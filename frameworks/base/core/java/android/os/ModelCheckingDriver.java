@@ -1091,8 +1091,9 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 	}
 	
+        //password of a dummy account created for testing purpose
 	public void initializeTextPassword(SQLiteDatabase db){
-		String data = "stellarium420"; 
+		String data = "an*42bu.ch"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PASSWORD);
@@ -2255,11 +2256,11 @@ public class ModelCheckingDriver {
 				
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_PERSON_NAME){
 				if((rawType & InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0){
-					//PALLAVI MAYA
+					//PALLAVI MAIYA
 					mappedType = TYPE_TEXT_NAME_CAPS;
 					
 				}else{
-					//Pallavi Maya
+					//Pallavi Maiya
 					mappedType = TYPE_TEXT_NAME;
 				}
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS){
