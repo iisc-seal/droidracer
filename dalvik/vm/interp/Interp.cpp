@@ -810,22 +810,22 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 abcAsyncStateMap.find(curAsync->asyncId)->second.second = true;
             }
         //    LOGE("APP-METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
-          /*  std::ofstream outfile;
+            std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->threadId << "\t meth:"
                 << method->name << "\t class:" << method->clazz->descriptor << "\n";
-            outfile.close(); */
+            outfile.close(); 
         }else{
             if(abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
                abcPushMethodForThread(self->threadId, method); 
                self->shouldABCTrack = false;
 
         //    LOGE("METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
-            /*   std::ofstream outfile;
+               std::ofstream outfile;
                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->threadId << "\t meth:"
                    << method->name << "\t class:" << method->clazz->descriptor << "\n";
-               outfile.close(); */
+               outfile.close(); 
             }else 
                self->shouldABCTrack = false;
         }
@@ -947,11 +947,11 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 abcPopLastMethodInThreadStack(self->threadId);
              
      //       LOGE("METHOD-EXIT: %s  class: %s", method->name, method->clazz->descriptor);
-             /*   std::ofstream outfile;
+                std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                 outfile << "METHOD EXIT tid:" << dvmThreadSelf()->threadId << "\t meth:"
                     << method->name << "\t class:" << method->clazz->descriptor << "\n";
-                outfile.close(); */
+                outfile.close(); 
             }
         
             bool isAppMethod = false;

@@ -392,7 +392,7 @@ public class ModelCheckingDriver {
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_VIEW_TYPE, -1);
 		values.put(McdDB.COLUMN_UI_EVENT_TYPE, EVENT_ROTATE_SCREEN);
-		values.put(McdDB.COLUMN_EVENT_PRIORITY, 20);
+		values.put(McdDB.COLUMN_EVENT_PRIORITY, KEY_PRESS_EVENT_PRIORITY);
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 		
 		//long clicks
@@ -3465,7 +3465,6 @@ public class ModelCheckingDriver {
 		Log.e(TAG, "storing error path...");
 		Cursor cursor = database.query(McdDB.TABLE_PATH, new String[]{McdDB.COLUMN_NODE_ID}, 
 				null, null, null, null, McdDB.COLUMN_ID + " DESC");
-//		cursor.moveToFirst();
 		int nextEvent = -1;
 		
 		//storing the error trace into TABLE_ERROR_PATH, 
@@ -3666,12 +3665,7 @@ public class ModelCheckingDriver {
 					return;
 				}
 			}
-//		}else if(popupWindows.size() == 0 && isPreviousMenuClickEvent == false){
 		}else if(popupWindows.size() == 0){
-//			if(isViewRootFocused(WindowManagerImpl.getDefault().getRootViews().length - 1) 
-//					== false){
-//				return;
-//			}
 			if(getViewRootInFocus() == -1){
 				return;
 			}
@@ -3840,7 +3834,6 @@ public class ModelCheckingDriver {
 			
 			//if no viewGroup view in popup windows then trigger event on the activity screen below all poup windows
 			if(viewGrpPopupsExist == false && popupWindows.size() > 0){
-//				if(!(isViewRootFocused(tmpViewRoots.length - (popupWindows.size() + 1))))
 				int viewInFocus = getViewRootInFocus();
 				if( viewInFocus == -1){
 					tmpViewRoots = null; //to avoid any window leak
@@ -3877,21 +3870,6 @@ public class ModelCheckingDriver {
         	Log.v(TAG, "intent event to be triggered");
         }
         }else if(MODE == EXPLORE && pathID != -1){
-//        	Cursor firstNode = database.rawQuery("SELECT MIN(" + McdDB.COLUMN_ID + ") FROM " +
-//    				McdDB.TABLE_PATH, null);
-//        	firstNode.moveToFirst();
-//        	if(firstNode.getInt(0) == pathID){
-//        		ClipboardManager clipBoard = (ClipboardManager) getContext().
-//        				getSystemService(getContext().CLIPBOARD_SERVICE);
-//        		ClipData data = null;
-//        		clipBoard.setPrimaryClip(data);
-//        	}
-//        	
-//        	firstNode.close();
-//        	firstNode = null;
-        	
-        	
-        	
         	if(abcHangCounter < HANG_LIMIT){
         	Cursor tmpNode = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID + ", " + 
         			McdDB.COLUMN_EVENT_TYPE + " FROM " + 
@@ -4689,7 +4667,6 @@ public class ModelCheckingDriver {
     			ContentValues values = new ContentValues();
     			values.put(McdDB.COLUMN_ACTIVITY_NAME, getVisibleActivity().getLocalClassName());
     			values.put(McdDB.COLUMN_TMP_ACTIVITY_HASH, getVisibleActivity().hashCode());
-//    			values.put(McdDB.COLUMN_HAS_MENU, hasMenu ? 1 : 0);
     			activityID = (int) database.insert(McdDB.TABLE_ACTIVITY, null, values);
     		}else{
     			activityID = activityResult.getInt(
@@ -4924,12 +4901,9 @@ public class ModelCheckingDriver {
         	//code to store events of all viewRoots for current screen after creating a 
         	//dummy path node.
         	//then choose an event and trigger it
-//        	int n = 0;
         	
-        	//List of <viewID of rootView , viewLevel>
         	List<Pair<Integer, Integer>> viewIDLst = new ArrayList<Pair<Integer, Integer>>();
         	if(windowSize > 0 && viewRootLimit == -1){
-//        		n = windowSize;
         		Cursor tmp = database.query(McdDB.TABLE_POPUPS_SCREEN, new String[]{
         				McdDB.COLUMN_POPUP_ID, McdDB.COLUMN_VIEWROOT_LEVEL}, 
         				McdDB.COLUMN_SCREEN_ID + " ?", new String[]{String.valueOf(screenID)}, 
@@ -4981,9 +4955,6 @@ public class ModelCheckingDriver {
         	
         	int pathNodeID = createDummyPathNode(ui_envID, database);
         	
-//        	if(!(viewIDLst.size()== n)){
-//				throw new McdException("Android Bug-checker found an assertion failure");
-//        	}
         	
         	for(int i=0; i<viewIDLst.size(); i++){
         		storeCurrentUIEvents(WindowManagerImpl.getDefault().getViewRoots()
@@ -4993,9 +4964,8 @@ public class ModelCheckingDriver {
         	
         	if(getVisibleActivity() != null){
         		addEventToUnexploredList(BACK_CLICK_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
-//        		if(hasMenu)
-        		addEventToUnexploredList(MENU_CLICK_EVENT_ID, UI_EVENT, pathNodeID, 26, database);
-//        		addEventToUnexploredList(ROTATE_SCREEN_EVENT_ID, UI_EVENT, pathNodeID, 25, database);
+        		addEventToUnexploredList(MENU_CLICK_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
+        		addEventToUnexploredList(ROTATE_SCREEN_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
         	}
         	
         	int[] nextEvent = selectNextEventToTrigger(pathNodeID, ui_envID, database);

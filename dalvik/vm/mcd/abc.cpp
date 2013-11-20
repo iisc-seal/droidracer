@@ -424,17 +424,11 @@ void abcRemoveCallerObjectForLibMethod(int abcTid, const Method* meth){
                 AbcMethObj* tmpPtr = it->second;
                 it->second = it->second->prev;
                 free(tmpPtr);
-                //LOGE("ABC: REMOVED 1 method %s, class %s",meth->name, meth->clazz->descriptor);
             }else{
                 AbcMethObj* tmpPtr = it->second;
                 abcLibCallerObjectMap.erase(abcTid);
                 free(tmpPtr);
-                //LOGE("ABC: REMOVED 2 method %s, class %s",meth->name, meth->clazz->descriptor);
             }
-            /*std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-            outfile << "ABC: DELETE " << meth->name << " of class " << meth->clazz->descriptor << "\n";
-            outfile.close();*/
         }else{
          //   LOGE("ABC-MISSING: caller object for method %s has been suspiciously removed for thread %d", meth->name, abcTid);
             abcLibCallerObjectMap.erase(abcTid);
@@ -1097,7 +1091,7 @@ std::string getLifecycleForCode(int code, std::string lifecycle){
 }
 
 void addAccessToTrace(int opId, int tid, int accessId){
-//    LOGE("%d ABC:Entered - Add ACCESS to trace", opId);
+    LOGE("%d ABC:Entered - Add ACCESS to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
@@ -1142,11 +1136,11 @@ bool addIntermediateReadWritesToTrace(int opId, int tid){
 }
 
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
-//    LOGE("%d ABC:Enter - Add REGISTER-RECEIVER to trace", opId);
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add REGISTER-RECEIVER to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1171,11 +1165,11 @@ void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, cha
 }
 
 void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
-//    LOGE("%d ABC:Enter - Add TRIGGER-RECEIVER to trace", opId);
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add TRIGGER-RECEIVER to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1200,11 +1194,11 @@ void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char
 }
 
 void addEnableLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
-//    LOGE("%d ABC:Enter - Add ENABLE-LIFECYCLE to trace", opId);
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add ENABLE-LIFECYCLE to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1231,11 +1225,11 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, int component
 }
 
 void addTriggerLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
-//    LOGE("%d ABC:Enter - Add TRIGGER-LIFECYCLE to trace tid:%d  state: %d", opId, tid, state);
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add TRIGGER-LIFECYCLE to trace tid:%d  state: %d", opId, tid, state);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1262,11 +1256,11 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, int componen
 }
 
 void addEnableEventToTrace(int opId, int tid, int view, int event){
-//    LOGE("%d ABC:Enter - Add ENABLE-EVENT to trace", opId);
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add ENABLE-EVENT to trace", opId);
    
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1293,11 +1287,11 @@ void addEnableEventToTrace(int opId, int tid, int view, int event){
 }
 
 void addTriggerEventToTrace(int opId, int tid, int view, int event){
-//    LOGE("%d ABC:Enter - Add TRIGGER-EVENT to trace", opId);
-    /*bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
-    }*/ //not necessary as this is seen immediately after CALL
+    }
+    LOGE("%d ABC:Enter - Add TRIGGER-EVENT to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1324,12 +1318,12 @@ void addTriggerEventToTrace(int opId, int tid, int view, int event){
 }
 
 int addPostToTrace(int opId, int srcTid, int msg, int destTid, s8 delay){
-//    LOGE("%d ABC:Enter - Add POST to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Enter - Add POST to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1359,7 +1353,7 @@ int addPostToTrace(int opId, int srcTid, int msg, int destTid, s8 delay){
 }
 
 void addCallToTrace(int opId, int tid, int msg){
-//    LOGE("%d ABC:Entered - Add CALL to trace", opId);
+    LOGE("%d ABC:Entered - Add CALL to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
@@ -1383,12 +1377,12 @@ void addCallToTrace(int opId, int tid, int msg){
 }
 
 void addRetToTrace(int opId, int tid, int msg){
-//    LOGE("%d ABC:Entered - Add RET to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add RET to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1417,7 +1411,7 @@ void addRetToTrace(int opId, int tid, int msg){
 }
 
 void addRemoveToTrace(int opId, int tid, int msg){
-//    LOGE("ABC:Entered - Add REMOVE to trace");
+    LOGE("ABC:Entered - Add REMOVE to trace");
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
@@ -1434,12 +1428,12 @@ void addRemoveToTrace(int opId, int tid, int msg){
 }
 
 void addAttachQToTrace(int opId, int tid, int msgQ){
-//    LOGE("%d ABC:Entered - Add ATTACHQ to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add ATTACHQ to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1463,12 +1457,12 @@ void addAttachQToTrace(int opId, int tid, int msgQ){
 }
 
 void addLoopToTrace(int opId, int tid, int msgQ){
-//    LOGE("%d ABC:Entered - Add LOOP to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add LOOP to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1492,12 +1486,12 @@ void addLoopToTrace(int opId, int tid, int msgQ){
 }
 
 void addLockToTrace(int opId, int tid, Object* lockObj){
-//    LOGE("%d ABC:Entered - Add LOCK to trace %p  %d", opId, lockObj, tid);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add LOCK to trace %p  %d", opId, lockObj, tid);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1521,12 +1515,12 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
 }
 
 void addUnlockToTrace(int opId, int tid, Object* lockObj){
-//    LOGE("%d ABC:Entered - Add UNLOCK to trace %p   %d", opId, lockObj, tid);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add UNLOCK to trace %p   %d", opId, lockObj, tid);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1550,12 +1544,12 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
 }
 
 void addForkToTrace(int opId, int parentTid, int childTid){
-//    LOGE("%d ABC:Entered - Add FORK to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, parentTid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add FORK to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1579,7 +1573,7 @@ void addForkToTrace(int opId, int parentTid, int childTid){
 }
 
 void addThreadInitToTrace(int opId, int tid){
-//    LOGE("%d ABC:Entered - Add THREADINIT to trace", opId);
+    LOGE("%d ABC:Entered - Add THREADINIT to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
 
     op->opType = ABC_THREADINIT;
@@ -1598,12 +1592,12 @@ void addThreadInitToTrace(int opId, int tid){
 }
 
 void addThreadExitToTrace(int opId, int tid){
-//    LOGE("%d ABC:Entered - Add THREADEXIT to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
+    LOGE("%d ABC:Entered - Add THREADEXIT to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_THREADEXIT;
@@ -1622,7 +1616,7 @@ void addThreadExitToTrace(int opId, int tid){
 }
 
 void addNativeEntryToTrace(int opId, int tid){
-//    LOGE("%d ABC:Entered - Add NATIVE_ENTRY to trace", opId);
+    LOGE("%d ABC:Entered - Add NATIVE_ENTRY to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
 
     op->opType = ABC_NATIVE_ENTRY;
@@ -1641,7 +1635,7 @@ void addNativeEntryToTrace(int opId, int tid){
 }
 
 void addNativeExitToTrace(int opId, int tid){
-//    LOGE("%d ABC:Entered - Add NATIVE_EXIT to trace", opId);
+    LOGE("%d ABC:Entered - Add NATIVE_EXIT to trace", opId);
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -3045,7 +3039,6 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
 
     //check if the race is a multithreaded race
     if(acc1->tid != acc2->tid){
-        LOGE("ABC: enetered 1");
         //set semantics ensures uniqueness of elements...a field wont be added more than once
         if(acc1->clazz != NULL){
             std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
@@ -3056,8 +3049,6 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
         } 
     }else{
 
-        LOGE("ABC: enetered 2");
-
     //categorize the async race..it may belong to multiple categories
         std::map<int, AbcOp*>::iterator opIter1 = abcTrace.find(o1);
         std::map<int, AbcOp*>::iterator opIter2 = abcTrace.find(o2);
@@ -3065,7 +3056,6 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
             AbcOp* op1 = opIter1->second;
             AbcOp* op2 = opIter2->second;
             if(op1->asyncId != -1 && op2->asyncId != -1){
-                LOGE("ABC: enetered 3");
 
                 std::map<int, AbcAsync*>::iterator asyncIter1 = abcAsyncMap.find(op1->asyncId); 
                 std::map<int, AbcAsync*>::iterator asyncIter2 = abcAsyncMap.find(op2->asyncId); 
@@ -3078,7 +3068,6 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                         (async1->recentTriggerOpId != async2->recentTriggerOpId)){
                         if(isHbEdge(async1->recentTriggerOpId, async2->recentTriggerOpId) ||
                                 isHbEdge(async2->recentTriggerOpId, async1->recentTriggerOpId)){
-                            LOGE("ABC: enetered 5");
 
                             //firstly, add this to the list of races
                             if(acc1->clazz != NULL){
@@ -3180,7 +3169,6 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                     /*        }//end of filter  */
                         }
                     }else{ //cannot find the corresponding triggers for one of the accesses. So test for other categpries
-                            LOGE("ABC: enetered 6");
 
                             //firstly, add this to the list of races
                             if(acc1->clazz != NULL){
