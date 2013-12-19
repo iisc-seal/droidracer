@@ -97,7 +97,6 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
             }
         }
         if(strcmp(gDvm.app_for_ABC, get_process_name()) == 0){
-            dvmDbgActive();
             gDvm.abcLogFile = std::string("/data/data/") + gDvm.app_for_ABC
                 + "/abc_log.txt";
             std::ofstream fs(gDvm.abcLogFile.c_str());
@@ -105,6 +104,7 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
             fs.close();
 
             
+            dvmDbgActive();
             startAbcModelChecker();
             gDvm.isRunABC = true;
 
