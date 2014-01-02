@@ -103,10 +103,10 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
             fs << "Android bug-checker log messages \n" << std::endl;
             fs.close();
 
-            
+            /*
+            gDvm.isRunABC = true;
             dvmDbgActive();
             startAbcModelChecker();
-            gDvm.isRunABC = true;
 
             dvmThreadSelf()->abcThreadId = abcThreadCount++;
             abcAddThreadToMap(dvmThreadSelf(), dvmGetThreadName(dvmThreadSelf()).c_str());
@@ -119,7 +119,7 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
        //         LOGE("ABC: fatal error in model checking. Main thread not added to map!");
 
             LOGE("ABC: main thread's name: %s", dvmGetThreadName(dvmThreadSelf()).c_str());
-            
+            */
         }
     }
 

@@ -4068,15 +4068,15 @@ public class ModelCheckingDriver {
 			int crossPostRaceCount = 0;
 			int uiRacecount = 0;
 			int nonUiRaceCount = 0;
-
-			int success = Thread.currentThread().abcPerformRaceDetection();
+            int success = 0;
+//			success = Thread.currentThread().abcPerformRaceDetection();
 
 			// collect stats
 			AbcGlobal.abcSetRaceDetectionEndTime(SystemClock.uptimeMillis());
 
 			// print race stats to file
-			Thread.currentThread().abcPrintRacesDetectedToFile();
-			Thread.currentThread().abcComputeMemoryUsedByRaceDetector();
+//			Thread.currentThread().abcPrintRacesDetectedToFile();
+//			Thread.currentThread().abcComputeMemoryUsedByRaceDetector();
 
 			if (success == 1) {
 				traceGenerationTime = AbcGlobal.abcGetTraceEndTime()
