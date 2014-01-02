@@ -119,7 +119,13 @@ public class AbcGlobal {
 					        SQLiteDatabase database = mcdDB.getWritableDatabase();
 					        
 					        //some initializations 
-					        
+					        try {
+							Looper.mcd.initializeIntentTable("/mnt/sdcard/AndroidManifest.xml", database);
+							Log.v("abc", "App manifest file loaded from /mnt/sdcard/AndroidManifest.xml");
+						} catch (Exception e) {
+							Log.e("abc", "App manifest file not found at /mnt/sdcard/AndroidManifest.xml");
+						}
+
 					        //ui_env for an event without a corresponding UI
 					        ContentValues values = new ContentValues();
 					        values.put(McdDB.COLUMN_SCREEN_ID, -1);

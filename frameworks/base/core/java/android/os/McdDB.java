@@ -7,63 +7,73 @@ import android.util.Log;
 
 public class McdDB extends SQLiteOpenHelper{
 	
-	  public static final String TABLE_UI_ENV = "UiEnv_Tab";
-	  public static final String TABLE_SCREEN = "Screen_Tab";
-	  public static final String TABLE_ACTIVITY = "Activity_Tab";
-	  public static final String TABLE_UNEXPLORED_EVENTS = "UnexploredEvents_Tab";
-	  public static final String TABLE_IGNORE_EVENT = "IgnoreEvents_Tab";
-	  public static final String TABLE_UI_EVENT = "UiEvent_Tab";
-	  public static final String TABLE_INTENT = "Intent_Tab";
-	  public static final String TABLE_POPUP = "Popup_Tab";
-	  public static final String TABLE_VIEW_NODE = "ViewNode_Tab";
-	  public static final String TABLE_PATH_NODE = "PathNode_Tab";
-	  public static final String TABLE_PATH = "Path_Tab";
-	  public static final String TABLE_ERROR_PATH = "ErrorPath_Tab";
-	  public static final String TABLE_PATH_NODE_DATA = "PatNodeData_Tab";
-	  public static final String TABLE_FIELD_SPECIFIC_DATA = "FieldSpecificData_Tab";
-	  public static final String TABLE_INPUT_SPECIFIC_DATA = "InputSpecificData_Tab";
-	  public static final String TABLE_QUICK_NODE_DATA_MAP = "QuickNodeDataMap_Tab";
-      public static final String TABLE_UI_EVENT_RELATIVE_PRIORITY = "UIEventRelativePriority_Tab"; 
-	  public static final String TABLE_POPUPS_SCREEN = "PopupsScreen_Tab";
+	public static final String TABLE_UI_ENV = "UiEnv_Tab";
+	public static final String TABLE_SCREEN = "Screen_Tab";
+	public static final String TABLE_ACTIVITY = "Activity_Tab";
+	public static final String TABLE_UNEXPLORED_EVENTS = "UnexploredEvents_Tab";
+	public static final String TABLE_IGNORE_EVENT = "IgnoreEvents_Tab";
+	public static final String TABLE_UI_EVENT = "UiEvent_Tab";
+	public static final String TABLE_INTENT = "Intent_Tab";
+	public static final String TABLE_INTENT_CATEGORY = "IntentCategory_Tab";
+	public static final String TABLE_UNEXPLORED_INTENTS = "UnExploredIntents_Tab";
+	public static final String TABLE_POPUP = "Popup_Tab";
+	public static final String TABLE_VIEW_NODE = "ViewNode_Tab";
+	public static final String TABLE_PATH_NODE = "PathNode_Tab";
+	public static final String TABLE_PATH = "Path_Tab";
+	public static final String TABLE_ERROR_PATH = "ErrorPath_Tab";
+	public static final String TABLE_PATH_NODE_DATA = "PatNodeData_Tab";
+	public static final String TABLE_FIELD_SPECIFIC_DATA = "FieldSpecificData_Tab";
+	public static final String TABLE_INPUT_SPECIFIC_DATA = "InputSpecificData_Tab";
+	public static final String TABLE_QUICK_NODE_DATA_MAP = "QuickNodeDataMap_Tab";
+	public static final String TABLE_UI_EVENT_RELATIVE_PRIORITY = "UIEventRelativePriority_Tab"; 
+	public static final String TABLE_POPUPS_SCREEN = "PopupsScreen_Tab";
 	
-	  public static final String COLUMN_ID = "_id";
-	  public static final String COLUMN_SCREEN_ID = "screenID";
-	  public static final String COLUMN_ACTIVITY_ID = "activityID";
-	  //hash value of activity object, has to be updated in every run
-	  public static final String COLUMN_TMP_ACTIVITY_HASH = "tmpActivityHash";
-	  public static final String COLUMN_ACTIVITY_NAME = "activityName";
-	  public static final String COLUMN_SCREEN_HASH = "screenHash";
-	  public static final String COLUMN_EVENT_ID = "eventID";
-	  public static final String COLUMN_EVENT_TYPE = "eventType";
-	  public static final String COLUMN_UI_EVENT_TYPE = "eventType";
-	  public static final String COLUMN_VIEW_ID = "viewID";
-	  public static final String COLUMN_NODE_ID = "nodeID";
-	  public static final String COLUMN_VIEWROOT_LEVEL = "viewRootLevel";
-	  public static final String COLUMN_VIEW_TYPE = "viewType";
-	  public static final String COLUMN_GUI_ID = "guiID";
-	  public static final String COLUMN_RELATIVE_ID = "relativeID";
-	  public static final String COLUMN_PARENT_ID = "parentID";
-	  public static final String COLUMN_IS_CLICKABLE = "isClickable";
-	  public static final String COLUMN_IS_LONG_CLICKABLE = "isLongClickable";
-	  public static final String COLUMN_TRAIT = "trait";
-	  public static final String COLUMN_POPUP_ID = "popupID";
-	  public static final String COLUMN_UI_ENV_ID = "uiEnvID";
-	  public static final String COLUMN_IS_ANCESTOR_DATA_WIDGET = "isAncestorDataWidget";
-	  public static final String COLUMN_SCREEN_ACTIVITY_HASH = "screenActivityHash";
-	  public static final String COLUMN_EXECUTION_STATUS = "executionStatus";
-      public static final String COLUMN_IS_CUSTOMIZED = "isDataCustomized";
-	  public static final String COLUMN_DATA_ID = "dataID";
-	  public static final String COLUMN_DATA = "data";
-	  public static final String COLUMN_ORDER = "eventOrder";
-	  public static final String COLUMN_EXPLORE_DEFAULT = "exploreDefault"; 
-      public static final String COLUMN_INPUT_TYPE = "inputType"; 
-      public static final String COLUMN_EVENT_PRIORITY = "eventPriority";
-      public static final String COLUMN_NEXT_EVENT = "nextEvent";
-      public static final String COLUMN_IS_FIRST_NODE = "isFirstNode";
-	  public static final String COLUMN_HAS_MENU = "activityHasMenu";
-	  
-	  private static final String DATABASE_NAME = "abc.db"; //android bug checker db
-	  private static final int DATABASE_VERSION = 1;
+	public static final String COLUMN_ID = "_id";
+	public static final String COLUMN_SCREEN_ID = "screenID";
+	public static final String COLUMN_ACTIVITY_ID = "activityID";
+	//hash value of activity object, has to be updated in every run
+	public static final String COLUMN_TMP_ACTIVITY_HASH = "tmpActivityHash";
+	public static final String COLUMN_ACTIVITY_NAME = "activityName";
+	public static final String COLUMN_SCREEN_HASH = "screenHash";
+	public static final String COLUMN_EVENT_ID = "eventID";
+	public static final String COLUMN_EVENT_TYPE = "eventType";
+	public static final String COLUMN_UI_EVENT_TYPE = "eventType";
+	public static final String COLUMN_INTENT_TYPE = "intentType";
+	public static final String COLUMN_INTENT_ID = "intentID";
+	//public static final String COLUMN_INTENT_CATEGORY_ID = "intentCategoryID";
+	public static final String COLUMN_INTENT_ACTION = "intentAction";
+	public static final String COLUMN_INTENT_CATEGORY = "intentCategory";
+	public static final String COLUMN_INTENT_COMPONENT = "intentComponent";
+	public static final String COLUMN_INTENT_DATA = "intentDataUri";
+	public static final String COLUMN_INTENT_AVAIL_FLAG = "intentAvailabilityFlag";
+	public static final String COLUMN_VIEW_ID = "viewID";
+	public static final String COLUMN_NODE_ID = "nodeID";
+	public static final String COLUMN_VIEWROOT_LEVEL = "viewRootLevel";
+	public static final String COLUMN_VIEW_TYPE = "viewType";
+	public static final String COLUMN_GUI_ID = "guiID";
+	public static final String COLUMN_RELATIVE_ID = "relativeID";
+	public static final String COLUMN_PARENT_ID = "parentID";
+	public static final String COLUMN_IS_CLICKABLE = "isClickable";
+	public static final String COLUMN_IS_LONG_CLICKABLE = "isLongClickable";
+	public static final String COLUMN_TRAIT = "trait";
+	public static final String COLUMN_POPUP_ID = "popupID";
+	public static final String COLUMN_UI_ENV_ID = "uiEnvID";
+	public static final String COLUMN_IS_ANCESTOR_DATA_WIDGET = "isAncestorDataWidget";
+	public static final String COLUMN_SCREEN_ACTIVITY_HASH = "screenActivityHash";
+	public static final String COLUMN_EXECUTION_STATUS = "executionStatus";
+	public static final String COLUMN_IS_CUSTOMIZED = "isDataCustomized";
+	public static final String COLUMN_DATA_ID = "dataID";
+	public static final String COLUMN_DATA = "data";
+	public static final String COLUMN_ORDER = "eventOrder";
+	public static final String COLUMN_EXPLORE_DEFAULT = "exploreDefault"; 
+	public static final String COLUMN_INPUT_TYPE = "inputType"; 
+	public static final String COLUMN_EVENT_PRIORITY = "eventPriority";
+	public static final String COLUMN_NEXT_EVENT = "nextEvent";
+	public static final String COLUMN_IS_FIRST_NODE = "isFirstNode";
+	public static final String COLUMN_HAS_MENU = "activityHasMenu";
+
+	private static final String DATABASE_NAME = "abc.db"; //android bug checker db
+	private static final int DATABASE_VERSION = 1;
 
 	  // Database creation sql statement
 	  private static final String TABLE_UI_ENV_CREATE = "create table "
@@ -165,6 +175,22 @@ public class McdDB extends SQLiteOpenHelper{
 //	      + " FOREIGN KEY ("+ COLUMN_VIEW_ID +") REFERENCES "+ TABLE_VIEW_NODE
 //	      + "("+ COLUMN_ID +") ON DELETE SET NULL ON UPDATE SET NULL);";
       
+	private static final String TABLE_INTENT_CREATE = "create table " + TABLE_INTENT + "(" + COLUMN_ID
+			+ " integer primary key autoincrement, " + COLUMN_INTENT_ID + " integer not null, " + COLUMN_INTENT_TYPE
+			+ " integer not null, " + COLUMN_INTENT_COMPONENT + " string not null, " + COLUMN_INTENT_AVAIL_FLAG
+			+ " integer not null, " + COLUMN_INTENT_DATA + " string null);";
+
+	private static final String TABLE_UNEXPLORED_INTENTS_CREATE = "create table " + TABLE_UNEXPLORED_INTENTS + "(" + COLUMN_ID
+			+ " integer primary key autoincrement, " + COLUMN_INTENT_ID + " integer not null, " + COLUMN_INTENT_TYPE
+			+ " integer not null, " + COLUMN_INTENT_COMPONENT + " string not null, " + COLUMN_INTENT_AVAIL_FLAG
+			+ " integer not null, " + COLUMN_INTENT_DATA + " string null);";
+
+	private static final String TABLE_INTENT_CATEGORY_CREATE = "create table " + TABLE_INTENT_CATEGORY + "("
+			+ COLUMN_ID + " integer primary key autoincrement, " + COLUMN_INTENT_ID + " integer not null, "
+			+ COLUMN_INTENT_CATEGORY + " string not null," + " FOREIGN KEY (" + COLUMN_INTENT_ID + ") REFERENCES "
+			+ TABLE_INTENT + "(" + COLUMN_INTENT_ID + ") ON DELETE SET NULL ON UPDATE SET NULL);";
+
+
       //event_id refers to a ui event or intent. the table to refer to is decided 
       //by event type: 0 - ui-event, 1 - intent
       private static final String TABLE_PATH_NODE_CREATE = "create table "
@@ -295,21 +321,24 @@ public class McdDB extends SQLiteOpenHelper{
 	  public void onCreate(SQLiteDatabase database) {
 		database.execSQL(TABLE_ACTIVITY_CREATE);
 		database.execSQL(TABLE_SCREEN_CREATE);
-	    database.execSQL(TABLE_UI_ENV_CREATE);
-	    database.execSQL(TABLE_VIEW_NODE_CREATE);
-	    database.execSQL(TABLE_POPUP_CREATE);
-	    database.execSQL(TABLE_UI_EVENT_CREATE);
-	    database.execSQL(TABLE_UNEXPLORED_EVENTS_CREATE);
-	    database.execSQL(TABLE_IGNORE_EVENT_CREATE);
-	    database.execSQL(TABLE_PATH_NODE_CREATE);
-	    database.execSQL(TABLE_PATH_CREATE);
-	    database.execSQL(TABLE_PATH_NODE_DATA_CREATE);
-	    database.execSQL(TABLE_FIELD_SPECIFIC_DATA_CREATE);
-	    database.execSQL(TABLE_INPUT_SPECIFIC_DATA_CREATE);
-	    database.execSQL(TABLE_QUICK_NODE_DATA_MAP_CREATE);
-	    database.execSQL(TABLE_UI_EVENT_RELATIVE_PRIORITY_CREATE);
-	    database.execSQL(TABLE_POPUPS_SCREEN_CREATE);
-	    database.execSQL(TABLE_ERROR_PATH_CREATE);
+		database.execSQL(TABLE_UI_ENV_CREATE);
+		database.execSQL(TABLE_VIEW_NODE_CREATE);
+		database.execSQL(TABLE_POPUP_CREATE);
+		database.execSQL(TABLE_UI_EVENT_CREATE);
+		database.execSQL(TABLE_INTENT_CREATE);
+		database.execSQL(TABLE_UNEXPLORED_INTENTS_CREATE);
+		database.execSQL(TABLE_INTENT_CATEGORY_CREATE);
+		database.execSQL(TABLE_UNEXPLORED_EVENTS_CREATE);
+		database.execSQL(TABLE_IGNORE_EVENT_CREATE);
+		database.execSQL(TABLE_PATH_NODE_CREATE);
+		database.execSQL(TABLE_PATH_CREATE);
+		database.execSQL(TABLE_PATH_NODE_DATA_CREATE);
+		database.execSQL(TABLE_FIELD_SPECIFIC_DATA_CREATE);
+		database.execSQL(TABLE_INPUT_SPECIFIC_DATA_CREATE);
+		database.execSQL(TABLE_QUICK_NODE_DATA_MAP_CREATE);
+		database.execSQL(TABLE_UI_EVENT_RELATIVE_PRIORITY_CREATE);
+		database.execSQL(TABLE_POPUPS_SCREEN_CREATE);
+		database.execSQL(TABLE_ERROR_PATH_CREATE);
 	    
 	    if (!database.isReadOnly()) {
 	        // Enable foreign key constraints
@@ -319,27 +348,30 @@ public class McdDB extends SQLiteOpenHelper{
 
 	  @Override
 	  public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-	    Log.w(McdDB.class.getName(),
-	        "Upgrading database from version " + oldVersion + " to "
-	            + newVersion + ", which will destroy all old data");
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACTIVITY);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_SCREEN);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_ENV);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_VIEW_NODE);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_POPUP);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_EVENT);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UNEXPLORED_EVENTS);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_IGNORE_EVENT);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE_DATA);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_FIELD_SPECIFIC_DATA);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_INPUT_SPECIFIC_DATA);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_QUICK_NODE_DATA_MAP);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_EVENT_RELATIVE_PRIORITY);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_POPUPS_SCREEN);
-	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_ERROR_PATH);
-	    onCreate(db);
+		Log.w(McdDB.class.getName(),
+			"Upgrading database from version " + oldVersion + " to "
+				+ newVersion + ", which will destroy all old data");
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACTIVITY);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_SCREEN);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_ENV);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_VIEW_NODE);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_POPUP);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_EVENT);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_INTENT);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_UNEXPLORED_INTENTS);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_INTENT_CATEGORY);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_UNEXPLORED_EVENTS);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_IGNORE_EVENT);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE_DATA);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_FIELD_SPECIFIC_DATA);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_INPUT_SPECIFIC_DATA);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_QUICK_NODE_DATA_MAP);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_EVENT_RELATIVE_PRIORITY);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_POPUPS_SCREEN);
+		db.execSQL("DROP TABLE IF EXISTS " + TABLE_ERROR_PATH);
+		onCreate(db);
 	  }
 
 }
