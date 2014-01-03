@@ -423,45 +423,80 @@ public class ModelCheckingDriver {
 	// ArrayList<String>();
 
 	static {
-		intentClassMap.put("android.media.AUDIO_BECOMING_NOISY", INTENT_AUDIO_BECOMING_NOISY);
-		intentClassMap.put("android.intent.action.ACTION_SHUTDOWN", INTENT_ACTION_SHUTDOWN);
-		intentClassMap.put("android.intent.action.ACTION_POWER_CONNECTED", INTENT_ACTION_POWER_CONNECTED);
-		intentClassMap.put("android.intent.action.ACTION_POWER_DISCONNECTED", INTENT_ACTION_POWER_DISCONNECTED);
-		intentClassMap.put("android.intent.action.AIRPLANE_MODE", INTENT_AIRPLANE_MODE);
-		intentClassMap.put("android.intent.action.BATTERY_CHANGED", INTENT_BATTERY_CHANGED);
-		intentClassMap.put("android.intent.action.BATTERY_LOW", INTENT_BATTERY_LOW);
-		intentClassMap.put("android.intent.action.BATTERY_OKAY", INTENT_BATTERY_OKAY);
-		intentClassMap.put("android.intent.action.BOOT_COMPLETED", INTENT_BOOT_COMPLETED);
-		intentClassMap.put("android.intent.action.DATE_CHANGED", INTENT_DATE_CHANGED);
-		intentClassMap.put("android.intent.action.DEVICE_STORAGE_LOW", INTENT_DEVICE_STORAGE_LOW);
-		intentClassMap.put("android.intent.action.INPUT_METHOD_CHANGED", INTENT_INPUT_METHOD_CHANGED);
-		intentClassMap.put("android.intent.action.MEDIA_EJECT", INTENT_MEDIA_EJECT);
-		intentClassMap.put("android.intent.action.MEDIA_MOUNTED", INTENT_MEDIA_MOUNTED);
-		intentClassMap.put("android.intent.action.MEDIA_REMOVED", INTENT_MEDIA_REMOVED);
-		intentClassMap.put("android.intent.action.MEDIA_SCANNER_FINISHED", INTENT_MEDIA_SCANNER_FINISHED);
-		intentClassMap.put("android.intent.action.MEDIA_SHARED", INTENT_MEDIA_SHARED);
-		intentClassMap.put("android.intent.action.MEDIA_UNMOUNTABLE", INTENT_MEDIA_UNMOUNTABLE);
-		intentClassMap.put("android.intent.action.MEDIA_UNMOUNTED", INTENT_MEDIA_UNMOUNTED);
-		intentClassMap.put("android.intent.action.NEW_OUTGOING_CALL", INTENT_NEW_OUTGOING_CALL);
-		intentClassMap.put("android.intent.action.PACKAGE_ADDED", INTENT_PACKAGE_ADDED);
-		intentClassMap.put("android.intent.action.PACKAGE_CHANGED", INTENT_PACKAGE_CHANGED);
-		intentClassMap.put("android.intent.action.PACKAGE_DATA_CLEARED", INTENT_PACKAGE_DATA_CLEARED);
-		intentClassMap.put("android.intent.action.PACKAGE_FIRST_LAUNCH", INTENT_PACKAGE_FIRST_LAUNCH);
-		intentClassMap.put("android.intent.action.PACKAGE_FULLY_REMOVED", INTENT_PACKAGE_FULLY_REMOVED);
-		intentClassMap.put("android.intent.action.PACKAGE_INSTALL", INTENT_PACKAGE_INSTALL);
-		intentClassMap.put("android.intent.action.PACKAGE_REMOVED", INTENT_PACKAGE_REMOVED);
-		intentClassMap.put("android.intent.action.PACKAGE_REPLACED", INTENT_PACKAGE_REPLACED);
-		intentClassMap.put("android.intent.action.PACKAGE_RESTARTED", INTENT_PACKAGE_RESTARTED);
-		intentClassMap.put("android.intent.action.PHONE_STATE", INTENT_PHONE_STATE);
+		intentClassMap.put("android.media.AUDIO_BECOMING_NOISY",
+				INTENT_AUDIO_BECOMING_NOISY);
+		intentClassMap.put("android.intent.action.ACTION_SHUTDOWN",
+				INTENT_ACTION_SHUTDOWN);
+		intentClassMap.put("android.intent.action.ACTION_POWER_CONNECTED",
+				INTENT_ACTION_POWER_CONNECTED);
+		intentClassMap.put("android.intent.action.ACTION_POWER_DISCONNECTED",
+				INTENT_ACTION_POWER_DISCONNECTED);
+		intentClassMap.put("android.intent.action.AIRPLANE_MODE",
+				INTENT_AIRPLANE_MODE);
+		intentClassMap.put("android.intent.action.BATTERY_CHANGED",
+				INTENT_BATTERY_CHANGED);
+		intentClassMap.put("android.intent.action.BATTERY_LOW",
+				INTENT_BATTERY_LOW);
+		intentClassMap.put("android.intent.action.BATTERY_OKAY",
+				INTENT_BATTERY_OKAY);
+		intentClassMap.put("android.intent.action.BOOT_COMPLETED",
+				INTENT_BOOT_COMPLETED);
+		intentClassMap.put("android.intent.action.DATE_CHANGED",
+				INTENT_DATE_CHANGED);
+		intentClassMap.put("android.intent.action.DEVICE_STORAGE_LOW",
+				INTENT_DEVICE_STORAGE_LOW);
+		intentClassMap.put("android.intent.action.INPUT_METHOD_CHANGED",
+				INTENT_INPUT_METHOD_CHANGED);
+		intentClassMap.put("android.intent.action.MEDIA_EJECT",
+				INTENT_MEDIA_EJECT);
+		intentClassMap.put("android.intent.action.MEDIA_MOUNTED",
+				INTENT_MEDIA_MOUNTED);
+		intentClassMap.put("android.intent.action.MEDIA_REMOVED",
+				INTENT_MEDIA_REMOVED);
+		intentClassMap.put("android.intent.action.MEDIA_SCANNER_FINISHED",
+				INTENT_MEDIA_SCANNER_FINISHED);
+		intentClassMap.put("android.intent.action.MEDIA_SHARED",
+				INTENT_MEDIA_SHARED);
+		intentClassMap.put("android.intent.action.MEDIA_UNMOUNTABLE",
+				INTENT_MEDIA_UNMOUNTABLE);
+		intentClassMap.put("android.intent.action.MEDIA_UNMOUNTED",
+				INTENT_MEDIA_UNMOUNTED);
+		intentClassMap.put("android.intent.action.NEW_OUTGOING_CALL",
+				INTENT_NEW_OUTGOING_CALL);
+		intentClassMap.put("android.intent.action.PACKAGE_ADDED",
+				INTENT_PACKAGE_ADDED);
+		intentClassMap.put("android.intent.action.PACKAGE_CHANGED",
+				INTENT_PACKAGE_CHANGED);
+		intentClassMap.put("android.intent.action.PACKAGE_DATA_CLEARED",
+				INTENT_PACKAGE_DATA_CLEARED);
+		intentClassMap.put("android.intent.action.PACKAGE_FIRST_LAUNCH",
+				INTENT_PACKAGE_FIRST_LAUNCH);
+		intentClassMap.put("android.intent.action.PACKAGE_FULLY_REMOVED",
+				INTENT_PACKAGE_FULLY_REMOVED);
+		intentClassMap.put("android.intent.action.PACKAGE_INSTALL",
+				INTENT_PACKAGE_INSTALL);
+		intentClassMap.put("android.intent.action.PACKAGE_REMOVED",
+				INTENT_PACKAGE_REMOVED);
+		intentClassMap.put("android.intent.action.PACKAGE_REPLACED",
+				INTENT_PACKAGE_REPLACED);
+		intentClassMap.put("android.intent.action.PACKAGE_RESTARTED",
+				INTENT_PACKAGE_RESTARTED);
+		intentClassMap.put("android.intent.action.PHONE_STATE",
+				INTENT_PHONE_STATE);
 		intentClassMap.put("android.intent.action.REBOOT", INTENT_REBOOT);
-		intentClassMap.put("android.intent.action.SCREEN_OFF", INTENT_SCREEN_OFF);
+		intentClassMap.put("android.intent.action.SCREEN_OFF",
+				INTENT_SCREEN_OFF);
 		intentClassMap.put("android.intent.action.SCREEN_ON", INTENT_SCREEN_ON);
-		intentClassMap.put("android.intent.action.TIMEZONE_CHANGED", INTENT_TIMEZONE_CHANGED);
+		intentClassMap.put("android.intent.action.TIMEZONE_CHANGED",
+				INTENT_TIMEZONE_CHANGED);
 		intentClassMap.put("android.intent.action.TIME_SET", INTENT_TIME_SET);
 		intentClassMap.put("android.intent.action.TIME_TICK", INTENT_TIME_TICK);
-		intentClassMap.put("android.intent.action.USER_PRESENT", INTENT_USER_PRESENT);
-		intentClassMap.put("android.intent.action.LOCALE_CHANGED", INTENT_LOCALE_CHANGED);
-		intentClassMap.put("android.intent.action.CONFIGURATION_CHANGED", INTENT_CONFIGURATION_CHANGED);
+		intentClassMap.put("android.intent.action.USER_PRESENT",
+				INTENT_USER_PRESENT);
+		intentClassMap.put("android.intent.action.LOCALE_CHANGED",
+				INTENT_LOCALE_CHANGED);
+		intentClassMap.put("android.intent.action.CONFIGURATION_CHANGED",
+				INTENT_CONFIGURATION_CHANGED);
 	}
 
 	static {
@@ -2530,27 +2565,36 @@ public class ModelCheckingDriver {
 		}
 	}
 
-	public void initializeIntentTable(String manifestFile, SQLiteDatabase database) throws McdException {
+	public void initializeIntentTable(String manifestFile,
+			SQLiteDatabase database) throws McdException {
 		try {
 			AndroidManifestParser amp = new AndroidManifestParser(manifestFile);
-			ArrayList<IntentComponent> component = amp.getAllBroadcastReceivers();
+			ArrayList<IntentComponent> component = amp
+					.getAllBroadcastReceivers();
 			for (int i = 0; i < component.size(); i++) {
 				ArrayList<IntentFilter> filters = component.get(i).intentFilters;
 				for (int j = 0; j < filters.size(); j++) {
 					ArrayList<String> actions = filters.get(j).intentActions;
 					ArrayList<String> categories = filters.get(j).intentCategory;
-					String mime = filters.get(j).data.size() > 0 ? filters.get(j).data.get(0).mimeType : "";
-					String scheme = filters.get(j).data.size() > 0 ? filters.get(j).data.get(0).scheme : "";
+					String mime = filters.get(j).data.size() > 0 ? filters
+							.get(j).data.get(0).mimeType : "";
+					String scheme = filters.get(j).data.size() > 0 ? filters
+							.get(j).data.get(0).scheme : "";
 					mime = scheme + " - " + mime;
 					for (int k = 0; k < actions.size(); k++) {
-						Log.v("Store-------------Intent", "before storing : " + actions.get(k));
+						Log.v("Store-------------Intent", "before storing : "
+								+ actions.get(k));
 						if (intentClassMap.containsKey(actions.get(k)))
-							storeIntent(intentClassMap.get(actions.get(k)), 2, component.get(i).intentComponentName, 1,
+							storeIntent(intentClassMap.get(actions.get(k)), 2,
+									component.get(i).intentComponentName, 1,
 									mime, database);
 						else {
-							ModelCheckingDriver.intentClassMap.put(actions.get(k), intentCount);
-							ModelCheckingDriver.intentActionList.add(actions.get(k));
-							storeIntent(intentClassMap.get(actions.get(k)), 2, component.get(i).intentComponentName, 1,
+							ModelCheckingDriver.intentClassMap.put(
+									actions.get(k), intentCount);
+							ModelCheckingDriver.intentActionList.add(actions
+									.get(k));
+							storeIntent(intentClassMap.get(actions.get(k)), 2,
+									component.get(i).intentComponentName, 1,
 									mime, database);
 							intentCount++;
 						}
@@ -2558,21 +2602,24 @@ public class ModelCheckingDriver {
 						Log.v("Store-------------Intent", "stored intent");
 						for (int l = 0; l < categories.size(); l++) {
 							Log.v("Store-------------cat", "before storing");
-							storeCategories(intentClassMap.get(actions.get(k)), categories.get(l), database);
+							storeCategories(intentClassMap.get(actions.get(k)),
+									categories.get(l), database);
 							Log.v("Store-------------cat", "stored cat");
 						}
 					}
 				}
 			}
 		} catch (FileNotFoundException e) {
-			throw new McdException("App manifest file cannot be found at - " + manifestFile);
+			throw new McdException("App manifest file cannot be found at - "
+					+ manifestFile);
 		}
 	}
 
 	// public void storeIntents(IntentComponent ic, int intentID, int
 	// pathNodeID, SQLiteDatabase database) {
-	public void storeIntent(int intentID, int componentType, String componentName, int flag, String mime,
-			SQLiteDatabase database) throws McdException {
+	public void storeIntent(int intentID, int componentType,
+			String componentName, int flag, String mime, SQLiteDatabase database)
+			throws McdException {
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_INTENT_ID, intentID);
 		// values.put(McdDB.COLUMN_INTENT_CATEGORY_ID, categoryId);
@@ -2586,19 +2633,22 @@ public class ModelCheckingDriver {
 		Log.v("Store-------------Intent", "Component - " + componentName);
 		long eventID = database.insert(McdDB.TABLE_INTENT, null, values);
 		if (!(eventID > -1)) {
-			throw new McdException("Android Bug-checker returned a database row for"
-					+ " Intents table with primary key -1");
+			throw new McdException(
+					"Android Bug-checker returned a database row for"
+							+ " Intents table with primary key -1");
 		}
 
 		eventID = database.insert(McdDB.TABLE_UNEXPLORED_INTENTS, null, values);
 		if (!(eventID > -1)) {
-			throw new McdException("Android Bug-checker returned a database row for"
-					+ " Unexplored Intents table with primary key -1");
+			throw new McdException(
+					"Android Bug-checker returned a database row for"
+							+ " Unexplored Intents table with primary key -1");
 		}
 		pendingIntentCount++;
 	}
 
-	public void storeCategories(int intentId, String category, SQLiteDatabase database) throws McdException {
+	public void storeCategories(int intentId, String category,
+			SQLiteDatabase database) throws McdException {
 		ContentValues values;
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_INTENT_ID, intentId);
@@ -2606,13 +2656,15 @@ public class ModelCheckingDriver {
 
 		long eventID = database.insert(McdDB.TABLE_INTENT, null, values);
 		if (!(eventID > -1)) {
-			throw new McdException("Android Bug-checker returned a database row for"
-					+ " Intent table with primary key -1");
+			throw new McdException(
+					"Android Bug-checker returned a database row for"
+							+ " Intent table with primary key -1");
 
 		}
 	}
 
-	public boolean triggerIntent(String Action, String[] intentCategories, String targetComponentName, String dataUri) {
+	public boolean triggerIntent(String Action, String[] intentCategories,
+			String targetComponentName, String dataUri) {
 		String categoryString = null;
 		Log.v("Trigger Intent called : ", "Action : " + Action);
 		if (intentCategories != null && intentCategories.length > 0) {
@@ -2629,7 +2681,8 @@ public class ModelCheckingDriver {
 		String data = "";
 
 		if (dataUri != null) {
-			if (dataUri.toLowerCase().contains("audio") || dataUri.toLowerCase().contains("mp3")) {
+			if (dataUri.toLowerCase().contains("audio")
+					|| dataUri.toLowerCase().contains("mp3")) {
 				if (dataUri.toLowerCase().contains("http"))
 					data = " -d http://techslides.com/demos/samples/sample.mp3";
 				else
@@ -2639,12 +2692,14 @@ public class ModelCheckingDriver {
 					data = " -d http://techslides.com/demos/sample-videos/small.mp4";
 				else
 					data = " -d /mnt/sdcard/test.mp4";
-			} else if (dataUri.toLowerCase().contains("text") || dataUri.toLowerCase().contains("txt")) {
+			} else if (dataUri.toLowerCase().contains("text")
+					|| dataUri.toLowerCase().contains("txt")) {
 				if (dataUri.toLowerCase().contains("http"))
 					data = " -d http://techslides.com/demos/samples/sample.txt";
 				else
 					data = " -d /mnt/sdcard/test.txt";
-			} else if (dataUri.toLowerCase().contains("image") || dataUri.toLowerCase().contains("jpeg")) {
+			} else if (dataUri.toLowerCase().contains("image")
+					|| dataUri.toLowerCase().contains("jpeg")) {
 				if (dataUri.toLowerCase().contains("http"))
 					data = " -d http://techslides.com/demos/samples/sample.jpg";
 				else
@@ -2657,10 +2712,12 @@ public class ModelCheckingDriver {
 		String targetBroadCast = null;
 		if (targetComponentName == null || !targetComponentName.contains("/")) {
 			targetBroadCast = "adb shell am broadcast -a " + Action
-					+ (categoryString != null ? (categoryString + " ") : " ") + "--receiver-registered-only" + data;
+					+ (categoryString != null ? (categoryString + " ") : " ")
+					+ "--receiver-registered-only" + data;
 		} else {
 			targetBroadCast = "adb shell am broadcast -a " + Action
-					+ (categoryString != null ? (categoryString + " ") : " ") + " -n " + targetComponentName + data;
+					+ (categoryString != null ? (categoryString + " ") : " ")
+					+ " -n " + targetComponentName + data;
 		}
 
 		ModelCheckingDriver.fireIntentCheck = false;
@@ -2674,7 +2731,8 @@ public class ModelCheckingDriver {
 		 */
 
 		Intent intent = new Intent("android.intent.action.MAIN");
-		intent.setComponent(ComponentName.unflattenFromString("abc.abcclientapp/abc.abcclientapp.AbcClient"));
+		intent.setComponent(ComponentName
+				.unflattenFromString("abc.abcclientapp/abc.abcclientapp.AbcClient"));
 		intent.addCategory("android.intent.category.LAUNCHER");
 		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 		intent.putExtra("package", appUT);
@@ -4068,15 +4126,15 @@ public class ModelCheckingDriver {
 			int crossPostRaceCount = 0;
 			int uiRacecount = 0;
 			int nonUiRaceCount = 0;
-            int success = 0;
-//			success = Thread.currentThread().abcPerformRaceDetection();
+			int success = 0;
+			// success = Thread.currentThread().abcPerformRaceDetection();
 
 			// collect stats
 			AbcGlobal.abcSetRaceDetectionEndTime(SystemClock.uptimeMillis());
 
 			// print race stats to file
-//			Thread.currentThread().abcPrintRacesDetectedToFile();
-//			Thread.currentThread().abcComputeMemoryUsedByRaceDetector();
+			// Thread.currentThread().abcPrintRacesDetectedToFile();
+			// Thread.currentThread().abcComputeMemoryUsedByRaceDetector();
 
 			if (success == 1) {
 				traceGenerationTime = AbcGlobal.abcGetTraceEndTime()
@@ -4130,7 +4188,7 @@ public class ModelCheckingDriver {
 			intent.putExtra("uiRacecount", uiRacecount);
 			intent.putExtra("nonUiRaceCount", nonUiRaceCount);
 
-			//getContext().startActivity(intent);
+			// getContext().startActivity(intent);
 			getContext().startService(intent);
 			// }
 			// };
@@ -4257,46 +4315,67 @@ public class ModelCheckingDriver {
 		double pick = Math.random();
 		// if (pick > 0.75 && ModelCheckingDriver.fireIntentCheck == true) {
 		if (pick < 0.75 || pendingIntentCount == 0) {
-			Cursor cursor = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID + ", " + McdDB.COLUMN_EVENT_TYPE + ", "
-					+ McdDB.COLUMN_ID + " FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " + McdDB.COLUMN_NODE_ID
-					+ " = ? AND " + McdDB.COLUMN_EVENT_ID + " NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM "
-					+ McdDB.TABLE_IGNORE_EVENT + " WHERE " + McdDB.COLUMN_UI_ENV_ID + " = ?)" + " ORDER BY "
-					+ McdDB.COLUMN_EVENT_PRIORITY + " DESC, " + McdDB.COLUMN_ID + " ASC LIMIT 1",
-					new String[] { String.valueOf(pathNodeID), String.valueOf(ui_envID) });
+			Cursor cursor = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID
+					+ ", " + McdDB.COLUMN_EVENT_TYPE + ", " + McdDB.COLUMN_ID
+					+ " FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE "
+					+ McdDB.COLUMN_NODE_ID + " = ? AND "
+					+ McdDB.COLUMN_EVENT_ID + " NOT IN (SELECT "
+					+ McdDB.COLUMN_EVENT_ID + " FROM "
+					+ McdDB.TABLE_IGNORE_EVENT + " WHERE "
+					+ McdDB.COLUMN_UI_ENV_ID + " = ?)" + " ORDER BY "
+					+ McdDB.COLUMN_EVENT_PRIORITY + " DESC, " + McdDB.COLUMN_ID
+					+ " ASC LIMIT 1", new String[] {
+					String.valueOf(pathNodeID), String.valueOf(ui_envID) });
 			if (cursor.moveToFirst()) {
-				eventInfo[0] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_ID));
-				eventInfo[1] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_TYPE));
+				eventInfo[0] = cursor.getInt(cursor
+						.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_ID));
+				eventInfo[1] = cursor.getInt(cursor
+						.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_TYPE));
 
 				if (eventInfo[1] == 0) { // gui event
-					Cursor tempRes = database.query(McdDB.TABLE_UI_EVENT, new String[] { McdDB.COLUMN_UI_EVENT_TYPE },
-							McdDB.COLUMN_ID + " = ?", new String[] { String.valueOf(eventInfo[0]) }, null, null, null);
+					Cursor tempRes = database.query(McdDB.TABLE_UI_EVENT,
+							new String[] { McdDB.COLUMN_UI_EVENT_TYPE },
+							McdDB.COLUMN_ID + " = ?",
+							new String[] { String.valueOf(eventInfo[0]) },
+							null, null, null);
 					if (!(tempRes.moveToFirst())) {
-						mcdRaiseException("Android Bug-checker found an invalid " + "primary key for UIEvent table",
+						mcdRaiseException(
+								"Android Bug-checker found an invalid "
+										+ "primary key for UIEvent table",
 								database);
 					}
 
-					if (!textDataViewSet.contains(tempRes.getInt(tempRes
-							.getColumnIndexOrThrow(McdDB.COLUMN_UI_EVENT_TYPE)))) {
-						database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?", new String[] { String
-								.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_ID))) });
+					if (!textDataViewSet
+							.contains(tempRes.getInt(tempRes
+									.getColumnIndexOrThrow(McdDB.COLUMN_UI_EVENT_TYPE)))) {
+						database.delete(
+								McdDB.TABLE_UNEXPLORED_EVENTS,
+								McdDB.COLUMN_ID + " = ?",
+								new String[] { String.valueOf(cursor.getInt(cursor
+										.getColumnIndexOrThrow(McdDB.COLUMN_ID))) });
 					}
 					tempRes.close();
 					tempRes = null;
+				} else {
+					database.delete(McdDB.TABLE_UNEXPLORED_EVENTS,
+							McdDB.COLUMN_ID + " = ?",
+							new String[] { String.valueOf(cursor.getInt(cursor
+									.getColumnIndexOrThrow(McdDB.COLUMN_ID))) });
 				}
-			} else {
-				database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?",
-						new String[] { String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_ID))) });
 			}
 			cursor.close();
 		} else {
 			// Intent is to be triggered and previous intent, if any, completed
-			Cursor cursor = database.rawQuery("SELECT * FROM " + McdDB.TABLE_UNEXPLORED_INTENTS + " WHERE "
-					+ McdDB.COLUMN_INTENT_AVAIL_FLAG + " = ? ORDER BY " + McdDB.COLUMN_ID + " ASC LIMIT 1",
+			Cursor cursor = database.rawQuery("SELECT * FROM "
+					+ McdDB.TABLE_UNEXPLORED_INTENTS + " WHERE "
+					+ McdDB.COLUMN_INTENT_AVAIL_FLAG + " = ? ORDER BY "
+					+ McdDB.COLUMN_ID + " ASC LIMIT 1",
 					new String[] { String.valueOf(1) });
 
 			if (cursor.moveToFirst()) {
 				// primary key from intent table
-				eventInfo[0] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_ID));
+				eventInfo[0] = cursor.getInt(cursor
+						.getColumnIndexOrThrow(McdDB.COLUMN_ID));
 				eventInfo[1] = INTENT_EVENT;
 			}
 			cursor.close();
@@ -4368,7 +4447,6 @@ public class ModelCheckingDriver {
 			return;
 		}
 		if (abcSilentReturn) {
-			Log.e("ABC", "ABC return silently");
 			return;
 		} else {
 			// add extra check for BACK button press later checking if
@@ -4621,38 +4699,53 @@ public class ModelCheckingDriver {
 				} else if (playEventType == INTENT_EVENT) {
 					Log.v(TAG, "intent event to be triggered");
 
-					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS, null, McdDB.COLUMN_ID + " = ?",
-							new String[] { String.valueOf(playEventID) }, null, null, null);
+					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS,
+							null, McdDB.COLUMN_ID + " = ?",
+							new String[] { String.valueOf(playEventID) }, null,
+							null, null);
 
 					if (!(res.moveToFirst())) {
-						throw new McdException("Android Bug-checker found an invalid key for" + " UiEvent table");
+						throw new McdException(
+								"Android Bug-checker found an invalid key for"
+										+ " UiEvent table");
 					}
 
-					int intentId = res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
-					Log.v("Trigger--Intent play-mode", "data retrieved " + intentId);
+					int intentId = res.getInt(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
+					Log.v("Trigger--Intent play-mode", "data retrieved "
+							+ intentId);
 					// int intentType =
 					// res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INPUT_TYPE));
-					String intentComponent = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
-					Log.v("Trigger--Intent", "data retrieved " + intentId + intentComponent);
-					String intentData = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
+					String intentComponent = res
+							.getString(res
+									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
+					Log.v("Trigger--Intent", "data retrieved " + intentId
+							+ intentComponent);
+					String intentData = res.getString(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
 					String[] categories;
 					res.close();
 					res = null;
 
-					Log.v("Trigger--Intent play-mode", "data retrieved " + intentId + intentComponent + intentData);
+					Log.v("Trigger--Intent play-mode", "data retrieved "
+							+ intentId + intentComponent + intentData);
 
 					// Get corresponding categories
-					Cursor categoryCursor = database.rawQuery("SELECT " + McdDB.COLUMN_INTENT_CATEGORY + " FROM "
-							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE " + McdDB.COLUMN_INTENT_ID + " = ?",
+					Cursor categoryCursor = database.rawQuery("SELECT "
+							+ McdDB.COLUMN_INTENT_CATEGORY + " FROM "
+							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE "
+							+ McdDB.COLUMN_INTENT_ID + " = ?",
 							new String[] { String.valueOf(intentId) });
 
-					Log.v("Trigger--Intent play-mode", "categories obtained " + categoryCursor.getCount());
+					Log.v("Trigger--Intent play-mode", "categories obtained "
+							+ categoryCursor.getCount());
 
 					if (categoryCursor.moveToFirst()) {
 						categories = new String[categoryCursor.getCount() - 1];
 						for (int i = 0; i < categoryCursor.getCount(); i++) {
-							categories[i] = categoryCursor.getString(categoryCursor
-									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
+							categories[i] = categoryCursor
+									.getString(categoryCursor
+											.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
 							categoryCursor.moveToNext();
 						}
 					} else
@@ -4661,9 +4754,11 @@ public class ModelCheckingDriver {
 					categoryCursor.close();
 					categoryCursor = null;
 
-					triggerIntent(intentActionList.get(intentId), categories, intentComponent, intentData);
+					triggerIntent(intentActionList.get(intentId), categories,
+							intentComponent, intentData);
 
-					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS, McdDB.COLUMN_ID + " = ?",
+					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS,
+							McdDB.COLUMN_ID + " = ?",
 							new String[] { String.valueOf(playEventID) });
 					pendingIntentCount--;
 				}
@@ -5039,39 +5134,55 @@ public class ModelCheckingDriver {
 						tmpView = null; // to avoid any window leak
 					} else if (nextEvent[1] == INTENT_EVENT) {
 						// eventType is intent
-						Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS, null, McdDB.COLUMN_ID + " = ?",
-								new String[] { String.valueOf(nextEvent[0]) }, null, null, null);
+						Cursor res = database.query(
+								McdDB.TABLE_UNEXPLORED_INTENTS, null,
+								McdDB.COLUMN_ID + " = ?",
+								new String[] { String.valueOf(nextEvent[0]) },
+								null, null, null);
 
 						if (!(res.moveToFirst())) {
-							throw new McdException("Android Bug-checker found an invalid key for" + " UiEvent table");
+							throw new McdException(
+									"Android Bug-checker found an invalid key for"
+											+ " UiEvent table");
 						}
 
-						int intentId = res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
-						Log.v("Trigger--Intent BT", "data retrieved " + intentId);
+						int intentId = res.getInt(res
+								.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
+						Log.v("Trigger--Intent BT", "data retrieved "
+								+ intentId);
 						// int intentType =
 						// res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INPUT_TYPE));
 						String intentComponent = res
-								.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
-						Log.v("Trigger--Intent BT", "data retrieved " + intentId + intentComponent);
-						String intentData = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
+								.getString(res
+										.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
+						Log.v("Trigger--Intent BT", "data retrieved "
+								+ intentId + intentComponent);
+						String intentData = res
+								.getString(res
+										.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
 						String[] categories;
 						res.close();
 						res = null;
 
-						Log.v("Trigger--Intent BT", "data retrieved " + intentId + intentComponent + intentData);
+						Log.v("Trigger--Intent BT", "data retrieved "
+								+ intentId + intentComponent + intentData);
 
 						// Get corresponding categories
-						Cursor categoryCursor = database.rawQuery("SELECT " + McdDB.COLUMN_INTENT_CATEGORY + " FROM "
-								+ McdDB.TABLE_INTENT_CATEGORY + " WHERE " + McdDB.COLUMN_INTENT_ID + " = ?",
+						Cursor categoryCursor = database.rawQuery("SELECT "
+								+ McdDB.COLUMN_INTENT_CATEGORY + " FROM "
+								+ McdDB.TABLE_INTENT_CATEGORY + " WHERE "
+								+ McdDB.COLUMN_INTENT_ID + " = ?",
 								new String[] { String.valueOf(intentId) });
 
-						Log.v("Trigger--Intent", "categories obtained " + categoryCursor.getCount());
+						Log.v("Trigger--Intent", "categories obtained "
+								+ categoryCursor.getCount());
 
 						if (categoryCursor.moveToFirst()) {
 							categories = new String[categoryCursor.getCount() - 1];
 							for (int i = 0; i < categoryCursor.getCount(); i++) {
-								categories[i] = categoryCursor.getString(categoryCursor
-										.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
+								categories[i] = categoryCursor
+										.getString(categoryCursor
+												.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
 								categoryCursor.moveToNext();
 							}
 						} else
@@ -5080,9 +5191,11 @@ public class ModelCheckingDriver {
 						categoryCursor.close();
 						categoryCursor = null;
 
-						triggerIntent(intentActionList.get(intentId), categories, intentComponent, intentData);
+						triggerIntent(intentActionList.get(intentId),
+								categories, intentComponent, intentData);
 
-						database.delete(McdDB.TABLE_UNEXPLORED_INTENTS, McdDB.COLUMN_ID + " = ?",
+						database.delete(McdDB.TABLE_UNEXPLORED_INTENTS,
+								McdDB.COLUMN_ID + " = ?",
 								new String[] { String.valueOf(nextEvent[0]) });
 						pendingIntentCount--;
 					}
@@ -5146,38 +5259,53 @@ public class ModelCheckingDriver {
 					screen = null;
 				} else if (eventType == INTENT_EVENT) {
 					Log.v(TAG, "intent event");
-					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS, null, McdDB.COLUMN_ID + " = ?",
-							new String[] { String.valueOf(eventID) }, null, null, null);
+					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS,
+							null, McdDB.COLUMN_ID + " = ?",
+							new String[] { String.valueOf(eventID) }, null,
+							null, null);
 
 					if (!(res.moveToFirst())) {
-						throw new McdException("Android Bug-checker found an invalid key for" + " UiEvent table");
+						throw new McdException(
+								"Android Bug-checker found an invalid key for"
+										+ " UiEvent table");
 					}
 
-					int intentId = res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
-					Log.v("Trigger--Intent Explore", "data retrieved " + intentId);
+					int intentId = res.getInt(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
+					Log.v("Trigger--Intent Explore", "data retrieved "
+							+ intentId);
 					// int intentType =
 					// res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INPUT_TYPE));
-					String intentComponent = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
-					Log.v("Trigger--Intent Explore", "data retrieved " + intentId + intentComponent);
-					String intentData = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
+					String intentComponent = res
+							.getString(res
+									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
+					Log.v("Trigger--Intent Explore", "data retrieved "
+							+ intentId + intentComponent);
+					String intentData = res.getString(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
 					String[] categories;
 					res.close();
 					res = null;
 
-					Log.v("Trigger--Intent Explore", "data retrieved " + intentId + intentComponent + intentData);
+					Log.v("Trigger--Intent Explore", "data retrieved "
+							+ intentId + intentComponent + intentData);
 
 					// Get corresponding categories
-					Cursor categoryCursor = database.rawQuery("SELECT " + McdDB.COLUMN_INTENT_CATEGORY + " FROM "
-							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE " + McdDB.COLUMN_INTENT_ID + " = ?",
+					Cursor categoryCursor = database.rawQuery("SELECT "
+							+ McdDB.COLUMN_INTENT_CATEGORY + " FROM "
+							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE "
+							+ McdDB.COLUMN_INTENT_ID + " = ?",
 							new String[] { String.valueOf(intentId) });
 
-					Log.v("Trigger--Intent", "categories obtained " + categoryCursor.getCount());
+					Log.v("Trigger--Intent", "categories obtained "
+							+ categoryCursor.getCount());
 
 					if (categoryCursor.moveToFirst()) {
 						categories = new String[categoryCursor.getCount() - 1];
 						for (int i = 0; i < categoryCursor.getCount(); i++) {
-							categories[i] = categoryCursor.getString(categoryCursor
-									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
+							categories[i] = categoryCursor
+									.getString(categoryCursor
+											.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
 							categoryCursor.moveToNext();
 						}
 					} else
@@ -5186,9 +5314,11 @@ public class ModelCheckingDriver {
 					categoryCursor.close();
 					categoryCursor = null;
 
-					triggerIntent(intentActionList.get(intentId), categories, intentComponent, intentData);
+					triggerIntent(intentActionList.get(intentId), categories,
+							intentComponent, intentData);
 
-					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS, McdDB.COLUMN_ID + " = ?",
+					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS,
+							McdDB.COLUMN_ID + " = ?",
 							new String[] { String.valueOf(eventID) });
 					pendingIntentCount--;
 				}
@@ -6277,41 +6407,54 @@ public class ModelCheckingDriver {
 					// eventType is intent
 					Log.v(TAG, "trigger intent event : " + nextEvent[0]);
 
-					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS, null, McdDB.COLUMN_ID + " = ?",
-							new String[] { String.valueOf(nextEvent[0]) }, null, null, null);
+					Cursor res = database.query(McdDB.TABLE_UNEXPLORED_INTENTS,
+							null, McdDB.COLUMN_ID + " = ?",
+							new String[] { String.valueOf(nextEvent[0]) },
+							null, null, null);
 
 					Log.v("Trigger--Intent", "cursor obtained");
 
 					if (!(res.moveToFirst())) {
-						throw new McdException("Android Bug-checker found an invalid key for"
-								+ " UnexploredIntent table");
+						throw new McdException(
+								"Android Bug-checker found an invalid key for"
+										+ " UnexploredIntent table");
 					}
 
-					int intentId = res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
+					int intentId = res.getInt(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_ID));
 					Log.v("Trigger--Intent", "data retrieved " + intentId);
 					// int intentType =
 					// res.getInt(res.getColumnIndexOrThrow(McdDB.COLUMN_INPUT_TYPE));
-					String intentComponent = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
-					Log.v("Trigger--Intent", "data retrieved " + intentId + intentComponent);
-					String intentData = res.getString(res.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
+					String intentComponent = res
+							.getString(res
+									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_COMPONENT));
+					Log.v("Trigger--Intent", "data retrieved " + intentId
+							+ intentComponent);
+					String intentData = res.getString(res
+							.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_DATA));
 					String[] categories;
 					res.close();
 					res = null;
 
-					Log.v("Trigger--Intent", "data retrieved " + intentId + intentComponent + intentData);
+					Log.v("Trigger--Intent", "data retrieved " + intentId
+							+ intentComponent + intentData);
 
 					// Get corresponding categories
-					Cursor categoryCursor = database.rawQuery("SELECT " + McdDB.COLUMN_INTENT_CATEGORY + " FROM "
-							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE " + McdDB.COLUMN_INTENT_ID + " = ?",
+					Cursor categoryCursor = database.rawQuery("SELECT "
+							+ McdDB.COLUMN_INTENT_CATEGORY + " FROM "
+							+ McdDB.TABLE_INTENT_CATEGORY + " WHERE "
+							+ McdDB.COLUMN_INTENT_ID + " = ?",
 							new String[] { String.valueOf(intentId) });
 
-					Log.v("Trigger--Intent", "categories obtained " + categoryCursor.getCount());
+					Log.v("Trigger--Intent", "categories obtained "
+							+ categoryCursor.getCount());
 
 					if (categoryCursor.moveToFirst()) {
 						categories = new String[categoryCursor.getCount() - 1];
 						for (int i = 0; i < categoryCursor.getCount(); i++) {
-							categories[i] = categoryCursor.getString(categoryCursor
-									.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
+							categories[i] = categoryCursor
+									.getString(categoryCursor
+											.getColumnIndexOrThrow(McdDB.COLUMN_INTENT_CATEGORY));
 							categoryCursor.moveToNext();
 						}
 					} else
@@ -6321,13 +6464,19 @@ public class ModelCheckingDriver {
 					categoryCursor = null;
 
 					addToPath(pathNodeID, -1, database);
-					Log.v(TAG, "triggering intent on pathnode:" + String.valueOf(pathNodeID));
+					Log.v(TAG,
+							"triggering intent on pathnode:"
+									+ String.valueOf(pathNodeID));
 
-					triggerIntent(intentActionList.get(intentId), categories, intentComponent, intentData);
+					triggerIntent(intentActionList.get(intentId), categories,
+							intentComponent, intentData);
 
-					Log.v(TAG, "triggered intent on pathnode:" + String.valueOf(pathNodeID));
+					Log.v(TAG,
+							"triggered intent on pathnode:"
+									+ String.valueOf(pathNodeID));
 
-					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS, McdDB.COLUMN_ID + " = ?",
+					database.delete(McdDB.TABLE_UNEXPLORED_INTENTS,
+							McdDB.COLUMN_ID + " = ?",
 							new String[] { String.valueOf(nextEvent[0]) });
 					pendingIntentCount--;
 				}
