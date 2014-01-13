@@ -34,6 +34,7 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.content.res.AssetManager;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Resources;
@@ -72,6 +73,8 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.IPowerManager;
 import android.os.Looper;
+import android.os.McdDB;
+import android.os.ModelCheckingDriver;
 import android.os.PowerManager;
 import android.os.Process;
 import android.os.RemoteException;
@@ -100,6 +103,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 class ReceiverRestrictedContext extends ContextWrapper {
     ReceiverRestrictedContext(Context base) {
@@ -1097,12 +1101,40 @@ class ContextImpl extends Context {
     public ComponentName startService(Intent service) {
         try {
         	/*Android bug-checker*/
-        	if(AbcGlobal.abcLogFile != null){
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_CREATE_SERVICE);
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_SERVICE_ARGS);
-        	    AbcGlobal.isStartService = true;
+        	//check if a service of current activity can be opened 
+        	//or else backtrack
+        	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
+        		if(!(service.getComponent() != null && 
+        				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
+    	    	final Intent tmpIntent = service;
+    	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
+    	    			tmpIntent, 0);
+    	    	boolean performStart = false;
+    	    	for(int i=0;i<pkgAppsList.size();i++){
+    	    		ResolveInfo ri = pkgAppsList.get(i);
+    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	    			performStart = true;
+    	    			break;
+    	    		}
+    	    	}
+    	    	
+	    	    	if(!performStart){
+	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
+	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    	}else{
+	    	    		//a tag for the system service to know that the startActivity request originated 
+	    	    		//from the app under test
+	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
+	    	    		
+	    	    		//connection logs for race detection
+	    	    		Thread.currentThread().abcEnableLifecycleEvent("", -1,
+	    	        			AbcGlobal.ABC_CREATE_SERVICE);
+	    	        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
+	    	        			AbcGlobal.ABC_SERVICE_ARGS);
+	    	        	    AbcGlobal.isStartService = true;
+	    	    	}
+        		}
         	}
         	/*Android bug-checker*/
         	
@@ -1165,18 +1197,46 @@ class ContextImpl extends Context {
             service.setAllowFds(false);
             
             /*Android bug-checker*/
-            if(AbcGlobal.abcLogFile != null){
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_CREATE_SERVICE);
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_BIND_SERVICE);
-        	    //if bindService() is called multiple times only 
-        	    //onServiceConnected may get called
-        	    Thread.currentThread().abcEnableLifecycleEvent("", 
-        	    		-1, AbcGlobal.ABC_CONNECT_SERVICE);
-        	    AbcGlobal.isBindService = true;
-            }
-        	/*Android bug-checker*/
+        	//check if a service of current activity can be opened 
+        	//or else backtrack
+        	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
+        		if(!(service.getComponent() != null && 
+        				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
+    	    	final Intent tmpIntent = service;
+    	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
+    	    			tmpIntent, 0);
+    	    	boolean performStart = false;
+    	    	for(int i=0;i<pkgAppsList.size();i++){
+    	    		ResolveInfo ri = pkgAppsList.get(i);
+    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	    			performStart = true;
+    	    			break;
+    	    		}
+    	    	}
+    	    	
+	    	    	if(!performStart){
+	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
+	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    	}else{
+	    	    		//a tag for the system service to know that the startActivity request originated 
+	    	    		//from the app under test
+	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
+	    	    		
+	    	    		//connection logs for race detection
+	    	    		Thread.currentThread().abcEnableLifecycleEvent("", -1,
+	    	        			AbcGlobal.ABC_CREATE_SERVICE);
+	    	        	Thread.currentThread().abcEnableLifecycleEvent("", -1,
+	    	        			AbcGlobal.ABC_BIND_SERVICE);
+	    	        	//if bindService() is called multiple times only 
+	    	        	//onServiceConnected may get called
+	    	        	Thread.currentThread().abcEnableLifecycleEvent("", 
+	    	        	    		-1, AbcGlobal.ABC_CONNECT_SERVICE);
+	    	        	AbcGlobal.isBindService = true;
+	    	    	}
+        		}
+        	}
+            /*Android bug-checker*/
         	
             int res = ActivityManagerNative.getDefault().bindService(
                 mMainThread.getApplicationThread(), getActivityToken(),

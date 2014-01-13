@@ -2498,7 +2498,34 @@ public class PackageManagerService extends IPackageManager.Stub {
             if (query.size() >= 1) {
                 // If there is more than one service with the same priority,
                 // just arbitrarily pick the first one.
-                return query.get(0);
+//                return query.get(0);
+                
+                /*Android bug-checker*/
+            	ResolveInfo chosenService = query.get(0);
+                if(intent.getStringExtra("androidBugCheckerAppUT") != null){
+                	if(!query.get(0).serviceInfo.packageName.equals(
+                			intent.getStringExtra("androidBugCheckerAppUT"))){
+                		boolean foundCompatibleService = false;
+                		for(int i=0;i<query.size();i++){
+            	    		ResolveInfo ri = query.get(i);    	    		
+            	    		if(ri.serviceInfo != null && 
+            	    				ri.serviceInfo.packageName != null &&
+            	    				ri.serviceInfo.packageName.equals(
+            	    						intent.getStringExtra("androidBugCheckerAppUT"))){
+            	    			chosenService = ri;
+            	    			foundCompatibleService = true;
+            	    			break;
+            	    		}
+            	    	}
+                		if(!foundCompatibleService){
+                			Log.e("model_checking_debug", "control reached outside app under test due to service call even " +
+                					"after passing all checks");
+                		}
+                	}
+                }
+                
+                return chosenService;
+                /*Android bug-checker*/
             }
         }
         return null;

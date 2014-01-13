@@ -4121,6 +4121,14 @@ public final class ActivityThread {
         if (data.instrumentationName != null) {
             ContextImpl appContext = new ContextImpl();
             appContext.init(data.info, null, this);
+            
+            /*Android bug-checker*/
+            if(Looper.mcd != null && Looper.mcd.getPackageName() != null && 
+            		Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
+		        Looper.mcd.setContext(appContext);
+            }
+            /*Android bug-checker*/
+            
             InstrumentationInfo ii = null;
             try {
                 ii = appContext.getPackageManager().
