@@ -1106,6 +1106,7 @@ class ContextImpl extends Context {
         	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
         		if(!(service.getComponent() != null && 
         				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
+        	    String resolvedService = ""; 
     	    	final Intent tmpIntent = service;
     	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
     	    			tmpIntent, 0);
@@ -1114,6 +1115,7 @@ class ContextImpl extends Context {
     	    		ResolveInfo ri = pkgAppsList.get(i);
     	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
     	    			performStart = true;
+    	    			resolvedService = ri.serviceInfo.name;
     	    			break;
     	    		}
     	    	}
@@ -1126,13 +1128,12 @@ class ContextImpl extends Context {
 	    	    		//a tag for the system service to know that the startActivity request originated 
 	    	    		//from the app under test
 	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
-	    	    		
+	    	    		service.putExtra("androidBugCheckerIntentId", 
+	    	    				AbcGlobal.getAndIncrementAbcIntentId());
 	    	    		//connection logs for race detection
-	    	    		Thread.currentThread().abcEnableLifecycleEvent("", -1,
-	    	        			AbcGlobal.ABC_CREATE_SERVICE);
-	    	        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-	    	        			AbcGlobal.ABC_SERVICE_ARGS);
-	    	        	    AbcGlobal.isStartService = true;
+	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
+	    	    				service.getIntExtra("androidBugCheckerIntentId", -1), 
+	    	    				AbcGlobal.ABC_REQUEST_START_SERVICE);
 	    	    	}
         		}
         	}
@@ -1157,9 +1158,39 @@ class ContextImpl extends Context {
     public boolean stopService(Intent service) {
         try {
         	/*Android bug-checker*/
-        	if(AbcGlobal.abcLogFile != null){
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_STOP_SERVICE);
+        	//check if a service of current activity can be stopped 
+        	//or else backtrack
+        	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
+        		if(!(service.getComponent() != null && 
+        				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
+        	    String resolvedService = ""; 
+    	    	final Intent tmpIntent = service;
+    	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
+    	    			tmpIntent, 0);
+    	    	boolean performStart = false;
+    	    	for(int i=0;i<pkgAppsList.size();i++){
+    	    		ResolveInfo ri = pkgAppsList.get(i);
+    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	    			performStart = true;
+    	    			resolvedService = ri.serviceInfo.name;
+    	    			break;
+    	    		}
+    	    	}
+    	    	
+	    	    	if(!performStart){
+	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
+	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    	}else{
+	    	    		//a tag for the system service to know that the startActivity request originated 
+	    	    		//from the app under test
+	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
+	    	    		
+	    	    		//connection logs for race detection
+	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
+	    	    				-1, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
+	    	    	}
+        		}
         	}
         	/*Android bug-checker*/
         	
@@ -1202,6 +1233,7 @@ class ContextImpl extends Context {
         	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
         		if(!(service.getComponent() != null && 
         				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
+        	    String resolvedService = "";
     	    	final Intent tmpIntent = service;
     	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
     	    			tmpIntent, 0);
@@ -1210,6 +1242,7 @@ class ContextImpl extends Context {
     	    		ResolveInfo ri = pkgAppsList.get(i);
     	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
     	    			performStart = true;
+    	    			resolvedService = ri.serviceInfo.name;
     	    			break;
     	    		}
     	    	}
@@ -1222,17 +1255,9 @@ class ContextImpl extends Context {
 	    	    		//a tag for the system service to know that the startActivity request originated 
 	    	    		//from the app under test
 	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
-	    	    		
-	    	    		//connection logs for race detection
-	    	    		Thread.currentThread().abcEnableLifecycleEvent("", -1,
-	    	        			AbcGlobal.ABC_CREATE_SERVICE);
-	    	        	Thread.currentThread().abcEnableLifecycleEvent("", -1,
-	    	        			AbcGlobal.ABC_BIND_SERVICE);
-	    	        	//if bindService() is called multiple times only 
-	    	        	//onServiceConnected may get called
-	    	        	Thread.currentThread().abcEnableLifecycleEvent("", 
-	    	        	    		-1, AbcGlobal.ABC_CONNECT_SERVICE);
-	    	        	AbcGlobal.isBindService = true;
+	    	    			    	    		
+	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService,
+	    	    				conn.hashCode(), AbcGlobal.ABC_REQUEST_BIND_SERVICE);
 	    	    	}
         		}
         	}
@@ -1260,8 +1285,8 @@ class ContextImpl extends Context {
             
             /*Android bug-checker*/
             if(AbcGlobal.abcLogFile != null){
-        	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-        			AbcGlobal.ABC_UNBIND_SERVICE);
+            	Thread.currentThread().abcTriggerServiceLifecycle("",
+	    				conn.hashCode(), AbcGlobal.ABC_REQUEST_UNBIND_SERVICE);
             }
         	/*Android bug-checker*/
             

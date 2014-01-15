@@ -51,6 +51,7 @@
 #define ABC_TRIGGER_LIFECYCLE 22
 #define ABC_REGISTER_RECEIVER 23
 #define ABC_TRIGGER_RECEIVER 24
+#define ABC_TRIGGER_SERVICE 25
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -491,6 +492,8 @@ void addNativeExitToTrace(int opId, int tid);
 void addEnableEventToTrace(int opId, int tid, int view, int event);
 
 void addTriggerEventToTrace(int opId, int tid, int view, int event);
+
+void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, int componentId, int state);
 
 void addEnableLifecycleToTrace(int opId, int tid, char* component, int componentId, int state);
 

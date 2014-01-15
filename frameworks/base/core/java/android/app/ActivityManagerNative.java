@@ -2281,8 +2281,8 @@ class ActivityManagerProxy implements IActivityManager
             int startId) throws RemoteException {
     	/*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
-    	    Thread.currentThread().abcEnableLifecycleEvent("", -1,
-    			AbcGlobal.ABC_STOP_SERVICE);
+    		Thread.currentThread().abcTriggerServiceLifecycle(className.getClassName(), 
+    				-1, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
     	}
     	/*Android bug-checker*/
     	

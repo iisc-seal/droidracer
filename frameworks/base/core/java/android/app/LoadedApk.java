@@ -1067,9 +1067,10 @@ public final class LoadedApk {
             // If there is a new service, it is now connected.
             if (service != null) {
             	/*Android bug-checker*/
+            	//service_connect is matched by service connection hashcode
             	if(AbcGlobal.abcLogFile != null){
-            		Thread.currentThread().abcTriggerLifecycleEvent("", -1, 
-            				AbcGlobal.ABC_CONNECT_SERVICE);
+            		Thread.currentThread().abcTriggerServiceLifecycle(
+            				"", mConnection.hashCode(), AbcGlobal.ABC_CONNECT_SERVICE);
             	}
             	/*Android bug-checker*/
             	

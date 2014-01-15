@@ -3218,15 +3218,34 @@ public class Activity extends ContextThemeWrapper
 	    		//a tag for the system service to know that the startActivity request originated 
 	    		//from the app under test
 	    		intent.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
+	    		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
 	    		
 	    		//connection logs for race detection
-	    		AbcGlobal.setIsPrevEventStartActivity(true);
-	    		Thread.currentThread().abcEnableLifecycleEvent(
-	    				Looper.mcd.getVisibleActivity().getLocalClassName(), 
-	    				Looper.mcd.getVisibleActivity().hashCode(),
-	    				AbcGlobal.ABC_PAUSE);
+//	    		AbcGlobal.setIsPrevEventStartActivity(true);
+	    		
+	    		synchronized (AbcGlobal.abcActivityLaunchList) {
+	    			/* issue PAUSE for current Activity from the first startActivity
+	    			 * call. The next Activity launched before handling a preceding
+	    			 * startAtivity will cause the preceding Activity to pause and not 
+	    			 * the one that is currently visible
+	    			 */
+	    			if(AbcGlobal.abcActivityLaunchList.size() == 0){
+		    			Thread.currentThread().abcEnableLifecycleEvent(
+			    				Looper.mcd.getVisibleActivity().getLocalClassName(), 
+			    				Looper.mcd.getVisibleActivity().hashCode(),
+			    				AbcGlobal.ABC_PAUSE);
+	    			}
+		    		
+		    		AbcGlobal.abcActivityLaunchList.add(
+		    				intent.getIntExtra("androidBugCheckerIntentId", 
+		    						AbcGlobal.getAbcIntentId()));
+				}
+	    		
 	    		if(requestCode != -1){
-	    			AbcGlobal.isStartActivityForResult = true;
+//	    			AbcGlobal.isStartActivityForResult = true;
+	    			AbcGlobal.abcResultExpectingActivityIntents.add(
+	    					intent.getIntExtra("androidBugCheckerIntentId", -1));
 	    		}
 	    	}
     		}
@@ -3752,7 +3771,7 @@ public class Activity extends ContextThemeWrapper
                     Thread.currentThread().abcEnableLifecycleEvent(
                 		this.getLocalClassName(), this.hashCode(), 
                 		AbcGlobal.ABC_DESTROY);
-                    AbcGlobal.abcFinishingActivities.add(this.hashCode());
+//                    AbcGlobal.abcFinishingActivities.add(this.hashCode());
                 }
                 /*Android bug-checker*/
                 

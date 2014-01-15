@@ -1369,6 +1369,10 @@ public class Thread implements Runnable {
 		vmThread.abcTriggerLifecycleEvent(component, compId, status);
 	}
 	
+	public void abcTriggerServiceLifecycle(String component, int compId, int status){
+		vmThread.abcTriggerServiceLifecycle(component, compId, status);
+	}
+	
 	public void abcRegisterBroadcastReceiver(String component, String action){
 		vmThread.abcRegisterBroadcastReceiver(component, action); 
 	}

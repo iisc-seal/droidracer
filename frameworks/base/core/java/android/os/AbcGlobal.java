@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import android.content.ContentValues;
@@ -39,14 +41,18 @@ public class AbcGlobal {
     public static final int ABC_APPBIND_DONE = 16;
     public static final int ABC_CONNECT_SERVICE = 17;
     public static final int ABC_RUN_TIMER_TASK = 18;
+    public static final int ABC_REQUEST_START_SERVICE = 19;
+    public static final int ABC_REQUEST_BIND_SERVICE = 20;
+    public static final int ABC_REQUEST_STOP_SERVICE = 21;
+    public static final int ABC_REQUEST_UNBIND_SERVICE = 22;
     
-    public static boolean isPrevEventBackPress = false;
-    public static boolean isPrevEventStartActivity = false;
-    public static boolean isStartActivityForResult = false;
-    public static boolean isBindService = false;
-    public static boolean isStartService = false;
+//    public static boolean isPrevEventBackPress = false;
+//    public static boolean isPrevEventStartActivity = false;
+//    public static boolean isStartActivityForResult = false;
+//    public static boolean isBindService = false;
+//    public static boolean isStartService = false;
     //to detect any being destroyed without going through back
-    public static boolean isPauseFinishing = false;
+//    public static boolean isPauseFinishing = false;
     
     public static String abcLogFile = null;
 
@@ -57,12 +63,43 @@ public class AbcGlobal {
 	private static long raceDetectionStartTime = -1;
 	private static long raceDetectionEndTime = -1;
 	
-	public static HashSet<Integer> abcFinishingActivities = 
+//	public static HashSet<Integer> abcFinishingActivities = 
+//			new HashSet<Integer>();
+	
+	/* collections and fields to track and enable interleaving lifecycles of 
+	 * multiple components
+	 */
+	public static boolean isRelaunchInProgress = false;
+	
+	private static int abcIntentId;
+	
+//	public static HashMap<Integer, Integer> abcIntentIdInstanceMap =
+//			new HashMap<Integer, Integer>();
+	
+	//<activity-intent-id-to-launch, actvity-instance-to-STOP>
+	public static HashMap<Integer, AbcHashNamePair> abcLaunchStopMap = 
+			new HashMap<Integer, AbcHashNamePair>();
+	
+	/* maintain a queue of intent IDs of started actvities..
+	 * remove element when its lifecycle
+	 * are enabled in previous activity's PAUSE.
+	 */
+	public static ArrayList<Integer> abcActivityLaunchList =
+			new ArrayList<Integer>();
+	
+	/* hashset to track result expecting activities: <intent-ID-of-Activity> */
+	public static HashSet<Integer> abcResultExpectingActivityIntents = 
 			new HashSet<Integer>();
 	
-	public static void setIsPrevEventStartActivity(boolean state){
-		isPrevEventStartActivity = state;
-	}
+	/* maintain a queue of activity instances that hit pause-finished
+	 * Enable their DESTROY inside Resume/Launch of next Activity
+	 */
+	public static ArrayList<AbcHashNamePair> abcActivityDestroyList =
+			new ArrayList<AbcHashNamePair>();
+	
+//	public static void setIsPrevEventStartActivity(boolean state){
+//		isPrevEventStartActivity = state;
+//	}
 	
 	public static void abcCheckAndSetAppToTest(String appName){
 		//this should be set for all processes
@@ -100,6 +137,9 @@ public class AbcGlobal {
 						+ event_depth + " init-delay:" + initDelay);
 				Looper.mcd.abcSilentReturn = false;
 				
+				//initialize abcIntentId which will be set as a argument of
+				//Activity and Service intents of test app
+				setAbcIntentId(0);
 				//collect stats
 				abcSetTraceStartTime(SystemClock.uptimeMillis());
 			}
@@ -486,6 +526,18 @@ public class AbcGlobal {
 	public static void abcSetRaceDetectionEndTime(long raceDetectionEndTime) {
 		AbcGlobal.raceDetectionEndTime = raceDetectionEndTime;
 		Log.e("ABC", "raceDetectionEndTime: " + raceDetectionEndTime);
+	}
+
+	public static int getAbcIntentId() {
+		return abcIntentId;
+	}
+
+	public static void setAbcIntentId(int abcIntentId) {
+		AbcGlobal.abcIntentId = abcIntentId;
+	}
+	
+	public synchronized static int getAndIncrementAbcIntentId(){
+		return abcIntentId++;
 	}
 	
 }

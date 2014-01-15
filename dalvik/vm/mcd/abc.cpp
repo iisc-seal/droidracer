@@ -1193,6 +1193,38 @@ void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char
 //    LOGE("ABC:Exit - Add TRIGGER-RECEIVER to trace");
 }
 
+void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add TRIGGER-SERVICE to trace tid:%d  state: %d", opId, tid, state);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = componentId;
+
+    op->opType = ABC_TRIGGER_SERVICE;
+    op->arg1 = state;
+    op->arg2 = arg2;
+    op->arg3 = -1;
+    op->arg4 = -1;
+    op->arg5 = new char[strlen(component) + 1];
+    strcpy(op->arg5, component);
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::string lifecycle("");
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " TRIGGER-SERVICE tid:" << tid << " component:" << component
+        << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
+    outfile.close();
+}
+
 void addEnableLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){

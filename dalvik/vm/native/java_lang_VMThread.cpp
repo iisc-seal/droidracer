@@ -194,6 +194,29 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver(const u4* args
     RETURN_VOID();
 }
 
+static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        StringObject* compStr = (StringObject*) args[1];
+        char *component = dvmCreateCstrFromString(compStr);
+        int componentId = args[2];
+        int state = args[3];
+
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
+            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+            addTriggerServiceLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, componentId, state);
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }else{
+            LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
+            std::ofstream outfile;
+            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ABC: ABORT " << "\n";
+            outfile.close();
+            gDvm.isRunABC = false;
+        }
+    }
+}
+
 static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
@@ -921,6 +944,8 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver },
     { "abcRegisterBroadcastReceiver","(Ljava/lang/String;Ljava/lang/String;)V",
         Dalvik_java_lang_VMThread_abcRegisterBroadcastReceiver },
+    { "abcTriggerServiceLifecycle","(Ljava/lang/String;II)V",
+        Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle },
     { "abcTriggerLifecycleEvent","(Ljava/lang/String;II)V",
         Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent },
     { "abcEnableLifecycleEvent","(Ljava/lang/String;II)V",

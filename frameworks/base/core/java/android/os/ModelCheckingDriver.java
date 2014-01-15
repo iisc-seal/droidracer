@@ -2813,7 +2813,7 @@ public class ModelCheckingDriver {
     	    	Thread.currentThread().abcEnableLifecycleEvent(
         				getVisibleActivity().getLocalClassName(), 
         				getVisibleActivity().hashCode(), AbcGlobal.ABC_PAUSE);
-        		AbcGlobal.isPrevEventBackPress = true;
+//        		AbcGlobal.isPrevEventBackPress = true;
         		
     	    	//log this to a file later
     	    	if(ModelCheckingDriver.MODE == ModelCheckingDriver.PLAY){
