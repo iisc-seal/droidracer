@@ -42,6 +42,7 @@ import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.AbcGlobal;
+import android.os.AbcHashNamePair;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -3244,8 +3245,10 @@ public class Activity extends ContextThemeWrapper
 	    		
 	    		if(requestCode != -1){
 //	    			AbcGlobal.isStartActivityForResult = true;
-	    			AbcGlobal.abcResultExpectingActivityIntents.add(
-	    					intent.getIntExtra("androidBugCheckerIntentId", -1));
+	    			AbcGlobal.abcResultSendingActivityIntents.put(
+	    					intent.getIntExtra("androidBugCheckerIntentId", -1), 
+	    					new AbcHashNamePair(this.hashCode(), this.getLocalClassName()));
+	    			AbcGlobal.abcResultExpectingActivities.add(this.hashCode());
 	    		}
 	    	}
     		}
@@ -3257,6 +3260,20 @@ public class Activity extends ContextThemeWrapper
                     this, mMainThread.getApplicationThread(), mToken, this,
                     intent, requestCode);
             if (ar != null) {
+            	/*Android bug-checker*/
+            	//result is being sent even before the nect acivity is
+            	//started. Indicate this using ENABLE
+                if(AbcGlobal.abcLogFile != null){
+                	if(AbcGlobal.abcResultExpectingActivities.contains(this.hashCode())){
+                	    Thread.currentThread().abcEnableLifecycleEvent(
+                			this.getLocalClassName(), this.hashCode(),
+                			AbcGlobal.ABC_RESULT);
+                	}
+                	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
+                	AbcGlobal.abcResultSendingActivityIntents.remove(
+                			intent.getIntExtra("androidBugCheckerIntentId", -5));
+                }
+                /*Android bug-checker*/
                 mMainThread.sendActivityResult(
                     mToken, mEmbeddedID, requestCode, ar.getResultCode(),
                     ar.getResultData());
@@ -3525,6 +3542,21 @@ public class Activity extends ContextThemeWrapper
                 this, mMainThread.getApplicationThread(), mToken, child,
                 intent, requestCode);
         if (ar != null) {
+        	/*Android bug-checker*/
+        	//result is being sent even before the next acivity is
+        	//started. Indicate this using ENABLE
+            if(AbcGlobal.abcLogFile != null){
+            	if(AbcGlobal.abcResultExpectingActivities.contains(this.hashCode())){
+            	    Thread.currentThread().abcEnableLifecycleEvent(
+            			this.getLocalClassName(), this.hashCode(),
+            			AbcGlobal.ABC_RESULT);
+            	}
+            	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
+            	AbcGlobal.abcResultSendingActivityIntents.remove(
+            			intent.getIntExtra("androidBugCheckerIntentId", -5));
+            }
+            /*Android bug-checker*/
+            
             mMainThread.sendActivityResult(
                 mToken, child.mEmbeddedID, requestCode,
                 ar.getResultCode(), ar.getResultData());
@@ -3771,10 +3803,15 @@ public class Activity extends ContextThemeWrapper
                     Thread.currentThread().abcEnableLifecycleEvent(
                 		this.getLocalClassName(), this.hashCode(), 
                 		AbcGlobal.ABC_DESTROY);
-//                    AbcGlobal.abcFinishingActivities.add(this.hashCode());
+                    
+                    AbcHashNamePair tmpPair = AbcGlobal.abcResultSendingActivityIntents.remove(
+                			mIntent.getIntExtra("androidBugCheckerIntentId", -5));
+                    if(tmpPair != null){
+                    	Thread.currentThread().abcEnableLifecycleEvent(
+                			tmpPair.name, tmpPair.hash, AbcGlobal.ABC_RESULT);
+                	}
                 }
-                /*Android bug-checker*/
-                
+                /*Android bug-checker*/              
                 if (ActivityManagerNative.getDefault()
                     .finishActivity(mToken, resultCode, resultData)) {
                     mFinished = true;

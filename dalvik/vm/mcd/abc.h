@@ -25,6 +25,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include "AbcModel.h"
 
 #define ABC_WRITE 1 
 #define ABC_READ 2

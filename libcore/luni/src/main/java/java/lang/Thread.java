@@ -1453,5 +1453,8 @@ public class Thread implements Runnable {
 		vmThread.abcComputeMemoryUsedByRaceDetector();
 	}
 	
+	public void abcMapInstanceWithIntentId(int instance, int intentId){
+		vmThread.abcMapInstanceWithIntentId(instance, intentId);
+	}
     /*Android bug-checker*/
 }

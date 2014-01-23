@@ -147,6 +147,16 @@ static void Dalvik_java_lang_VMThread_abcComputeMemoryUsedByRaceDetector(const u
     RETURN_VOID();
 }
 
+static void Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        u4 instance = args[1];
+        int intentId = args[2];
+
+        AbcInstanceIntentMap.insert(std::make_pair(instance, intentId));
+    }    
+    RETURN_VOID();
+}
+
 static void Dalvik_java_lang_VMThread_abcRegisterBroadcastReceiver(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
@@ -940,6 +950,8 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcGetTraceLength },
     { "abcStopTraceGeneration","()V",
         Dalvik_java_lang_VMThread_abcStopTraceGeneration },
+    { "abcMapInstanceWithIntentId","(II)V",
+        Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId },
     { "abcTriggerBroadcastReceiver","(Ljava/lang/String;Ljava/lang/String;I)V",
         Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver },
     { "abcRegisterBroadcastReceiver","(Ljava/lang/String;Ljava/lang/String;)V",

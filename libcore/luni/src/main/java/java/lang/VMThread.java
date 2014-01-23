@@ -142,5 +142,7 @@ class VMThread {
 	
 	native void abcComputeMemoryUsedByRaceDetector();
 	
+	native void abcMapInstanceWithIntentId(int instance, int intentId);
+	
     /*Android bug-checker*/
 }

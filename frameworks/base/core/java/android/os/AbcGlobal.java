@@ -45,6 +45,8 @@ public class AbcGlobal {
     public static final int ABC_REQUEST_BIND_SERVICE = 20;
     public static final int ABC_REQUEST_STOP_SERVICE = 21;
     public static final int ABC_REQUEST_UNBIND_SERVICE = 22;
+    public static final int ABC_START = 23;
+    public static final int ABC_NEW_INTENT = 24;
     
 //    public static boolean isPrevEventBackPress = false;
 //    public static boolean isPrevEventStartActivity = false;
@@ -88,7 +90,9 @@ public class AbcGlobal {
 			new ArrayList<Integer>();
 	
 	/* hashset to track result expecting activities: <intent-ID-of-Activity> */
-	public static HashSet<Integer> abcResultExpectingActivityIntents = 
+	public static HashMap<Integer, AbcHashNamePair> abcResultSendingActivityIntents = 
+			new HashMap<Integer, AbcHashNamePair>();
+	public static HashSet<Integer> abcResultExpectingActivities = 
 			new HashSet<Integer>();
 	
 	/* maintain a queue of activity instances that hit pause-finished
