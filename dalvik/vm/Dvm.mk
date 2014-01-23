@@ -183,8 +183,8 @@ LOCAL_SRC_FILES := \
 	test/AtomicTest.cpp.arm \
 	test/TestHash.cpp \
 	test/TestIndirectRefTable.cpp \
-        mcd/abc.cpp \
-        mcd/AbcModel.cpp
+        mcd/AbcModel.cpp \
+        mcd/abc.cpp 
 
 # TODO: this is the wrong test, but what's the right one?
 ifeq ($(dvm_arch),arm)
