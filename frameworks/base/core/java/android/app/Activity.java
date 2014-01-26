@@ -3243,6 +3243,18 @@ public class Activity extends ContextThemeWrapper
 		    						AbcGlobal.getAbcIntentId()));
 				}
 	    		
+	    		//speculating every startActivity to be leading to call of onNewIntent
+	    		if(AbcGlobal.activityNewIntentsMap.containsKey(this.hashCode())){
+	    			AbcGlobal.activityNewIntentsMap.get(this.hashCode()).add(
+	    					intent.getIntExtra("androidBugCheckerIntentId", 
+		    						AbcGlobal.getAbcIntentId()));
+	    		}else{
+	    			ArrayList<Integer> tmpNewIntentList = new ArrayList<Integer>();
+	    			tmpNewIntentList.add(intent.getIntExtra("androidBugCheckerIntentId", 
+		    						AbcGlobal.getAbcIntentId()));
+	    			AbcGlobal.activityNewIntentsMap.put(this.hashCode(), tmpNewIntentList);
+	    		}
+	    		
 	    		if(requestCode != -1){
 //	    			AbcGlobal.isStartActivityForResult = true;
 	    			AbcGlobal.abcResultSendingActivityIntents.put(

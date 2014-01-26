@@ -67,9 +67,39 @@ struct asyncStruct{
 };
 typedef struct asyncStruct AbcAsync;
 
+struct WorklistElemStruct{
+    int src;
+    int dest;
+    struct WorklistElemStruct * prev;
+};
+typedef struct WorklistElemStruct WorklistElem;
 
+struct DestinationStruct{
+    int dest;
+    struct DestinationStruct * prev;
+};
+typedef struct DestinationStruct Destination;
+
+struct SourceStruct{
+    int src;
+    struct SourceStruct * prev;
+};
+typedef struct SourceStruct Source;
+
+
+extern int abcOpCount;
 /*program trace stored as hashmap with key being the index 
  *of operation in the trace*/
 extern std::map<int, AbcOp*> abcTrace;
+extern bool ** adjGraph;
+extern WorklistElem* worklist;
+extern std::map<int, std::pair<Destination*, Source*> > adjMap;
+extern std::map<int, AbcAsync*> abcAsyncMap;
+
+
+bool isHbEdge(int src, int dest);
+void addEdgeToHBGraph(int op1, int op2);
+AbcAsync* getAsyncBlockFromId(int asyncId);
+int getAsyncIdOfOperation(int opId);
 
 #endif  //common.h

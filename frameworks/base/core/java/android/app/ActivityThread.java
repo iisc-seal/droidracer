@@ -1208,6 +1208,7 @@ public final class ActivityThread {
                     	//remove the element on front of launch-list as its necessary
                     	//callbacks have been enabled
                     	AbcGlobal.abcActivityLaunchList.remove(0);
+                    	
                     }
                     /*Android bug-checker*/
                     break;
@@ -2198,6 +2199,13 @@ public final class ActivityThread {
         for (int i=0; i<N; i++) {
             Intent intent = intents.get(i);
             intent.setExtrasClassLoader(r.activity.getClassLoader());
+            /*Android bug-checker*/
+            //trigger to connect to startActivity if new_intent is called independently
+            if(AbcGlobal.abcLogFile != null){
+            	Thread.currentThread().abcTriggerLifecycleEvent(r.activity.getLocalClassName(),
+            			intent.getIntExtra("androidBugCheckerIntentId", -6), AbcGlobal.ABC_START_NEW_INTENT);
+            }
+            /*Android bug-checker*/
             r.activity.mFragments.noteStateNotSaved();
             mInstrumentation.callActivityOnNewIntent(r.activity, intent);
         }
@@ -2635,14 +2643,7 @@ public final class ActivityThread {
     public final ActivityClientRecord performResumeActivity(IBinder token,
             boolean clearHide) {
         ActivityClientRecord r = mActivities.get(token);
-        /*Android bug-checker*/
-    	if(AbcGlobal.abcLogFile != null){
-    	    Thread.currentThread().abcTriggerLifecycleEvent(
-    			r.activity.getLocalClassName(), r.activity.hashCode(),	
-    			AbcGlobal.ABC_RESUME);
-    	}
-    	/*Android bug-checker*/
-    	
+        
         if (localLOGV) Slog.v(TAG, "Performing resume of " + r
                 + " finished=" + r.activity.mFinished);
         if (r != null && !r.activity.mFinished) {
@@ -2652,13 +2653,36 @@ public final class ActivityThread {
             }
             try {
                 if (r.pendingIntents != null) {
+                	/*Android bug-checker*/
+                	if(AbcGlobal.abcLogFile != null){
+                	    Thread.currentThread().abcTriggerLifecycleEvent(
+                			r.activity.getLocalClassName(), r.activity.hashCode(),	
+                			AbcGlobal.ABC_NEW_INTENT);
+                	}
+                	/*Android bug-checker*/
                     deliverNewIntents(r, r.pendingIntents);
                     r.pendingIntents = null;
                 }
                 if (r.pendingResults != null) {
+                	/*Android bug-checker*/
+                	if(AbcGlobal.abcLogFile != null){
+                	    Thread.currentThread().abcTriggerLifecycleEvent(
+                			r.activity.getLocalClassName(), r.activity.hashCode(),	
+                			AbcGlobal.ABC_RESULT);
+                	}
+                	/*Android bug-checker*/
                     deliverResults(r, r.pendingResults);
                     r.pendingResults = null;
                 }
+                
+                /*Android bug-checker*/
+            	if(AbcGlobal.abcLogFile != null){
+            	    Thread.currentThread().abcTriggerLifecycleEvent(
+            			r.activity.getLocalClassName(), r.activity.hashCode(),	
+            			AbcGlobal.ABC_RESUME);
+            	}
+            	/*Android bug-checker*/
+            	
                 r.activity.performResume();
 
                 EventLog.writeEvent(LOG_ON_RESUME_CALLED,
@@ -2907,10 +2931,22 @@ public final class ActivityThread {
             			r.activity.getLocalClassName());
             	if(finished){
             		AbcGlobal.abcActivityDestroyList.add(tmpPair);
+            		
+            		//enable NEW_INTENT if the next activity being launched is of
+            		//singleTop type..
+            		if(AbcGlobal.activityNewIntentsMap.containsKey(r.activity.hashCode())){
+            			for(Integer i : AbcGlobal.activityNewIntentsMap.get(r.activity.hashCode())){
+            				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+            						AbcGlobal.ABC_START_NEW_INTENT);
+            			}
+            		}
             	}else if(AbcGlobal.abcActivityLaunchList.size() > 0){            	    
             	    AbcGlobal.abcLaunchStopMap.put(AbcGlobal.abcActivityLaunchList.get(0), 
             			tmpPair);
             	}
+
+            	//remove entry of this activity if any present in activityNewIntentsMap
+            	AbcGlobal.activityNewIntentsMap.remove(r.activity.hashCode());
             }
         }
     }

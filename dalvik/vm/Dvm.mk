@@ -183,6 +183,7 @@ LOCAL_SRC_FILES := \
 	test/AtomicTest.cpp.arm \
 	test/TestHash.cpp \
 	test/TestIndirectRefTable.cpp \
+        mcd/common.cpp \
         mcd/AbcModel.cpp \
         mcd/abc.cpp 
 

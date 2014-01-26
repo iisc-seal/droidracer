@@ -236,24 +236,7 @@ struct MethObjStruct{
 };
 typedef struct MethObjStruct AbcMethObj;
 
-struct WorklistElemStruct{
-    int src;
-    int dest;
-    struct WorklistElemStruct * prev;
-};
-typedef struct WorklistElemStruct WorklistElem;
 
-struct DestinationStruct{
-    int dest;
-    struct DestinationStruct * prev;
-};
-typedef struct DestinationStruct Destination;
-
-struct SourceStruct{
-    int src;
-    struct SourceStruct * prev;
-};
-typedef struct SourceStruct Source;
 
 extern struct AbcGlobals* gAbc;
 
@@ -337,7 +320,6 @@ extern std::map<int, AbcReceiver*> abcDelayedReceiverTriggerMsgMap;
 
 extern int abcThreadCount;
 extern int abcMsgCount;
-extern int abcOpCount;
 extern int abcAccessSetCount;
 extern int abcRWCount;
 extern int abcEventCount;

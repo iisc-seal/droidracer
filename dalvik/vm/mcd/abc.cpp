@@ -1786,69 +1786,6 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
     }
 }
 
-int getAsyncIdOfOperation(int opId){
-    int asyncId = -1;
-    std::map<int, AbcOp*>::iterator it = abcTrace.find(opId);
-    if(it != abcTrace.end()){
-        asyncId = it->second->asyncId;
-    } 
-    return asyncId;
-}
-
-AbcAsync* getAsyncBlockFromId(int asyncId){
-    AbcAsync* async = NULL;
-    std::map<int, AbcAsync*>::iterator itAsync = abcAsyncMap.find(asyncId);
-    if(itAsync != abcAsyncMap.end()){
-        async = itAsync->second;
-    }
-    
-    return async;
-}
-
-//takes two operation ids as input
-void addEdgeToHBGraph(int op1, int op2){
-    assert(op1 < abcOpCount && op2 < abcOpCount && op1 != -1 && op2 != -1);
-  //  LOGE("ABC: check-add hb edge between %d and %d", op1, op2);
-    if(adjGraph[op1 - 1][op2 - 1] == false){
-        adjGraph[op1-1][op2-1] = true;    
-        //add edge to worklist
-        WorklistElem* elem = (WorklistElem*)malloc(sizeof(WorklistElem));
-        elem->src = op1;
-        elem->dest = op2;
-        elem->prev = worklist;
-        worklist = elem;
-    
-        //add this edge to adjMap
-        std::map<int, std::pair<Destination*, Source*> >::iterator iter1 = adjMap.find(op1);
-        std::map<int, std::pair<Destination*, Source*> >::iterator iter2 = adjMap.find(op2);
-    
-        if(iter1 != adjMap.end() && iter2 != adjMap.end()){
-            Destination* destNode = (Destination*)malloc(sizeof(Destination));
-            destNode->dest = op2;
-            destNode->prev = iter1->second.first;
-            iter1->second.first = destNode;
-    
-            Source* srcNode = (Source*)malloc(sizeof(Source));
-            destNode->dest = op2;
-            srcNode->src = op1;
-            srcNode->prev = iter2->second.second;
-            iter2->second.second = srcNode;
-        }else{
-            LOGE("ABC-MISSING: adjMap has no entry for %d or %d operations", op1, op2);
-        }
-
-    /*    std::ofstream outfile;
-        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-        outfile << "( " << op1 << ", " << op2  << " ) \n";
-        outfile.close();*/ 
-    }
- //   LOGE("ABC: exit HB graph");
-}
-
-bool isHbEdge(int src, int dest){
-    return adjGraph[src-1][dest-1];
-}
-
 WorklistElem* getNextEdgeFromWorklist(){
     WorklistElem* edge = worklist;
     if(worklist != NULL)
@@ -2304,6 +2241,10 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
     if(op->arg1 == ABC_APPBIND_DONE){
         abcAppBind = opId;
     }
+    checkAndAddToMapIfActivityResult(opId, op);
+   /* if(op->arg1 == ABC_RESUME && op->arg2->id == ){
+
+    }*/
 }
 
 bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2311,6 +2252,24 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
     bool shouldAbort = false;
     op->asyncId = threadBK->curAsyncId;
 
+    bool edgeAdded = false;
+    edgeAdded = checkAndUpdateComponentState(opId, op);
+
+    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
+    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
+    if(it != abcEnabledLifecycleMap.end()){
+        connectEnableAndTriggerLifecycleEvents(it->second.first, opId, op);                
+        edgeAdded = true;
+    }
+   
+    if(!edgeAdded){
+        LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
+             "corresponding enable event during processing. Aborting processing.", op->arg2->id, op->arg1);
+        gDvm.isRunABC = false;
+        shouldAbort = true;
+    }
+
+    /*
     //needed for race nature stats collection
     //18 is id for RUN_TIMER_TASK operation. these triggers
     //are not done on threads with message queues...so dont perform any 
@@ -2320,8 +2279,6 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         async->recentTriggerOpId = opId;
     }
 
-    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
-    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
     if(it != abcEnabledLifecycleMap.end()){
         it->second.second = opId;
         //18 is id for RUN_TIMER_TASK operation
@@ -2338,7 +2295,7 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
              "corresponding enable event during processing. Aborting processing.", op->arg2->id, op->arg1);
         gDvm.isRunABC = false;
         shouldAbort = true;
-    }
+    }*/
     return shouldAbort;
 }
 

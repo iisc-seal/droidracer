@@ -33,13 +33,25 @@
 #define ABC_REQUEST_UNBIND_SERVICE 22
 #define ABC_ACTIVITY_START 23
 #define ABC_NEW_INTENT 24
+#define ABC_START_NEW_INTENT 25
 
+
+//a struct to track two enable locations of ACT-RESULT 
+//(one after corresponding STOP and another when finish() is called
+//inside activity which was started for result)
+struct ActivityResultStruct{
+    AbcOpWithId* enable1;
+    AbcOpWithId* enable2;
+    AbcOpWithId* trigger; 
+};
+typedef struct ActivityResultStruct AbcActivityResult;
+
+
+extern int blankEnableResumeOpid;
 //a mapping from activity instance to intentID
 extern std::map<u4, int> AbcInstanceIntentMap;
 
-//a mapping from activity instance (or intentID temporarily) 
-//to a TRIGGER op
-extern std::map<u4, AbcOpWithId*> ActivityStateMap;
-
-void checkAndUpdateComponentState(int opId, AbcOp* op);
+void connectEnableAndTriggerLifecycleEvents(int enableOpid, int triggerOpid, AbcOp* triggerOp);
+void checkAndAddToMapIfActivityResult(int opId, AbcOp* op);
+bool checkAndUpdateComponentState(int opId, AbcOp* op);
 #endif  // ABCMODEL_H_
