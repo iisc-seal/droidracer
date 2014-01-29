@@ -1132,7 +1132,7 @@ class ContextImpl extends Context {
 	    	    				AbcGlobal.getAndIncrementAbcIntentId());
 	    	    		//connection logs for race detection
 	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
-	    	    				service.getIntExtra("androidBugCheckerIntentId", -1), 
+	    	    				service.getIntExtra("androidBugCheckerIntentId", 8888), 
 	    	    				AbcGlobal.ABC_REQUEST_START_SERVICE);
 	    	    	}
         		}
@@ -1188,7 +1188,7 @@ class ContextImpl extends Context {
 	    	    		
 	    	    		//connection logs for race detection
 	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
-	    	    				-1, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
+	    	    				8999, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
 	    	    	}
         		}
         	}

@@ -27,7 +27,7 @@
 
 struct ArgumentStruct{
     Object* obj; //lock
-    int id; //thread-id/msg-id/access-id
+    u4 id; //thread-id/msg-id/access-id
 };
 typedef struct ArgumentStruct AbcArg;
 

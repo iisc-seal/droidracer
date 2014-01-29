@@ -2282,7 +2282,7 @@ class ActivityManagerProxy implements IActivityManager
     	/*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
     		Thread.currentThread().abcTriggerServiceLifecycle(className.getClassName(), 
-    				-1, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
+    				0, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
     	}
     	/*Android bug-checker*/
     	
@@ -2494,9 +2494,9 @@ class ActivityManagerProxy implements IActivityManager
     {
     	/*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
-            Thread.currentThread().abcEnableLifecycleEvent("", -1,
+            Thread.currentThread().abcEnableLifecycleEvent("", 0,
     			AbcGlobal.ABC_CHANGE_CONFIG);
-            Thread.currentThread().abcEnableLifecycleEvent("", -1,
+            Thread.currentThread().abcEnableLifecycleEvent("", 0,
         			AbcGlobal.ABC_CHANGE_ACT_CONFIG);
     	}
         /*Android bug-checker*/

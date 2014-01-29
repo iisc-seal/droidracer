@@ -100,11 +100,11 @@ std::map<Object*, AbcLock*> abcLockMap;
 std::map<Object*, AbcLockCount*> abcLockCountMap;
 
 //needed only during trace generation
-std::map<int, std::set<int> > abcViewEventMap;
+std::map<u4, std::set<int> > abcViewEventMap;
 
 //maps from events to enableOpId, triggerOpId
 //filled and used during analysis stage
-std::map<std::pair<int, int>, std::pair<int,int> > abcEnabledEventMap;
+std::map<std::pair<u4, int>, std::pair<int,int> > abcEnabledEventMap;
 //filled and used during analysis stage
 std::map<std::pair<int, int>, std::pair<int,int> > abcEnabledLifecycleMap;
 //filled during analysis stage
@@ -1007,7 +1007,7 @@ void startAbcModelChecker(){
     char * component = new char[2];
     strcpy(component, "");
     component[1] = '\0';
-    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, -1, ABC_BIND);
+    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, 0, ABC_BIND);
 
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");
@@ -1085,12 +1085,21 @@ std::string getLifecycleForCode(int code, std::string lifecycle){
         case 16: lifecycle = "BINDAPP-DONE"; break;
         case 17: lifecycle = "SERVICE_CONNECT"; break;
         case 18: lifecycle = "RUN_TIMER_TASK"; break;
+        case 19: lifecycle = "REQUEST_START_SERVICE"; break;
+        case 20: lifecycle = "REQUEST_BIND_SERVICE"; break;
+        case 21: lifecycle = "REQUEST_STOP_SERVICE"; break;
+        case 22: lifecycle = "REQUEST_UNBIND_SERVICE"; break;
+        case 23: lifecycle = "START-ACT"; break;
+        case 24: lifecycle = "NEW_INTENT"; break;
+        case 25: lifecycle = "START_NEW_INTENT"; break;
+        case 26: lifecycle = "REQUEST_STOP_SELF";break;
+        default: lifecycle = "UNKNOWN";
     }
     
     return lifecycle;
 }
 
-void addAccessToTrace(int opId, int tid, int accessId){
+void addAccessToTrace(int opId, int tid, u4 accessId){
     LOGE("%d ABC:Entered - Add ACCESS to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1145,7 +1154,7 @@ void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, cha
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
-    arg2->id = -1;
+    arg2->id = 0;
 
     op->opType = ABC_REGISTER_RECEIVER;
     op->tid = tid;
@@ -1174,7 +1183,7 @@ void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
-    arg2->id = -1;
+    arg2->id = 0;
 
     op->opType = ABC_TRIGGER_RECEIVER;
     op->tid = tid;
@@ -1193,7 +1202,7 @@ void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char
 //    LOGE("ABC:Exit - Add TRIGGER-RECEIVER to trace");
 }
 
-void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
+void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1225,7 +1234,7 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, int c
     outfile.close();
 }
 
-void addEnableLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
+void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1256,7 +1265,7 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, int component
 //     LOGE("ABC:Exit - Add ENABLE-LIFECYCLE to trace");
 }
 
-void addTriggerLifecycleToTrace(int opId, int tid, char* component, int componentId, int state){
+void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1287,7 +1296,7 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, int componen
 //    LOGE("ABC:Exit - Add TRIGGER-LIFECYCLE to trace");
 }
 
-void addEnableEventToTrace(int opId, int tid, int view, int event){
+void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1318,7 +1327,7 @@ void addEnableEventToTrace(int opId, int tid, int view, int event){
 //    LOGE("ABC:Exit - Add ENABLE-EVENT to trace");
 }
 
-void addTriggerEventToTrace(int opId, int tid, int view, int event){
+void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1349,7 +1358,7 @@ void addTriggerEventToTrace(int opId, int tid, int view, int event){
 //    LOGE("ABC:Exit - Add TRIGGER-EVENT to trace");
 }
 
-int addPostToTrace(int opId, int srcTid, int msg, int destTid, s8 delay){
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
     if(accessSetAdded){
@@ -1384,7 +1393,7 @@ int addPostToTrace(int opId, int srcTid, int msg, int destTid, s8 delay){
     return opId;
 }
 
-void addCallToTrace(int opId, int tid, int msg){
+void addCallToTrace(int opId, int tid, u4 msg){
     LOGE("%d ABC:Entered - Add CALL to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1408,7 +1417,7 @@ void addCallToTrace(int opId, int tid, int msg){
 
 }
 
-void addRetToTrace(int opId, int tid, int msg){
+void addRetToTrace(int opId, int tid, u4 msg){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1442,7 +1451,7 @@ void addRetToTrace(int opId, int tid, int msg){
     }*/
 }
 
-void addRemoveToTrace(int opId, int tid, int msg){
+void addRemoveToTrace(int opId, int tid, u4 msg){
     LOGE("ABC:Entered - Add REMOVE to trace");
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1459,7 +1468,7 @@ void addRemoveToTrace(int opId, int tid, int msg){
     abcTrace.insert(std::make_pair(opId, op));
 }
 
-void addAttachQToTrace(int opId, int tid, int msgQ){
+void addAttachQToTrace(int opId, int tid, u4 msgQ){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1488,7 +1497,7 @@ void addAttachQToTrace(int opId, int tid, int msgQ){
 //    LOGE("ABC:Exit - Add ATTACHQ to trace");
 }
 
-void addLoopToTrace(int opId, int tid, int msgQ){
+void addLoopToTrace(int opId, int tid, u4 msgQ){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1528,7 +1537,7 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = lockObj;
-    arg2->id = -1;
+    arg2->id = 0;
 
     op->opType = ABC_LOCK;
     op->arg1 = tid;
@@ -1557,7 +1566,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = lockObj;
-    arg2->id = -1;
+    arg2->id = 0;
 
     op->opType = ABC_UNLOCK;
     op->arg1 = tid;
@@ -2193,8 +2202,8 @@ bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 
 void processEnableEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     op->asyncId = threadBK->curAsyncId;
-    std::pair<int, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
-    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
+    std::pair<u4, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
+    std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
     if(it == abcEnabledEventMap.end()){
         abcEnabledEventMap.insert(std::make_pair(viewEventPair, std::make_pair(opId, -1)));
     }else{
@@ -2211,8 +2220,8 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
     async->recentTriggerOpId = opId;
 
-    std::pair<int, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
-    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
+    std::pair<u4, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
+    std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
     if(it != abcEnabledEventMap.end()){
         it->second.second = opId;
         int callId = getAsyncBlockFromId(op->asyncId)->callId;
@@ -2231,7 +2240,7 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
 void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing enable lifecycle hit");
     op->asyncId = threadBK->curAsyncId;
-    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
+/*    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
     std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
     if(it == abcEnabledLifecycleMap.end()){
         abcEnabledLifecycleMap.insert(std::make_pair(compLifecyclePair, std::make_pair(opId, -1)));
@@ -2240,11 +2249,18 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
     }
     if(op->arg1 == ABC_APPBIND_DONE){
         abcAppBind = opId;
-    }
-    checkAndAddToMapIfActivityResult(opId, op);
-   /* if(op->arg1 == ABC_RESUME && op->arg2->id == ){
+    } */
+//    checkAndAddToMapIfActivityResult(opId, op);
 
-    }*/
+    addEnableLifecycleEventToMap(opId, op);
+    if(op->arg1 == ABC_RESUME && op->arg2->id == 0){
+        blankEnableResumeOp->opId = opId;
+        blankEnableResumeOp->opPtr = op; 
+    }
+
+    if(op->arg1 == ABC_APPBIND_DONE){
+        abcAppBind = opId;
+    }
 }
 
 bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2253,18 +2269,19 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
     op->asyncId = threadBK->curAsyncId;
 
     bool edgeAdded = false;
-    edgeAdded = checkAndUpdateComponentState(opId, op);
+    edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);
+    edgeAdded = edgeAdded || checkAndUpdateComponentState(opId, op);
 
-    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
+ /*   std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
     std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
     if(it != abcEnabledLifecycleMap.end()){
-        connectEnableAndTriggerLifecycleEvents(it->second.first, opId, op);                
-        edgeAdded = true;
-    }
+        edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);                
+    } */
    
     if(!edgeAdded){
         LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
-             "corresponding enable event during processing. Aborting processing.", op->arg2->id, op->arg1);
+             "corresponding enable event or mismatch in activity state machine during processing."
+             " Aborting processing.", op->arg2->id, op->arg1);
         gDvm.isRunABC = false;
         shouldAbort = true;
     }
@@ -2296,6 +2313,17 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         gDvm.isRunABC = false;
         shouldAbort = true;
     }*/
+    return shouldAbort;
+}
+
+//Service events are completely managed with TRIGGERs with supporting maps and state machines.
+//Check AbcModel.cpp for its corresponding functions
+bool processTriggerServiceLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    abcEventTriggerCount++;
+    op->asyncId = threadBK->curAsyncId;
+    bool serviceUpdated = checkAndUpdateServiceState(opId, op);
+    bool shouldAbort = !serviceUpdated;
+   
     return shouldAbort;
 }
 
@@ -2479,7 +2507,7 @@ void checkAndAddRetToTriggerIfRetToEnableExists(int o1, int o2, AbcOp* op1, AbcO
     if((op1->opType == ABC_RET && (op2->opType == ABC_ENABLE_EVENT || 
             op2->opType == ABC_ENABLE_LIFECYCLE || op2->opType == ABC_REGISTER_RECEIVER))){
 
-        std::map<std::pair<int, int>, std::pair<int,int> >::iterator it1;
+        std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it1;
         std::map<std::pair<int, int>, std::pair<int, int> >::iterator it2;
         std::map<std::string, std::pair<int,int> >::iterator it3;
  
@@ -2557,8 +2585,9 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
         if(async1->callId != async3->callId &&
             adjGraph[async1->retId - 1][async3->callId - 1] == false){
             //conditional transitivity base case
+            int op2AsyncId = op2->arg2->id;
             if(op2->opType == ABC_POST && op3->opType == ABC_CALL &&
-                    op2->arg2->id == op3->asyncId){
+                    op2AsyncId == op3->asyncId){
                 isCondTrans = true;
             }
         }else{
@@ -3468,7 +3497,7 @@ bool abcPerformRaceDetection(){
     }
 
     if(abcViewEventMap.size() > 0){
-        std::map<int, std::set<int> >::iterator itTmp = abcViewEventMap.begin();
+        std::map<u4, std::set<int> >::iterator itTmp = abcViewEventMap.begin();
         while(itTmp != abcViewEventMap.end()){
             abcViewEventMap.erase(itTmp++);
         }
@@ -3507,8 +3536,8 @@ bool abcPerformRaceDetection(){
     std::set<int> requiredEventEnableOps;
     std::map<int, AbcOp*>::iterator itTmp = abcTrace.begin();
     while(itTmp != abcTrace.end()){
-        std::pair<int, int> eventPair;
-        std::map<std::pair<int, int>, std::pair<int,int> >::iterator it;
+        std::pair<u4, int> eventPair;
+        std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it;
         AbcOp* op = itTmp->second;
         switch(itTmp->second->opType){
         case ABC_ENABLE_EVENT:
@@ -3531,7 +3560,7 @@ bool abcPerformRaceDetection(){
                  return false;
              }
              break;
-        case ABC_ENABLE_LIFECYCLE:
+    /*    case ABC_ENABLE_LIFECYCLE:
              eventPair = std::make_pair(op->arg2->id, op->arg1);
              it = abcEnabledLifecycleMap.find(eventPair);
              if(it == abcEnabledLifecycleMap.end()){
@@ -3550,7 +3579,7 @@ bool abcPerformRaceDetection(){
                  gDvm.isRunABC = false;
                  return false;
              }
-             break;
+             break;*/
         } 
         ++itTmp;
     }
@@ -3596,11 +3625,11 @@ bool abcPerformRaceDetection(){
     //uncomment this after things are fine
  //   abcOpCount = traceIndex;
 
-    for(std::map<std::pair<int, int>, std::pair<int,int> >::iterator itr = abcEnabledLifecycleMap.begin();
+ /*   for(std::map<std::pair<int, int>, std::pair<int,int> >::iterator itr = abcEnabledLifecycleMap.begin();
             itr != abcEnabledLifecycleMap.end(); ){
         abcEnabledLifecycleMap.erase(itr++);
-    }
-    for(std::map<std::pair<int, int>, std::pair<int,int> >::iterator itr = abcEnabledEventMap.begin();
+    }*/
+    for(std::map<std::pair<u4, int>, std::pair<int,int> >::iterator itr = abcEnabledEventMap.begin();
             itr != abcEnabledEventMap.end(); ){
         abcEnabledEventMap.erase(itr++);
     }
@@ -3629,6 +3658,11 @@ bool abcPerformRaceDetection(){
             adjGraph[i][j] = false;
         }
     }
+
+    //initialize blankEnableResumeOp which tracks the most recent enable resume with blank instance
+    blankEnableResumeOp = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+    blankEnableResumeOp->opId = -1;
+    blankEnableResumeOp->opPtr = NULL;
 
     std::map<int, AbcOp*>::iterator opIt = abcTrace.begin();
     if(opIt->second->opType == ABC_START){
@@ -3735,7 +3769,10 @@ bool abcPerformRaceDetection(){
              processEnableLifecycleOperation(opId, op, threadIt->second);
              break;
         case ABC_TRIGGER_LIFECYCLE:
-             processTriggerLifecycleOperation(opId, op, threadIt->second);
+             shouldAbort = processTriggerLifecycleOperation(opId, op, threadIt->second);
+             break;
+        case ABC_TRIGGER_SERVICE:
+             processTriggerServiceLifecycleOperation(opId, op, threadIt->second);
              break;
         case ABC_REGISTER_RECEIVER:
              processRegisterBroadcastReceiver(opId, op, threadIt->second);

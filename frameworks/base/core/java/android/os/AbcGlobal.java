@@ -48,6 +48,7 @@ public class AbcGlobal {
     public static final int ABC_START = 23;
     public static final int ABC_NEW_INTENT = 24;
     public static final int ABC_START_NEW_INTENT = 25;
+    public static final int ABC_REQUEST_STOP_SELF = 26;
     
 //    public static boolean isPrevEventBackPress = false;
 //    public static boolean isPrevEventStartActivity = false;
@@ -86,11 +87,14 @@ public class AbcGlobal {
 	/* maintain a queue of intent IDs of started actvities..
 	 * remove element when its lifecycle
 	 * are enabled in previous activity's PAUSE.
-	 */
+	 *
 	public static ArrayList<Integer> abcActivityLaunchList =
 			new ArrayList<Integer>();
+	 */
 	
-	public static HashMap<Integer, ArrayList<Integer> > activityNewIntentsMap = 
+	//a map from activity instance to a list of activity intent-id started 
+	//from the activity's context
+	public static HashMap<Integer, ArrayList<Integer> > parentAndStartedActivitiesMap = 
 			new HashMap<Integer, ArrayList<Integer> >(); 
 	
 	/* hashset to track result expecting activities: <intent-ID-of-Activity> */

@@ -1059,20 +1059,21 @@ public final class LoadedApk {
                     old.binder.unlinkToDeath(old.deathMonitor, 0);
                 }
             }
+            
+            /*Android bug-checker*/
+        	//service_connect is matched by service connection hashcode
+        	if(AbcGlobal.abcLogFile != null && service != null){
+        		Thread.currentThread().abcTriggerServiceLifecycle(
+        				name.getClassName(), mConnection.hashCode(), AbcGlobal.ABC_CONNECT_SERVICE);
+        	}
+        	/*Android bug-checker*/
 
             // If there was an old service, it is not disconnected.
             if (old != null) {
                 mConnection.onServiceDisconnected(name);
             }
             // If there is a new service, it is now connected.
-            if (service != null) {
-            	/*Android bug-checker*/
-            	//service_connect is matched by service connection hashcode
-            	if(AbcGlobal.abcLogFile != null){
-            		Thread.currentThread().abcTriggerServiceLifecycle(
-            				"", mConnection.hashCode(), AbcGlobal.ABC_CONNECT_SERVICE);
-            	}
-            	/*Android bug-checker*/
+            if (service != null) {    	
             	
                 mConnection.onServiceConnected(name, service);
             }

@@ -1194,23 +1194,6 @@ public final class ActivityThread {
                 	handlePauseActivity((IBinder)msg.obj, false, msg.arg1 != 0, msg.arg2);
                     maybeSnapshot();
                     
-                    /*Android bug-checker*/
-                    if(AbcGlobal.abcLogFile != null && 
-                    		AbcGlobal.abcActivityLaunchList.size() > 0){
-                    	//since we would not know activity instance that is being resumed
-                    	//or launched we use an intent extra added by us to identify this activity
-                    	// and connect its lifecycle callbacks
-                    	Thread.currentThread().abcEnableLifecycleEvent("", 
-                    			AbcGlobal.abcActivityLaunchList.get(0), AbcGlobal.ABC_LAUNCH);
-                    	Thread.currentThread().abcEnableLifecycleEvent("", 
-                    			AbcGlobal.abcActivityLaunchList.get(0), AbcGlobal.ABC_RESUME);
-                    	
-                    	//remove the element on front of launch-list as its necessary
-                    	//callbacks have been enabled
-                    	AbcGlobal.abcActivityLaunchList.remove(0);
-                    	
-                    }
-                    /*Android bug-checker*/
                     break;
                 case PAUSE_ACTIVITY_FINISHING:
                 	handlePauseActivity((IBinder)msg.obj, true, msg.arg1 != 0, msg.arg2);
@@ -1219,7 +1202,7 @@ public final class ActivityThread {
                     if(AbcGlobal.abcLogFile != null){
                         //we do not know which is the activity prior to this..keeping this 
                         //info can be confusing due to various activity launch modes
-                        Thread.currentThread().abcEnableLifecycleEvent("", -1,
+                        Thread.currentThread().abcEnableLifecycleEvent("", 0,
                     		AbcGlobal.ABC_RESUME);
                     }
                     /*Android bug-checker*/
@@ -1268,7 +1251,7 @@ public final class ActivityThread {
                 case BIND_APPLICATION:
                 	/*Android bug-checker*/
                 	Thread.currentThread().abcTriggerLifecycleEvent(
-                			"", -1, AbcGlobal.ABC_BIND);
+                			"", 0, AbcGlobal.ABC_BIND);
                 	/*Android bug-checker*/
                 	
                     AppBindData data = (AppBindData)msg.obj;
@@ -1277,7 +1260,7 @@ public final class ActivityThread {
                     /*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
                 		Thread.currentThread().abcEnableLifecycleEvent(
-                				"", -1, AbcGlobal.ABC_APPBIND_DONE);
+                				"", 0, AbcGlobal.ABC_APPBIND_DONE);
                 		Thread.currentThread().abcEnableLifecycleEvent(
                 				"", AbcGlobal.getAbcIntentId(), AbcGlobal.ABC_LAUNCH);
                 	}
@@ -1318,7 +1301,7 @@ public final class ActivityThread {
                 case CONFIGURATION_CHANGED:
                 	/*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
-                	    Thread.currentThread().abcTriggerLifecycleEvent("", -1,
+                	    Thread.currentThread().abcTriggerLifecycleEvent("", 0,
                 			AbcGlobal.ABC_CHANGE_CONFIG);
                 	}
                 	/*Android bug-checker*/
@@ -1341,7 +1324,7 @@ public final class ActivityThread {
                 case ACTIVITY_CONFIGURATION_CHANGED:
                 	/*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
-                	    Thread.currentThread().abcTriggerLifecycleEvent("", -1,
+                	    Thread.currentThread().abcTriggerLifecycleEvent("", 0,
                 			AbcGlobal.ABC_CHANGE_ACT_CONFIG);
                 	}
                 	/*Android bug-checker*/
@@ -1918,7 +1901,7 @@ public final class ActivityThread {
     			}
     	        Thread.currentThread().abcTriggerLifecycleEvent("", 
     	        		r.intent.getIntExtra(
-    	        				"androidBugCheckerIntentId", -2),
+    	        				"androidBugCheckerIntentId", 2222),
     			                 AbcGlobal.ABC_LAUNCH);
     		}
     	}
@@ -2107,7 +2090,7 @@ public final class ActivityThread {
     			}
     	        Thread.currentThread().abcTriggerLifecycleEvent("", 
     	        		r.intent.getIntExtra(
-    	        				"androidBugCheckerIntentId", -2),
+    	        				"androidBugCheckerIntentId", 5555),
     			                 AbcGlobal.ABC_LAUNCH);
     		}
     	}
@@ -2203,7 +2186,7 @@ public final class ActivityThread {
             //trigger to connect to startActivity if new_intent is called independently
             if(AbcGlobal.abcLogFile != null){
             	Thread.currentThread().abcTriggerLifecycleEvent(r.activity.getLocalClassName(),
-            			intent.getIntExtra("androidBugCheckerIntentId", -6), AbcGlobal.ABC_START_NEW_INTENT);
+            			intent.getIntExtra("androidBugCheckerIntentId", 6666), AbcGlobal.ABC_START_NEW_INTENT);
             }
             /*Android bug-checker*/
             r.activity.mFragments.noteStateNotSaved();
@@ -2441,7 +2424,7 @@ public final class ActivityThread {
         	/*Android bug-checker*/
         	if(AbcGlobal.abcLogFile != null){ 
         	    Thread.currentThread().abcTriggerServiceLifecycle(data.info.name, 
-    				-1, AbcGlobal.ABC_CREATE_SERVICE);
+    				0, AbcGlobal.ABC_CREATE_SERVICE);
         	}
         	/*Android bug-checker*/
         	
@@ -2479,7 +2462,7 @@ public final class ActivityThread {
                 /*Android bug-checker*/
                 if(AbcGlobal.abcLogFile != null){
             	    Thread.currentThread().abcTriggerServiceLifecycle(s.getClass().getName(), 
-        				-1, AbcGlobal.ABC_BIND_SERVICE);
+        				0, AbcGlobal.ABC_BIND_SERVICE);
                 }
             	/*Android bug-checker*/
                 try {
@@ -2511,7 +2494,7 @@ public final class ActivityThread {
             try {
             	/*Android bug-checker*/
             	Thread.currentThread().abcTriggerServiceLifecycle(s.getClass().getName(), 
-        				-1, AbcGlobal.ABC_UNBIND_SERVICE);
+        				0, AbcGlobal.ABC_UNBIND_SERVICE);
             	/*Android bug-checker*/
                 data.intent.setExtrasClassLoader(s.getClassLoader());
                 boolean doRebind = s.onUnbind(data.intent);
@@ -2570,9 +2553,9 @@ public final class ActivityThread {
                 }
                 /*Android bug-checker*/
                 if(AbcGlobal.abcLogFile != null){
-                	int abcIntentId = -3; //assigning an arbit negative integer to avoid unintended matches
+                	int abcIntentId = 9999; //assigning an arbit integer to avoid unintended matches
                 	if(data.args != null){
-                		abcIntentId = data.args.getIntExtra("androidBugCheckerIntentId", -3);
+                		abcIntentId = data.args.getIntExtra("androidBugCheckerIntentId", abcIntentId);
                 	}
             	    Thread.currentThread().abcTriggerServiceLifecycle(s.getClass().getName(), 
         				abcIntentId, AbcGlobal.ABC_SERVICE_ARGS);
@@ -2610,7 +2593,7 @@ public final class ActivityThread {
         if (s != null) {
         	/*Android bug-checker*/
         	Thread.currentThread().abcTriggerServiceLifecycle(s.getClass().getName(), 
-    				-1, AbcGlobal.ABC_STOP_SERVICE);
+    				0, AbcGlobal.ABC_STOP_SERVICE);
         	/*Android bug-checker*/
             try {
                 if (localLOGV) Slog.v(TAG, "Destroying service " + s);
@@ -2816,12 +2799,12 @@ public final class ActivityThread {
             if(AbcGlobal.abcLogFile != null && !AbcGlobal.isRelaunchInProgress){
             	if(AbcGlobal.abcLaunchStopMap.size() > 0){
         			AbcHashNamePair stopActvity = AbcGlobal.abcLaunchStopMap.get(
-        					r.intent.getIntExtra("androidBugCheckerIntentId", -2));
+        					r.intent.getIntExtra("androidBugCheckerIntentId", 4444));
         			if(stopActvity != null){
             		    Thread.currentThread().abcEnableLifecycleEvent(
             				stopActvity.name, stopActvity.hash, AbcGlobal.ABC_STOP);
             		    AbcGlobal.abcLaunchStopMap.remove(
-            		    		r.intent.getIntExtra("androidBugCheckerIntentId", -2));
+            		    		r.intent.getIntExtra("androidBugCheckerIntentId", 3333));
         			}                    		
             	}
             }
@@ -2927,6 +2910,19 @@ public final class ActivityThread {
             }
             
             if(AbcGlobal.abcLogFile != null){
+            	//since we would not know activity instance that is being resumed
+            	//or launched we use an intent extra added by us to identify this activity
+            	// and connect its lifecycle callbacks
+            	
+            	if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){
+        			for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
+        				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+        						AbcGlobal.ABC_LAUNCH);
+        				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+        						AbcGlobal.ABC_RESUME);
+        			}
+        		}       
+            	
             	AbcHashNamePair tmpPair = new AbcHashNamePair(r.activity.hashCode(), 
             			r.activity.getLocalClassName());
             	if(finished){
@@ -2934,19 +2930,19 @@ public final class ActivityThread {
             		
             		//enable NEW_INTENT if the next activity being launched is of
             		//singleTop type..
-            		if(AbcGlobal.activityNewIntentsMap.containsKey(r.activity.hashCode())){
-            			for(Integer i : AbcGlobal.activityNewIntentsMap.get(r.activity.hashCode())){
+            		if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){
+            			for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
             				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
             						AbcGlobal.ABC_START_NEW_INTENT);
             			}
             		}
-            	}else if(AbcGlobal.abcActivityLaunchList.size() > 0){            	    
-            	    AbcGlobal.abcLaunchStopMap.put(AbcGlobal.abcActivityLaunchList.get(0), 
-            			tmpPair);
+            	}else if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){            	    
+            	    for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
+            	    	AbcGlobal.abcLaunchStopMap.put(i, tmpPair);
+            	    }            		
             	}
-
-            	//remove entry of this activity if any present in activityNewIntentsMap
-            	AbcGlobal.activityNewIntentsMap.remove(r.activity.hashCode());
+            	//remove entry of this activity if any present in parentAndStartedActivitiesMap
+            	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
             }
         }
     }
@@ -3182,6 +3178,17 @@ public final class ActivityThread {
 
         /*Android bug-checker*/
         if(AbcGlobal.abcLogFile != null){
+        	//hanling happens before, if startActivity was issued from this activity's context after its paused
+        	if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){
+    			for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
+    				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+    						AbcGlobal.ABC_LAUNCH);
+    				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+    						AbcGlobal.ABC_RESUME);
+    			}
+    		}
+        	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
+        	
         	if(AbcGlobal.abcResultExpectingActivities.contains(this.hashCode())){
         	    Thread.currentThread().abcEnableLifecycleEvent(
         			r.activity.getLocalClassName(), 
@@ -3554,6 +3561,22 @@ public final class ActivityThread {
                 ((ContextImpl) c).scheduleFinalCleanup(
                         r.activity.getClass().getName(), "Activity");
             }
+            
+            /*Android bug-checker*/
+            if(AbcGlobal.abcLogFile != null){
+            	//hanling happens before, if startActivity was issued from this activity's context after its stopped
+            	if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){
+        			for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
+        				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+        						AbcGlobal.ABC_LAUNCH);
+        				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+        						AbcGlobal.ABC_RESUME);
+        			}
+        		}
+            	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
+            }
+            /*Android bug-checker*/
+            
         }
         if (finishing) {
             try {

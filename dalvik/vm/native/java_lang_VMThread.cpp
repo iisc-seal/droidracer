@@ -208,7 +208,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
         char *component = dvmCreateCstrFromString(compStr);
-        int componentId = args[2];
+        u4 componentId = args[2];
         int state = args[3];
 
         AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
@@ -231,7 +231,7 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
         char *component = dvmCreateCstrFromString(compStr);        
-        int componentId = args[2];
+        u4 componentId = args[2];
         int state = args[3];
         
         AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
@@ -256,7 +256,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
         char *component = dvmCreateCstrFromString(compStr);
-        int componentId = args[2];
+        u4 componentId = args[2];
         int state = args[3];
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
@@ -269,12 +269,12 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
 
 static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
-        int view = args[1];
+        u4 view = args[1];
         int event = args[2];
 
         //view = 0 indicates the event to be BACK PRESS / MENU CLICK / ROTATE-SCREEN
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        std::map<int, std::set<int> >::iterator it = abcViewEventMap.find(view);
+        std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
         if(it == abcViewEventMap.end()){
             LOGE("ABC: triggering an event for which an enable is not seen. Something is missing."
                  "Aborting");
@@ -304,7 +304,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
 
 static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
-        int view = args[1];
+        u4 view = args[1];
         int event = args[2];
 
         //view = 0 indicates the event to be BACK PRESS / MENU CLICK / ROTATE-SCREEN
@@ -312,7 +312,7 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        std::map<int, std::set<int> >::iterator it = abcViewEventMap.find(view);
+        std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
         if(it == abcViewEventMap.end()){
             std::set<int> eventSet;
             eventSet.insert(event);
@@ -341,12 +341,12 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
 
 static void Dalvik_java_lang_VMThread_abcRemoveAllEventsOfView(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
-        int view = args[1];
+        u4 view = args[1];
         int ignoreEvent = args[2];
   
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         
-        std::map<int, std::set<int> >::iterator it = abcViewEventMap.find(view);
+        std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
         if(it != abcViewEventMap.end()){
             if(ignoreEvent == EVENT_CLICK){
                 //this means the only event to be removed is the long-click event
@@ -373,14 +373,14 @@ static void Dalvik_java_lang_VMThread_abcRemoveAllEventsOfView(const u4* args, J
 
 static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
-        int view = args[1];
+        u4 view = args[1];
         int event = args[2];
 
         AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        std::map<int, std::set<int> >::iterator it = abcViewEventMap.find(view);
+        std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
         if(it == abcViewEventMap.end()){
             std::set<int> eventSet;
             eventSet.insert(event);
@@ -656,7 +656,7 @@ static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
         int curTid = selfThread->threadId;
-        int queueHash = args[1];
+        u4 queueHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
@@ -682,7 +682,7 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
         int curTid = selfThread->threadId;
-        int queueHash = args[1];
+        u4 queueHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);

@@ -3225,36 +3225,36 @@ public class Activity extends ContextThemeWrapper
 	    		//connection logs for race detection
 //	    		AbcGlobal.setIsPrevEventStartActivity(true);
 	    		
-	    		synchronized (AbcGlobal.abcActivityLaunchList) {
+	    		synchronized (AbcGlobal.parentAndStartedActivitiesMap) {
 	    			/* issue PAUSE for current Activity from the first startActivity
 	    			 * call. The next Activity launched before handling a preceding
 	    			 * startAtivity will cause the preceding Activity to pause and not 
 	    			 * the one that is currently visible
 	    			 */
-	    			if(AbcGlobal.abcActivityLaunchList.size() == 0){
-		    			Thread.currentThread().abcEnableLifecycleEvent(
-			    				Looper.mcd.getVisibleActivity().getLocalClassName(), 
-			    				Looper.mcd.getVisibleActivity().hashCode(),
+	    			if(!AbcGlobal.parentAndStartedActivitiesMap.containsKey(this.hashCode())){
+	    				//if startActivity has been called with this activity's context when
+	    				//some other activity is in the foreground do not enable PAUSE for this activity
+	    				if(Looper.mcd.getVisibleActivity().hashCode() == this.hashCode()){
+		    			    Thread.currentThread().abcEnableLifecycleEvent(
+			    				this.getLocalClassName(), this.hashCode(),
 			    				AbcGlobal.ABC_PAUSE);
+	    				}
+		    			
+		    			ArrayList<Integer> tmpStartedActivities = new ArrayList<Integer>();
+		    			tmpStartedActivities.add(intent.getIntExtra("androidBugCheckerIntentId", 
+			    						AbcGlobal.getAbcIntentId()));
+		    			AbcGlobal.parentAndStartedActivitiesMap.put(this.hashCode(), tmpStartedActivities);
+	    			}else{
+	    				AbcGlobal.parentAndStartedActivitiesMap.get(this.hashCode()).add(
+		    					intent.getIntExtra("androidBugCheckerIntentId", 
+			    						AbcGlobal.getAbcIntentId()));
 	    			}
 		    		
-		    		AbcGlobal.abcActivityLaunchList.add(
-		    				intent.getIntExtra("androidBugCheckerIntentId", 
-		    						AbcGlobal.getAbcIntentId()));
+//		    		AbcGlobal.abcActivityLaunchList.add(
+//		    				intent.getIntExtra("androidBugCheckerIntentId", 
+//		    						AbcGlobal.getAbcIntentId()));
 				}
-	    		
-	    		//speculating every startActivity to be leading to call of onNewIntent
-	    		if(AbcGlobal.activityNewIntentsMap.containsKey(this.hashCode())){
-	    			AbcGlobal.activityNewIntentsMap.get(this.hashCode()).add(
-	    					intent.getIntExtra("androidBugCheckerIntentId", 
-		    						AbcGlobal.getAbcIntentId()));
-	    		}else{
-	    			ArrayList<Integer> tmpNewIntentList = new ArrayList<Integer>();
-	    			tmpNewIntentList.add(intent.getIntExtra("androidBugCheckerIntentId", 
-		    						AbcGlobal.getAbcIntentId()));
-	    			AbcGlobal.activityNewIntentsMap.put(this.hashCode(), tmpNewIntentList);
-	    		}
-	    		
+	    			    		
 	    		if(requestCode != -1){
 //	    			AbcGlobal.isStartActivityForResult = true;
 	    			AbcGlobal.abcResultSendingActivityIntents.put(
@@ -3283,7 +3283,7 @@ public class Activity extends ContextThemeWrapper
                 	}
                 	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
                 	AbcGlobal.abcResultSendingActivityIntents.remove(
-                			intent.getIntExtra("androidBugCheckerIntentId", -5));
+                			intent.getIntExtra("androidBugCheckerIntentId", 5999));
                 }
                 /*Android bug-checker*/
                 mMainThread.sendActivityResult(
@@ -3565,7 +3565,7 @@ public class Activity extends ContextThemeWrapper
             	}
             	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
             	AbcGlobal.abcResultSendingActivityIntents.remove(
-            			intent.getIntExtra("androidBugCheckerIntentId", -5));
+            			intent.getIntExtra("androidBugCheckerIntentId", 7777));
             }
             /*Android bug-checker*/
             
@@ -3812,12 +3812,17 @@ public class Activity extends ContextThemeWrapper
                 }
                 /*Android bug-checker*/
                 if(AbcGlobal.abcLogFile != null){
+                	//even Resume may be called if this activity is no
+                	//activity is resumed. But we are ignoring this in modelling
+                	Thread.currentThread().abcEnableLifecycleEvent(
+                    		this.getLocalClassName(), this.hashCode(), 
+                    		AbcGlobal.ABC_PAUSE);
                     Thread.currentThread().abcEnableLifecycleEvent(
                 		this.getLocalClassName(), this.hashCode(), 
                 		AbcGlobal.ABC_DESTROY);
                     
                     AbcHashNamePair tmpPair = AbcGlobal.abcResultSendingActivityIntents.remove(
-                			mIntent.getIntExtra("androidBugCheckerIntentId", -5));
+                			mIntent.getIntExtra("androidBugCheckerIntentId", 6789));
                     if(tmpPair != null){
                     	Thread.currentThread().abcEnableLifecycleEvent(
                 			tmpPair.name, tmpPair.hash, AbcGlobal.ABC_RESULT);

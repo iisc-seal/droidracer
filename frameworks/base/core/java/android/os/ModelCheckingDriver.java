@@ -2835,9 +2835,9 @@ public class ModelCheckingDriver {
                 Thread.currentThread().abcEnableLifecycleEvent(
                 		getVisibleActivity().getLocalClassName(), 
                 		getVisibleActivity().hashCode(), AbcGlobal.ABC_RELAUNCH);
-                Thread.currentThread().abcEnableLifecycleEvent("", -1,
+                Thread.currentThread().abcEnableLifecycleEvent("", 0,
                 		AbcGlobal.ABC_CHANGE_CONFIG);
-                Thread.currentThread().abcEnableLifecycleEvent("", -1,
+                Thread.currentThread().abcEnableLifecycleEvent("", 0,
             			AbcGlobal.ABC_CHANGE_ACT_CONFIG);
                 /*Android bug-checker*/
                 

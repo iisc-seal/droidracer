@@ -307,7 +307,7 @@ extern std::map<int, std::pair<bool,bool> > abcAsyncStateMap;
 //extern std::map<Object*, AbcLockCount*> abcLockCountMap;
 
 //a map maintained during trace generation to track enabled events on views
-extern std::map<int, std::set<int> > abcViewEventMap;
+extern std::map<u4, std::set<int> > abcViewEventMap;
 
 // <<view, event>, enable-event-opId> only abc.cpp modifies it and hence need not be extern
 //extern std::map<std::pair<int, int>, int> abcEnabledEventMap;
@@ -392,19 +392,19 @@ void startAbcModelChecker();
 
 bool abcPerformRaceDetection();
 
-void addAccessToTrace(int opId, int tid, int accessId);
+void addAccessToTrace(int opId, int tid, u4 accessId);
 
-int addPostToTrace(int opId, int srcTid, int msg, int destTid, s8 delay);
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay);
 
-void addCallToTrace(int opId, int tid, int msg);
+void addCallToTrace(int opId, int tid, u4 msg);
 
-void addRetToTrace(int opId, int tid, int msg);
+void addRetToTrace(int opId, int tid, u4 msg);
 
-void addRemoveToTrace(int opId, int tid, int msg);
+void addRemoveToTrace(int opId, int tid, u4 msg);
 
-void addAttachQToTrace(int opId, int tid, int msgQ);
+void addAttachQToTrace(int opId, int tid, u4 msgQ);
 
-void addLoopToTrace(int opId, int tid, int msgQ);
+void addLoopToTrace(int opId, int tid, u4 msgQ);
 
 void addLockToTrace(int opId, int tid, Object* lockObj);
 
@@ -423,15 +423,15 @@ void addNativeEntryToTrace(int opId, int tid);
 
 void addNativeExitToTrace(int opId, int tid);
 
-void addEnableEventToTrace(int opId, int tid, int view, int event);
+void addEnableEventToTrace(int opId, int tid, u4 view, int event);
 
-void addTriggerEventToTrace(int opId, int tid, int view, int event);
+void addTriggerEventToTrace(int opId, int tid, u4 view, int event);
 
-void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, int componentId, int state);
+void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
-void addEnableLifecycleToTrace(int opId, int tid, char* component, int componentId, int state);
+void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
-void addTriggerLifecycleToTrace(int opId, int tid, char* component, int componentId, int state);
+void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
 
