@@ -25,6 +25,18 @@ std::map<std::string, AbcService*> AbcServiceMap;
 std::map<u4, AbcOpWithId*> AbcRequestStartServiceMap;
 std::map<u4, AbcRequestBind*> AbcServiceConnectMap;
 
+/*Broadcast receiver related datastructures*/
+std::set<std::string> StickyIntentActionSet;
+//key: <componentHash, action>  value:first registerReceiver request for the comp-action pair
+//entry removed on seeing unregister
+std::map<std::pair<u4, std::string>, int> RegisterReceiverMap;
+//key: <componentHash, action>  value: list of registerRec opId when corresponding
+//action had a sticky intent
+std::map<std::pair<u4, std::string>, std::list<int> > StickyRegisterReceiverMap;
+//<intentId - intentInfo>
+std::map<int, AbcSticky*> SentIntentMap;
+std::map<int, std::pair<int, bool> > PreReceiverTriggerToRegisterMap;
+std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
 
 
 void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid, 
@@ -35,6 +47,161 @@ void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid,
         addEdgeToHBGraph(prevOpAsync->retId, curOpAsync->callId);
         addEdgeToHBGraph(prevOpAsync->postId, curOpAsync->postId);
     }
+}
+
+bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
+    bool updated = false;
+    int state = op->arg1;
+    u4 component = op->arg2->id;
+    int intentId = op->arg3;
+    std::string action(op->arg5);
+    
+    if(state == ABC_SEND_BROADCAST){
+        AbcSticky* as = (AbcSticky*)malloc(sizeof(AbcSticky));
+        as->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+        as->op->opId = opId;
+        as->op->opPtr = op;
+        as->isSticky = false;
+        SentIntentMap.insert(std::make_pair(intentId, as));
+       
+        updated = true;
+    }else if(state == ABC_SEND_STICKY_BROADCAST){
+        AbcSticky* as = (AbcSticky*)malloc(sizeof(AbcSticky));
+        as->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+        as->op->opId = opId;
+        as->op->opPtr = op;
+        as->isSticky = true;
+        SentIntentMap.insert(std::make_pair(intentId, as));
+
+        StickyIntentActionSet.insert(action);
+        updated = true;
+    }else if(state == ABC_REGISTER_RECEIVER){
+        std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
+        RegisterReceiverMap.insert(std::make_pair(compActionPair, opId));
+        
+        //check if corresponding action has sticky intent
+        if(StickyIntentActionSet.find(action) != StickyIntentActionSet.end()){
+            std::map<std::pair<u4, std::string>, std::list<int> >::iterator it =
+                     StickyRegisterReceiverMap.find(compActionPair);
+            if(it != StickyRegisterReceiverMap.end()){
+                it->second.push_back(opId);
+            }else{
+                std::list<int> registerList;
+                registerList.push_back(opId);
+                StickyRegisterReceiverMap.insert(std::make_pair(compActionPair, registerList));
+            }
+        }
+
+        updated = true;
+    }else if(state == ABC_UNREGISTER_RECEIVER){
+        std::map<std::pair<u4, std::string>, int>::iterator regIt = RegisterReceiverMap.begin();
+        for( ; regIt != RegisterReceiverMap.end(); ){
+            if(regIt->first.first == component){
+                RegisterReceiverMap.erase(regIt++);
+            }else{
+                ++regIt;
+            }
+        }
+
+        //maybe this cleanup is not needed as each registerReceiver called when a 
+        //a corresponding sticky intent is around is supposed to thrigger onReceive
+        //which in turn will clear the corresponding entry in this map. 
+        std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt = 
+                StickyRegisterReceiverMap.begin();
+        for( ; stickyIt != StickyRegisterReceiverMap.end(); ){
+            if(stickyIt->first.first == component){
+                stickyIt->second.clear();
+                StickyRegisterReceiverMap.erase(stickyIt++);
+            }else{
+                ++stickyIt;
+            }
+        }
+
+        updated = true;
+    }else if(state == ABC_REMOVE_STICKY_BROADCAST){
+        StickyIntentActionSet.erase(action);
+        updated = true;
+    }else if(state == ABC_TRIGGER_ONRECIEVE_LATER){
+        std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
+        std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt = 
+                StickyRegisterReceiverMap.find(compActionPair);
+        if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
+            PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, std::make_pair(stickyIt->second.front(), true)));
+            stickyIt->second.pop_front();
+        }else{
+            std::map<std::pair<u4, std::string>, int>::iterator recIter = 
+                    RegisterReceiverMap.find(compActionPair);
+            if(recIter != RegisterReceiverMap.end()){
+                PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, std::make_pair(recIter->second, false)));
+            }
+        }
+        
+        updated = true;
+    }else if(state == ABC_TRIGGER_ONRECIEVE){
+        AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
+        if(opAsync == NULL){
+            LOGE("ABC-ABORT: missing async block for onReceive of broadcast action: %s", action.c_str());
+            gDvm.isRunABC = false;
+            return updated;
+        }
+        std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
+
+        std::map<int, std::pair<int, bool> >::iterator preIter = 
+                PreReceiverTriggerToRegisterMap.find(op->arg4);
+        if(preIter != PreReceiverTriggerToRegisterMap.end()){
+            addEdgeToHBGraph(preIter->second.first, opId);
+            addEdgeToHBGraph(preIter->second.first, opAsync->postId);
+            
+            AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));            
+            ast->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+            ast->op->opId = opId;
+            ast->op->opPtr = op;
+            ast->isSticky = preIter->second.second;
+            AbcRegisterOnReceiveMap.insert(std::make_pair(preIter->second.first, ast));
+        }else{
+            int recOpid = -1; 
+            bool isSticky = false;
+
+            std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt =
+                    StickyRegisterReceiverMap.find(compActionPair);
+            if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
+                recOpid = stickyIt->second.front();
+                stickyIt->second.pop_front();
+                isSticky = true;
+            }else{
+                std::map<std::pair<u4, std::string>, int>::iterator recIter =
+                        RegisterReceiverMap.find(compActionPair);
+                if(recIter != RegisterReceiverMap.end()){
+                    recOpid = recIter->second;
+                    isSticky = false;
+                }
+            }
+             
+            //add edges
+            if(recOpid != -1){
+                addEdgeToHBGraph(recOpid, opId);
+                addEdgeToHBGraph(recOpid, opAsync->postId);
+
+                AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));
+                ast->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+                ast->op->opId = opId;
+                ast->op->opPtr = op;
+                ast->isSticky = isSticky;
+                AbcRegisterOnReceiveMap.insert(std::make_pair(recOpid, ast));
+            }
+        }
+  
+        //add edges corresponding to sendIntent if any
+        std::map<int, AbcSticky*>::iterator siIt = SentIntentMap.find(intentId);      
+        if(siIt != SentIntentMap.end()){
+            addEdgeToHBGraph(siIt->second->op->opId, opId);
+            addEdgeToHBGraph(siIt->second->op->opId, opAsync->postId);
+        }
+        
+        updated = true;
+    }
+
+    return updated;
 }
 
 bool checkAndUpdateServiceState(int opId, AbcOp* op){

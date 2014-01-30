@@ -34,6 +34,13 @@
 #define ABC_ACTIVITY_START 23
 #define ABC_NEW_INTENT 24
 #define ABC_START_NEW_INTENT 25
+#define ABC_REGISTER_RECEIVER 26
+#define ABC_SEND_BROADCAST 27
+#define ABC_SEND_STICKY_BROADCAST 28
+#define ABC_TRIGGER_ONRECIEVE 29
+#define ABC_UNREGISTER_RECEIVER 30
+#define ABC_REMOVE_STICKY_BROADCAST 31
+#define ABC_TRIGGER_ONRECIEVE_LATER 32
 //#define ABC_REQUEST_STOP_SELF 26
 
 
@@ -77,6 +84,21 @@ struct requestBindStruct{
 };
 typedef struct requestBindStruct AbcRequestBind;
 
+struct stickyStruct{
+    AbcOpWithId* op;
+    bool isSticky;
+};
+typedef struct stickyStruct AbcSticky;
+
+struct receiverStruct{
+    char* action;
+    u4 component;
+    int intentId;
+    int state;
+    int delayTriggerOpid;
+};
+typedef struct receiverStruct AbcReceiver;
+
 
 //Activity lifecycle related datastructure
 extern AbcOpWithId* blankEnableResumeOp;
@@ -102,10 +124,14 @@ extern std::map<u4, AbcOpWithId*> AbcRequestStartServiceMap;
  */
 extern std::map<u4, AbcRequestBind*> AbcServiceConnectMap;
 
+//Broadcast Receiver related datastructure
+extern std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
+
 
 bool checkAndUpdateServiceState(int opId, AbcOp* op);
 void addEnableLifecycleEventToMap(int opId, AbcOp* op);
 bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp);
 void checkAndAddToMapIfActivityResult(int opId, AbcOp* op);
 bool checkAndUpdateComponentState(int opId, AbcOp* op);
+bool checkAndUpdateBroadcastState(int opId, AbcOp* op);
 #endif  // ABCMODEL_H_

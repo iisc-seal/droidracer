@@ -48,7 +48,13 @@ public class AbcGlobal {
     public static final int ABC_START = 23;
     public static final int ABC_NEW_INTENT = 24;
     public static final int ABC_START_NEW_INTENT = 25;
-    public static final int ABC_REQUEST_STOP_SELF = 26;
+    public static final int ABC_REGISTER_RECEIVER = 26;
+    public static final int ABC_SEND_BROADCAST =  27;
+    public static final int ABC_SEND_STICKY_BROADCAST = 28;
+    public static final int ABC_TRIGGER_ONRECIEVE = 29;
+    public static final int ABC_UNREGISTER_RECEIVER = 30;
+    public static final int ABC_REMOVE_STICKY_BROADCAST = 31;
+    public static final int ABC_TRIGGER_ONRECIEVE_LATER = 32;
     
 //    public static boolean isPrevEventBackPress = false;
 //    public static boolean isPrevEventStartActivity = false;

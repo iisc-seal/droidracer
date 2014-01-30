@@ -157,6 +157,7 @@ static void Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId(const u4* args,
     RETURN_VOID();
 }
 
+/*
 static void Dalvik_java_lang_VMThread_abcRegisterBroadcastReceiver(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
@@ -194,7 +195,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver(const u4* args
             strcpy(receiver->component, component);
             receiver->action = new char[strlen(action) + 1];
             strcpy(receiver->action, action);
-
+        
             abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
                     dvmThreadSelf()->threadId, receiver));
         }
@@ -203,6 +204,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver(const u4* args
 
     RETURN_VOID();
 }
+*/
 
 static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
@@ -264,6 +266,53 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
 
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        StringObject* actionStr = (StringObject*) args[1];
+        char *action = dvmCreateCstrFromString(actionStr);
+        u4 componentId = args[2];
+        int intentId = args[3];
+        int state = args[4];
+        int delayTriggerOpid = -1;
+
+     /*   AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
+            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, action, componentId, intentId, state);
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }else{
+            LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
+            std::ofstream outfile;
+            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ABC: ABORT " << "\n";
+            outfile.close();
+            gDvm.isRunABC = false;
+        }*/
+
+        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+        if(state != ABC_TRIGGER_ONRECIEVE_LATER){
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, action, 
+                componentId, intentId, state, delayTriggerOpid);
+        }else{
+            AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
+            receiver->action = new char[strlen(action) + 1];
+            strcpy(receiver->action, action);
+            receiver->component = componentId;
+            receiver->intentId = intentId;
+            receiver->state = ABC_TRIGGER_ONRECIEVE;
+            receiver->delayTriggerOpid = abcOpCount;
+            abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
+                    dvmThreadSelf()->threadId, receiver));
+
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, action, 
+                componentId, intentId, state, delayTriggerOpid);
+
+        }
+        abcUnlockMutex(&gAbc->abcMainMutex);
+    }
     RETURN_VOID();
 }
 
@@ -568,11 +617,14 @@ static void Dalvik_java_lang_VMThread_abcPrintCallMsg(const u4* args,
                 std::map<int,AbcReceiver*>::iterator recIter = 
                       abcDelayedReceiverTriggerMsgMap.find(msgIter->second->msgId);
                 if(recIter != abcDelayedReceiverTriggerMsgMap.end()){
-                    addTriggerBroadcastReceiverToTrace(abcOpCount++, curTid, 
-                            recIter->second->component, recIter->second->action);
+                    addTriggerBroadcastLifecycleToTrace(abcOpCount++, curTid, recIter->second->action,
+                         recIter->second->component, recIter->second->intentId, recIter->second->state, 
+                         recIter->second->delayTriggerOpid);
+             /*       addTriggerBroadcastReceiverToTrace(abcOpCount++, curTid, 
+                            recIter->second->component, recIter->second->action);*/
                     AbcReceiver* tmpRec = recIter->second;
                     abcDelayedReceiverTriggerMsgMap.erase(msgIter->second->msgId);
-                    free(tmpRec->component);
+                   // free(tmpRec->component);
                     free(tmpRec->action);
                     free(tmpRec);
                 }
@@ -952,16 +1004,14 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcStopTraceGeneration },
     { "abcMapInstanceWithIntentId","(II)V",
         Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId },
-    { "abcTriggerBroadcastReceiver","(Ljava/lang/String;Ljava/lang/String;I)V",
-        Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver },
-    { "abcRegisterBroadcastReceiver","(Ljava/lang/String;Ljava/lang/String;)V",
-        Dalvik_java_lang_VMThread_abcRegisterBroadcastReceiver },
     { "abcTriggerServiceLifecycle","(Ljava/lang/String;II)V",
         Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle },
     { "abcTriggerLifecycleEvent","(Ljava/lang/String;II)V",
         Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent },
     { "abcEnableLifecycleEvent","(Ljava/lang/String;II)V",
         Dalvik_java_lang_VMThread_abcEnableLifecycleEvent },
+    { "abcTriggerBroadcastLifecycle","(Ljava/lang/String;III)V",
+        Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle },
     { "abcPerformRaceDetection","()I",
         Dalvik_java_lang_VMThread_abcPerformRaceDetection },
     { "abcTriggerEvent","(II)V",

@@ -1092,7 +1092,13 @@ std::string getLifecycleForCode(int code, std::string lifecycle){
         case 23: lifecycle = "START-ACT"; break;
         case 24: lifecycle = "NEW_INTENT"; break;
         case 25: lifecycle = "START_NEW_INTENT"; break;
-        case 26: lifecycle = "REQUEST_STOP_SELF";break;
+        case 26: lifecycle = "ABC_REGISTER_RECEIVER";break;
+        case 27: lifecycle = "ABC_SEND_BROADCAST";break;
+        case 28: lifecycle = "ABC_SEND_STICKY_BROADCAST";break;
+        case 29: lifecycle = "ABC_TRIGGER_RECEIVER";break;
+        case 30: lifecycle = "ABC_UNREGISTER_RECEIVER";break;
+        case 31: lifecycle = "ABC_REMOVE_STICKY_BROADCAST";break;
+        case 32: lifecycle = "ABC_TRIGGER_ONRECIEVE_LATER";break;
         default: lifecycle = "UNKNOWN";
     }
     
@@ -1144,6 +1150,7 @@ bool addIntermediateReadWritesToTrace(int opId, int tid){
     return accessSetAdded;
 }
 
+/*
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1172,6 +1179,7 @@ void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, cha
     outfile.close(); 
 //    LOGE("ABC:Exit - Add REGISTER-RECEIVER to trace");
 }
+*/
 
 void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
@@ -1231,6 +1239,39 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-SERVICE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
+    outfile.close();
+}
+
+void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 componentId, 
+        int intentId, int state, int delayTriggerOpid){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add TRIGGER-BROADCAST to trace tid:%d  state: %d", opId, tid, state);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = componentId;
+
+    op->opType = ABC_TRIGGER_RECEIVER;
+    op->arg1 = state;
+    op->arg2 = arg2;
+    op->arg3 = intentId;
+    op->arg4 = delayTriggerOpid;
+    op->arg5 = new char[strlen(action) + 1];
+    strcpy(op->arg5, action);
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::string lifecycle("");
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " TRIGGER-BROADCAST tid:" << tid << " action:" << action
+        << " component:" << componentId << " intent:"<< intentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
 }
 
@@ -2264,9 +2305,15 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
 }
 
 bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
-    abcEventTriggerCount++;
     bool shouldAbort = false;
     op->asyncId = threadBK->curAsyncId;
+
+    //stats needed when reporting races
+    abcEventTriggerCount++;
+    if(op->asyncId != -1){
+        AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
+        async->recentTriggerOpId = opId;
+    }
 
     bool edgeAdded = false;
     edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);
@@ -2319,8 +2366,16 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
 //Service events are completely managed with TRIGGERs with supporting maps and state machines.
 //Check AbcModel.cpp for its corresponding functions
 bool processTriggerServiceLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
-    abcEventTriggerCount++;
     op->asyncId = threadBK->curAsyncId;
+
+    //stats needed when reporting races
+    abcEventTriggerCount++;
+    if(op->asyncId != -1 && op->arg1 != ABC_REQUEST_START_SERVICE && op->arg1 != ABC_REQUEST_BIND_SERVICE
+           && op->arg1 != ABC_REQUEST_STOP_SERVICE && op->arg1 != ABC_REQUEST_UNBIND_SERVICE){
+        AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
+        async->recentTriggerOpId = opId;
+    }
+
     bool serviceUpdated = checkAndUpdateServiceState(opId, op);
     bool shouldAbort = !serviceUpdated;
    
@@ -2339,6 +2394,24 @@ void processRegisterBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* th
     }
 }
 
+bool processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId;
+    bool shouldAbort = false;
+ 
+    //stats needed when reporting races
+    abcEventTriggerCount++;
+    if(op->asyncId != -1 && op->arg1 == ABC_TRIGGER_ONRECIEVE){
+        AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
+        async->recentTriggerOpId = opId;
+    }
+
+    bool success = checkAndUpdateBroadcastState(opId, op);
+    shouldAbort = !success;
+
+    return shouldAbort;
+}
+
+/*
 void processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     abcEventTriggerCount++;
     op->asyncId = threadBK->curAsyncId;
@@ -2366,6 +2439,7 @@ void processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* thr
         }
     }
 }
+*/
 
 //Graph closure and race detection related methods
 
@@ -3515,7 +3589,7 @@ bool abcPerformRaceDetection(){
         while(itTmp != abcDelayedReceiverTriggerThreadMap.end()){
             AbcReceiver* tmpPtr = itTmp->second;
             abcDelayedReceiverTriggerThreadMap.erase(itTmp++);
-            free(tmpPtr->component);
+          //  free(tmpPtr->component);
             free(tmpPtr->action);
             free(tmpPtr);
         }
@@ -3526,7 +3600,7 @@ bool abcPerformRaceDetection(){
         while(itTmp != abcDelayedReceiverTriggerMsgMap.end()){
             AbcReceiver* tmpPtr = itTmp->second;
             abcDelayedReceiverTriggerMsgMap.erase(itTmp++);
-            free(tmpPtr->component);
+         //   free(tmpPtr->component);
             free(tmpPtr->action);
             free(tmpPtr);
         }
@@ -3586,6 +3660,7 @@ bool abcPerformRaceDetection(){
 
     //delete unused operations on trace and copy reduced trace to another map
     itTmp = abcTrace.begin();
+    std::map<int, int> oldToNewDelayedReceiverTriggerMap;
     int traceIndex = abcStartOpId;
     while(itTmp != abcTrace.end()){
         AbcOp* op = itTmp->second;
@@ -3604,6 +3679,19 @@ bool abcPerformRaceDetection(){
           //uncomment this after things are fine
         //    abcRWAbstractionMap.find(op->arg2->id)->second.first = traceIndex;
               shouldDelete = false; //dummy statement
+        }else if(op->opType == ABC_TRIGGER_RECEIVER){
+            //logic to remap opId of onReceive-LATER held by corresponding onReceive
+            if(op->arg1 == ABC_TRIGGER_ONRECIEVE_LATER){
+                oldToNewDelayedReceiverTriggerMap.insert(std::make_pair(itTmp->first, traceIndex));
+            }else if(op->arg1 == ABC_TRIGGER_ONRECIEVE && op->arg4 != -1){
+                std::map<int, int>::iterator onIt = oldToNewDelayedReceiverTriggerMap.find(op->arg4);
+                if(onIt != oldToNewDelayedReceiverTriggerMap.end()){
+                    op->arg4 = onIt->second;
+                    oldToNewDelayedReceiverTriggerMap.erase(onIt);
+                }else{
+                    op->arg4 = -1;
+                }
+            }
         }
 
         if(shouldDelete){
@@ -3774,11 +3862,11 @@ bool abcPerformRaceDetection(){
         case ABC_TRIGGER_SERVICE:
              processTriggerServiceLifecycleOperation(opId, op, threadIt->second);
              break;
-        case ABC_REGISTER_RECEIVER:
+     /*   case ABC_REGISTER_RECEIVER:
              processRegisterBroadcastReceiver(opId, op, threadIt->second);
-             break;
+             break;*/
         case ABC_TRIGGER_RECEIVER:
-             processTriggerBroadcastReceiver(opId, op, threadIt->second);
+             shouldAbort = processTriggerBroadcastReceiver(opId, op, threadIt->second);
              break;
         default: LOGE("ABC: found an unknown opType when processing abcTrace. Aborting.");
                  gDvm.isRunABC = false;

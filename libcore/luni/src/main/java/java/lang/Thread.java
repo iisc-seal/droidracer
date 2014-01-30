@@ -1373,12 +1373,16 @@ public class Thread implements Runnable {
 		vmThread.abcTriggerServiceLifecycle(component, compId, status);
 	}
 	
-	public void abcRegisterBroadcastReceiver(String component, String action){
-		vmThread.abcRegisterBroadcastReceiver(component, action); 
-	}
+//	public void abcRegisterBroadcastReceiver(String component, String action){
+//		vmThread.abcRegisterBroadcastReceiver(component, action); 
+//	}
+//	
+//	public void abcTriggerBroadcastReceiver(String component, String action, int triggerNow){
+//		vmThread.abcTriggerBroadcastReceiver(component, action, triggerNow);
+//	}
 	
-	public void abcTriggerBroadcastReceiver(String component, String action, int triggerNow){
-		vmThread.abcTriggerBroadcastReceiver(component, action, triggerNow);
+	public void abcTriggerBroadcastLifecycle(String action, int componentId, int intentId, int status){
+		vmThread.abcTriggerBroadcastLifecycle(action, componentId, intentId, status);
 	}
 	
 	public void abcStopTraceGeneration(){

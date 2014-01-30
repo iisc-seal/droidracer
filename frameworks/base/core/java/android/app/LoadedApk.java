@@ -654,10 +654,13 @@ public final class LoadedApk {
                 if (rd != null) {
                 	/*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
-                        Thread.currentThread().abcTriggerBroadcastReceiver(
-                    		rd.mReceiver.getClass().getName(), intent.getAction(), 0);
-                    }
+                	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+                	    		intent.getAction(), rd.mReceiver.hashCode(), 
+                	    		intent.getIntExtra("androidBugCheckerIntentId", -9), 
+                	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE_LATER);	
+                	}
                 	/*Android bug-checker*/
+                	
                     rd.performReceive(intent, resultCode, data, extras,
                             ordered, sticky);
                 } else {

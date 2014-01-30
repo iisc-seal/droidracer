@@ -898,6 +898,15 @@ class ContextImpl extends Context {
     public void sendBroadcast(Intent intent) {
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", 9989), 
+        	    		AbcGlobal.ABC_SEND_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, null,
@@ -910,6 +919,15 @@ class ContextImpl extends Context {
     public void sendBroadcast(Intent intent, String receiverPermission) {
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", -2), 
+        	    		AbcGlobal.ABC_SEND_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, null,
@@ -923,6 +941,15 @@ class ContextImpl extends Context {
             String receiverPermission) {
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", -3), 
+        	    		AbcGlobal.ABC_SEND_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, null,
@@ -955,6 +982,15 @@ class ContextImpl extends Context {
         }
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", -4), 
+        	    		AbcGlobal.ABC_SEND_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, rd,
@@ -968,6 +1004,15 @@ class ContextImpl extends Context {
     public void sendStickyBroadcast(Intent intent) {
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", -5), 
+        	    		AbcGlobal.ABC_SEND_STICKY_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, null,
@@ -1000,6 +1045,15 @@ class ContextImpl extends Context {
         }
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		intent.putExtra("androidBugCheckerIntentId", 
+	    				AbcGlobal.getAndIncrementAbcIntentId());
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		intent.getAction(), 0, intent.getIntExtra("androidBugCheckerIntentId", -6),
+        	    		AbcGlobal.ABC_SEND_STICKY_BROADCAST);	
+        	}
+        	/*Android bug-checker*/
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().broadcastIntent(
                 mMainThread.getApplicationThread(), intent, resolvedType, rd,
@@ -1016,6 +1070,13 @@ class ContextImpl extends Context {
             intent = new Intent(intent);
             intent.setDataAndType(intent.getData(), resolvedType);
         }
+        /*Android bug-checker*/
+    	if(AbcGlobal.abcLogFile != null){
+    	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+    	    		intent.getAction(), 0, 0,
+    	    		AbcGlobal.ABC_REMOVE_STICKY_BROADCAST);	
+    	}
+    	/*Android bug-checker*/
         try {
             intent.setAllowFds(false);
             ActivityManagerNative.getDefault().unbroadcastIntent(
@@ -1033,23 +1094,14 @@ class ContextImpl extends Context {
     public Intent registerReceiver(BroadcastReceiver receiver, IntentFilter filter,
             String broadcastPermission, Handler scheduler) {
     	/*Android bug-checker*/
-    	if(AbcGlobal.abcLogFile != null){
+    	if(AbcGlobal.abcLogFile != null && receiver != null){
     		for(int i=0; i < filter.countActions(); i++){
-    			String receiverClass = "";
-//    			int receiverHash = -1;
-    			if(receiver != null){
-    				receiverClass = receiver.getClass().getName();
-    				//if sent with null receiver you cannot use this
-    				//as trigger will have a concrete instance while register wont
-    				//resulting in mismatch. So only use action for comparison
-    				//for broadcastReceivers
-//    				receiverHash = receiver.hashCode();
-    			}
-    			Thread.currentThread().abcRegisterBroadcastReceiver( 
-    					receiverClass, filter.getAction(i));
+    		    Thread.currentThread().abcTriggerBroadcastLifecycle(
+    		    		filter.getAction(i), receiver.hashCode(), 0, AbcGlobal.ABC_REGISTER_RECEIVER);	
     		}
     	}
     	/*Android bug-checker*/
+    	
         return registerReceiverInternal(receiver, filter, broadcastPermission,
                 scheduler, getOuterContext());
     }
@@ -1086,6 +1138,13 @@ class ContextImpl extends Context {
     @Override
     public void unregisterReceiver(BroadcastReceiver receiver) {
         if (mPackageInfo != null) {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null && receiver != null){
+        	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+        	    		"", receiver.hashCode(), 0, AbcGlobal.ABC_UNREGISTER_RECEIVER);	
+        	}
+        	/*Android bug-checker*/
+        	
             IIntentReceiver rd = mPackageInfo.forgetReceiverDispatcher(
                     getOuterContext(), receiver);
             try {

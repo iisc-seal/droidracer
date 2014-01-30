@@ -2275,12 +2275,13 @@ public final class ActivityThread {
         }
 
         /*Android bug-checker*/
-//        Log.e("ABC", "receiver received for component " + receiver.getClass().getName());
-        if(AbcGlobal.abcLogFile != null){
-            Thread.currentThread().abcTriggerBroadcastReceiver(
-        		receiver.getClass().getName(), data.intent.getAction(), 1);
-        }
-        /*Android bug-checker*/
+    	if(AbcGlobal.abcLogFile != null){
+    	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+    	    		data.intent.getAction(), receiver.hashCode(), 
+    	    		data.intent.getIntExtra("androidBugCheckerIntentId", -7), 
+    	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE);	
+    	}
+    	/*Android bug-checker*/
         
         try {
             Application app = packageInfo.makeApplication(false, mInstrumentation);

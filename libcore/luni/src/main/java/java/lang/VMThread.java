@@ -108,9 +108,11 @@ class VMThread {
 	
 	native void abcTriggerServiceLifecycle(String component, int compId, int status);
 	
-	native void abcRegisterBroadcastReceiver(String component, String action);
+//	native void abcRegisterBroadcastReceiver(String component, String action);
+//	
+//	native void abcTriggerBroadcastReceiver(String component, String action, int triggerNow);
 	
-	native void abcTriggerBroadcastReceiver(String component, String action, int triggerNow);
+	native void abcTriggerBroadcastLifecycle(String action, int componentId, int intentId, int status);
 	
 	native void abcStopTraceGeneration();
 	

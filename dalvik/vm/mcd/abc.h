@@ -44,7 +44,7 @@
 #define ABC_TRIGGER_EVENT 20
 #define ABC_ENABLE_LIFECYCLE 21
 #define ABC_TRIGGER_LIFECYCLE 22
-#define ABC_REGISTER_RECEIVER 23
+//#define ABC_REGISTER_RECEIVER 23
 #define ABC_TRIGGER_RECEIVER 24
 #define ABC_TRIGGER_SERVICE 25
 
@@ -141,11 +141,11 @@ struct MsgStruct{
 };
 typedef struct MsgStruct AbcMsg;
 
-struct receiverStruct{
+/*struct receiverStruct{
     char* component;
     char* action;
 };
-typedef struct receiverStruct AbcReceiver;
+typedef struct receiverStruct AbcReceiver;*/
 
 struct ThreadLockCountStruct{
     int threadId;
@@ -432,6 +432,9 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
 void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
 void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
+
+void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 componentId, 
+         int intentId, int state, int delayTriggerOpid);
 
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
 
