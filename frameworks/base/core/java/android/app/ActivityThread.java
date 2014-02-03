@@ -2660,7 +2660,7 @@ public final class ActivityThread {
                 }
                 
                 /*Android bug-checker*/
-            	if(AbcGlobal.abcLogFile != null){
+                if(AbcGlobal.abcLogFile != null){
             	    Thread.currentThread().abcTriggerLifecycleEvent(
             			r.activity.getLocalClassName(), r.activity.hashCode(),	
             			AbcGlobal.ABC_RESUME);
@@ -2944,6 +2944,17 @@ public final class ActivityThread {
             	}
             	//remove entry of this activity if any present in parentAndStartedActivitiesMap
             	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
+            	
+            	//current topmost view will lose focus resulting in FOCUS-CHANGE call. Enable this
+            	int windowStackSize = WindowManagerImpl.getDefault().getViewRoots().length;
+        		if(windowStackSize > 0){
+        			View tmpTopView = WindowManagerImpl.getDefault().getViewRoots()
+        					[windowStackSize - 1].getView();
+        			if(tmpTopView != null){
+        		        Thread.currentThread().abcEnableWindowFocusChangeEvent(
+        		    		tmpTopView.hashCode());
+        			}
+        		}
             }
         }
     }

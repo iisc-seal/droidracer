@@ -59,12 +59,12 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thr
                 if(gDvm.isRunABC == true){
                     addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
                         obj, "", self->threadId);
-                   /*     std::ofstream outfile;
+                        std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx  
                             << "\n";
-                        outfile.close(); */
+                        outfile.close(); 
                 }
                 abcUnlockMutex(&gAbc->abcMainMutex);
             }else{
@@ -86,12 +86,12 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thr
                         addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
                             obj, "", self->threadId);
 
-                      /*  std::ofstream outfile;
+                        std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId  
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                             << "\n";
-                        outfile.close(); */
+                        outfile.close(); 
                     }
                     abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -103,12 +103,12 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thr
                             addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
                                 obj, "", self->threadId);
 
-                         /*  std::ofstream outfile;
+                           std::ofstream outfile;
                             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                             outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
                                 << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                                 << "\n";
-                            outfile.close(); */
+                            outfile.close(); 
                         }
                         abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -148,12 +148,12 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                     std::string fieldName(field);
                     addReadWriteToTrace(abcRWCount++, accessType, clazz, fieldName, fieldIdx,
                         NULL, "", self->threadId);
-                     /*   std::ofstream outfile;
+                        std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
                             << " class:" << clazz << " field:" << fieldIdx 
                             << "\n";
-                        outfile.close(); */
+                        outfile.close(); 
                 }
                 abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -179,12 +179,12 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                     addReadWriteToTrace(abcRWCount++, accessType, clazz, fieldName, fieldIdx,
                         NULL, "", self->threadId);
                 }
-              /*  std::ofstream outfile;
+                std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                 outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId
                     << " class:" << clazz << " field:" << fieldIdx 
                     << "\n";
-                outfile.close(); */
+                outfile.close(); 
                 abcUnlockMutex(&gAbc->abcMainMutex); 
 
             }

@@ -152,7 +152,9 @@ static void Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId(const u4* args,
         u4 instance = args[1];
         int intentId = args[2];
 
-        AbcInstanceIntentMap.insert(std::make_pair(instance, intentId));
+        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+        addInstanceIntentMapToTrace(abcOpCount++, dvmThreadSelf()->threadId, instance, intentId);
+        abcUnlockMutex(&gAbc->abcMainMutex);
     }    
     RETURN_VOID();
 }
@@ -278,6 +280,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
         int state = args[4];
         int delayTriggerOpid = -1;
 
+        Thread* selfThread = dvmThreadSelf();
+
      /*   AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
             abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
@@ -291,12 +295,53 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             outfile.close();
             gDvm.isRunABC = false;
         }*/
+        
+        //onReceive can be posted from native thread (we have a trigger there.
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end()){
+            abcLockMutex(selfThread, &gAbc->abcMainMutex);
+
+            selfThread->abcThreadId = abcThreadCount++;
+            abcAddThreadToMap(selfThread, dvmGetThreadName(selfThread).c_str());
+            it = abcThreadMap.find(selfThread->abcThreadId);
+            if(it != abcThreadMap.end()){
+                it->second->isOriginUntracked = true;
+            }else{
+                LOGE("ABC: error in model checking. A native thread not added to map!");
+                gDvm.isRunABC = false;
+                return;
+            }
+            addThreadToCurAsyncMap(selfThread->threadId);
+
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }
+
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         if(state != ABC_TRIGGER_ONRECIEVE_LATER){
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, action, 
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
                 componentId, intentId, state, delayTriggerOpid);
         }else{
+            //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
+            std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+            if(it == abcThreadMap.end()){
+                abcLockMutex(selfThread, &gAbc->abcMainMutex);
+
+                selfThread->abcThreadId = abcThreadCount++;
+                abcAddThreadToMap(selfThread, dvmGetThreadName(selfThread).c_str());
+                it = abcThreadMap.find(selfThread->abcThreadId);
+                if(it != abcThreadMap.end()){
+                    it->second->isOriginUntracked = true;
+                }else{
+                    LOGE("ABC: error in model checking. A native thread not added to map!");
+                    gDvm.isRunABC = false;
+                    return;
+                }
+                addThreadToCurAsyncMap(selfThread->threadId);
+
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }
+
             AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
             receiver->action = new char[strlen(action) + 1];
             strcpy(receiver->action, action);
@@ -305,10 +350,12 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             receiver->state = ABC_TRIGGER_ONRECIEVE;
             receiver->delayTriggerOpid = abcOpCount;
             abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
-                    dvmThreadSelf()->threadId, receiver));
+                    selfThread->threadId, receiver));
 
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, action, 
+            addNativeEntryToTrace(abcOpCount++, selfThread->threadId);
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
                 componentId, intentId, state, delayTriggerOpid);
+            addNativeExitToTrace(abcOpCount++, selfThread->threadId);
 
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -445,6 +492,52 @@ static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, J
 
         }else{
             LOGE("ABC-DONT-LOG: enable event found in a deleted async block. aborting trace creation");
+            std::ofstream outfile;
+            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ABC: ABORT " << "\n";
+            outfile.close();
+            gDvm.isRunABC = false;
+        }
+    }
+
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        u4 windowHash = args[1];
+ 
+        Thread* selfThread = dvmThreadSelf();
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        if(!curAsync->hasMQ || curAsync->asyncId != -1){
+            abcLockMutex(selfThread, &gAbc->abcMainMutex);
+            addEnableWindowFocusChangeEventToTrace(abcOpCount++, selfThread->threadId, windowHash);
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }else{
+            LOGE("ABC-ABORT: ENABLE-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
+            std::ofstream outfile;
+            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ABC: ABORT " << "\n";
+            outfile.close();
+            gDvm.isRunABC = false;
+        }
+    }
+    
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        u4 windowHash = args[1];
+
+        Thread* selfThread = dvmThreadSelf();
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        if(!curAsync->hasMQ || curAsync->asyncId != -1){
+            abcLockMutex(selfThread, &gAbc->abcMainMutex);
+            addTriggerWindowFocusChangeEventToTrace(abcOpCount++, selfThread->threadId, windowHash);
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }else{
+            LOGE("ABC-ABORT: TRIGGER-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
             std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
@@ -1016,6 +1109,10 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPerformRaceDetection },
     { "abcTriggerEvent","(II)V",
         Dalvik_java_lang_VMThread_abcTriggerEvent },
+    { "abcEnableWindowFocusChangeEvent","(I)V",
+        Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent },
+    { "abcTriggerWindowFocusChangeEvent","(I)V",
+        Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent },
     { "abcAddEnableEventForView","(II)V",
         Dalvik_java_lang_VMThread_abcAddEnableEventForView },
     { "abcRemoveAllEventsOfView","(II)V",

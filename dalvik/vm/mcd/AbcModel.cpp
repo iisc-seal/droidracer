@@ -159,35 +159,35 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             ast->isSticky = preIter->second.second;
             AbcRegisterOnReceiveMap.insert(std::make_pair(preIter->second.first, ast));
         }else{
-            int recOpid = -1; 
+            int regOpid = -1; 
             bool isSticky = false;
 
             std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt =
                     StickyRegisterReceiverMap.find(compActionPair);
             if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
-                recOpid = stickyIt->second.front();
+                regOpid = stickyIt->second.front();
                 stickyIt->second.pop_front();
                 isSticky = true;
             }else{
                 std::map<std::pair<u4, std::string>, int>::iterator recIter =
                         RegisterReceiverMap.find(compActionPair);
                 if(recIter != RegisterReceiverMap.end()){
-                    recOpid = recIter->second;
+                    regOpid = recIter->second;
                     isSticky = false;
                 }
             }
              
             //add edges
-            if(recOpid != -1){
-                addEdgeToHBGraph(recOpid, opId);
-                addEdgeToHBGraph(recOpid, opAsync->postId);
+            if(regOpid != -1){
+                addEdgeToHBGraph(regOpid, opId);
+                addEdgeToHBGraph(regOpid, opAsync->postId);
 
                 AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));
                 ast->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
                 ast->op->opId = opId;
                 ast->op->opPtr = op;
                 ast->isSticky = isSticky;
-                AbcRegisterOnReceiveMap.insert(std::make_pair(recOpid, ast));
+                AbcRegisterOnReceiveMap.insert(std::make_pair(regOpid, ast));
             }
         }
   
@@ -698,7 +698,8 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
     return updated;
 }
 
-void abcMapInstanceWithIntentId(u4 instance, int intentId){
+bool abcMapInstanceWithIntentId(u4 instance, int intentId){
+    bool shouldAbort = false;
     AbcInstanceIntentMap.insert(std::make_pair(instance, intentId));
     //change key from intentId to instance iin all maps, now that you have activity instance info
 
@@ -708,10 +709,13 @@ void abcMapInstanceWithIntentId(u4 instance, int intentId){
         ActivityStateMap.insert(std::make_pair(instance, tmpOp));
     }else{
         gDvm.isRunABC = false;
-        LOGE("ABC-MISSING: Activity state machine error. instance supplied without intentId entry in stateMap");
-        return;
+        shouldAbort = true;
+        LOGE("ABC-MISSING: Activity state machine error. instance %d supplied without "
+             "intentId %d entry in stateMap", instance, intentId);
+        return shouldAbort;
     }
 
+    //for LAUNCH and RESUME enable may be issued with intent id. Reassign it to instance
     int state = ABC_LAUNCH;
     std::pair<u4, int> intentStatePair = std::make_pair(intentId, state);
     std::map<std::pair<u4, int>, AbcEnableTriggerList*>::iterator it =
@@ -724,6 +728,19 @@ void abcMapInstanceWithIntentId(u4 instance, int intentId){
         AbcEnableTriggerLcMap.insert(std::make_pair(instanceStatePair, tmpLst));
     }
 
+    state = ABC_RESUME;
+    intentStatePair = std::make_pair(intentId, state);
+    it = AbcEnableTriggerLcMap.find(intentStatePair);
+    if(it != AbcEnableTriggerLcMap.end()){
+        AbcEnableTriggerList* tmpLst = it->second;
+        AbcEnableTriggerLcMap.erase(intentStatePair);
+
+        std::pair<u4, int> instanceStatePair = std::make_pair(instance, state);
+        AbcEnableTriggerLcMap.insert(std::make_pair(instanceStatePair, tmpLst));
+    }
+
+
+    return shouldAbort;
 }
 
 void checkAndAddToMapIfActivityResult(int opId, AbcOp* op){
@@ -757,6 +774,7 @@ void addEnableLifecycleEventToMap(int opId, AbcOp* op){
     std::map<std::pair<u4, int>, AbcEnableTriggerList*>::iterator it =
             AbcEnableTriggerLcMap.find(instanceStatePair);
 
+//    LOGE("adding enable lifecycle: instance: %d lc: %d", instance, state);
     if(it != AbcEnableTriggerLcMap.end()){
         AbcEnableTriggerList* lst = (AbcEnableTriggerList*)malloc(sizeof(AbcEnableTriggerList));
         lst->enable = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
@@ -774,6 +792,12 @@ void addEnableLifecycleEventToMap(int opId, AbcOp* op){
         lst->prev = NULL;
         
         AbcEnableTriggerLcMap.insert(std::make_pair(instanceStatePair, lst));
+        
+        //debugging
+        it  = AbcEnableTriggerLcMap.find(instanceStatePair);
+        if(it != AbcEnableTriggerLcMap.end()){
+            LOGE("instance %d state %d just added to enable map", instance, state);
+        }
     }
 }
 
@@ -810,11 +834,11 @@ bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp){
     std::pair<u4, int> instanceStatePair = std::make_pair(instance, state);
     std::map<std::pair<u4, int>, AbcEnableTriggerList*>::iterator it = 
             AbcEnableTriggerLcMap.find(instanceStatePair);
+    
   
     bool edgeAdded = false;
     if(it != AbcEnableTriggerLcMap.end()){
         AbcEnableTriggerList* etList = it->second;
-    
         //connect trigger to all previous continous enable which dont have corresponding trigger
         do{
             if(etList->trigger != NULL){
@@ -897,8 +921,8 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
     AbcOpWithId* prevOperation = NULL;
     u4 instance = op->arg2->id;
     int state = op->arg1;
-    AbcAsync* curOpAsync; 
-    AbcAsync* prevOpAsync;
+    AbcAsync* curOpAsync = NULL; 
+    AbcAsync* prevOpAsync = NULL;
 
     if(state != ABC_LAUNCH){
         if(ActivityStateMap.find(instance) != ActivityStateMap.end()){
@@ -906,11 +930,9 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
 
             curOpAsync = getAsyncBlockFromId(op->asyncId);
             prevOpAsync = getAsyncBlockFromId(prevOperation->opPtr->asyncId);
-        }else if(!isEventActivityEvent(state)){
-            return updated;
         }else{
             gDvm.isRunABC = false;
-            LOGE("ABC-MISSING: Activity state machine error. %d state seen before instantiation", state);
+            LOGE("ABC-MISSING: Activity state machine error. state %d seen before instantiation", state);
             return updated;
         }
     }
@@ -918,12 +940,13 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
     /*in all the states except LAUNCH check if prevOperation of the activity is in 
      *the expected state, only then perform other task
      */
-    
+    LOGE("Activity state machine entered: instance %d, state %d", instance, state);
     switch(state){
       case ABC_LAUNCH:
         //if any instance with same id remaining clear it
         //should not happen usually. but not considering as a serious error...
         ActivityStateMap.erase(instance); 
+        LOGE("LAUNCH-ACT state machine entered: instance %d, state %d", instance, state);
  
         //add an entry to activity state tracking map
         /*for LAUNCH instance is actually intentId. Instance will be sent later

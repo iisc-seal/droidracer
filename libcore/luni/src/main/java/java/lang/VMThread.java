@@ -100,6 +100,10 @@ class VMThread {
 	
 	native void abcTriggerEvent(int viewHash, int eventType);
 	
+	native void abcEnableWindowFocusChangeEvent(int windowHash);
+	
+	native void abcTriggerWindowFocusChangeEvent(int windowHash);
+	
 	native int abcPerformRaceDetection();
 	
 	native void abcEnableLifecycleEvent(String component, int compId, int status);

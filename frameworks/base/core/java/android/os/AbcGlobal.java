@@ -157,7 +157,7 @@ public class AbcGlobal {
 				
 				//initialize abcIntentId which will be set as a argument of
 				//Activity and Service intents of test app
-				setAbcIntentId(0);
+				setAbcIntentId(1);
 				//collect stats
 				abcSetTraceStartTime(SystemClock.uptimeMillis());
 			}

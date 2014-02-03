@@ -47,6 +47,10 @@
 //#define ABC_REGISTER_RECEIVER 23
 #define ABC_TRIGGER_RECEIVER 24
 #define ABC_TRIGGER_SERVICE 25
+#define ABC_INSTANCE_INTENT 26
+#define ENABLE_WINDOW_FOCUS 27
+#define TRIGGER_WINDOW_FOCUS 28
+
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -427,11 +431,17 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event);
 
 void addTriggerEventToTrace(int opId, int tid, u4 view, int event);
 
+void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash);
+
+void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash);
+
 void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
 void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
 
 void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
+
+void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId);
 
 void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 componentId, 
          int intentId, int state, int delayTriggerOpid);

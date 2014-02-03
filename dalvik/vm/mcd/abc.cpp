@@ -952,10 +952,10 @@ void addStartToTrace(int opId){
 
     abcTrace.insert(std::make_pair(opId, op));
     
-/*    std::ofstream outfile;
+    std::ofstream outfile;
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " START" << "\n";
-    outfile.close(); */
+    outfile.close(); 
 }
 
 void executeTestcase(){
@@ -1337,6 +1337,36 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 component
 //    LOGE("ABC:Exit - Add TRIGGER-LIFECYCLE to trace");
 }
 
+void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add INSTANCE-INTENT to trace tid:%d ", opId, tid);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = instance;
+
+    op->opType = ABC_INSTANCE_INTENT;
+    op->arg1 = intentId;
+    op->arg2 = arg2;
+    op->arg3 = -1;
+    op->arg4 = -1;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::string lifecycle("");
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " INSTANCE-INTENT tid:" << tid << " instance:" << instance
+        << " intentId:" << intentId <<"\n";
+    outfile.close();
+}
+
 void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1397,6 +1427,66 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
         << " event:" << event <<"\n";
     outfile.close(); 
 //    LOGE("ABC:Exit - Add TRIGGER-EVENT to trace");
+}
+
+void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add ENABLE-WINDOW-FOCUS to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = windowHash;
+
+    op->opType = ENABLE_WINDOW_FOCUS;
+    op->arg1 = -1;
+    op->arg2 = arg2;
+    op->arg3 = -1;
+    op->arg4 = -1;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " ENABLE-WINDOW-FOCUS tid:" << tid 
+        << " windowHash:" << windowHash <<"\n";
+    outfile.close();
+}
+
+void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add TRIGGER-WINDOW-FOCUS to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = windowHash;
+
+    op->opType = TRIGGER_WINDOW_FOCUS;
+    op->arg1 = -1;
+    op->arg2 = arg2;
+    op->arg3 = -1;
+    op->arg4 = -1;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " TRIGGER-WINDOW-FOCUS tid:" << tid 
+        << " windowHash:" << windowHash <<"\n";
+    outfile.close();
 }
 
 int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
@@ -2265,9 +2355,9 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
     if(it != abcEnabledEventMap.end()){
         it->second.second = opId;
-        int callId = getAsyncBlockFromId(op->asyncId)->callId;
-        //add edge from enable-event to call corresponding to trigger event 
-        addEdgeToHBGraph(it->second.first, callId);
+        int postId = getAsyncBlockFromId(op->asyncId)->postId;
+        //add edge from enable-event to post corresponding to trigger event 
+        addEdgeToHBGraph(it->second.first, postId);
         abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
     }else{
         LOGE("ABC: Trigger event seen without a corresponding enable event during processing."
@@ -2315,9 +2405,20 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         async->recentTriggerOpId = opId;
     }
 
-    bool edgeAdded = false;
-    edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);
-    edgeAdded = edgeAdded || checkAndUpdateComponentState(opId, op);
+    /*both edgeAded1 and edgeAdded2 being false mean that you have seen a 
+     *TRIGGER with no corresponding ENABLE and neither is at a activity state
+     *or, its a activity state but state machine is not consistent with this
+     *TRIGGER and hence cant proceed
+     */
+    bool edgeAdded1, edgeAdded2;
+    edgeAdded1 = connectEnableAndTriggerLifecycleEvents(opId, op);
+    if(isEventActivityEvent(op->arg1)){
+        edgeAdded2 = checkAndUpdateComponentState(opId, op);
+        shouldAbort = !edgeAdded2;
+    }else{
+        shouldAbort = !edgeAdded1;
+    }
+
 
  /*   std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
     std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
@@ -2325,12 +2426,11 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);                
     } */
    
-    if(!edgeAdded){
+    if(shouldAbort){
         LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
              "corresponding enable event or mismatch in activity state machine during processing."
              " Aborting processing.", op->arg2->id, op->arg1);
         gDvm.isRunABC = false;
-        shouldAbort = true;
     }
 
     /*
@@ -2360,6 +2460,15 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         gDvm.isRunABC = false;
         shouldAbort = true;
     }*/
+    return shouldAbort;
+}
+
+bool processInstanceIntentMap(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId;
+    bool shouldAbort = false;
+ 
+    shouldAbort = abcMapInstanceWithIntentId(op->arg2->id, op->arg1);
+
     return shouldAbort;
 }
 
@@ -2624,6 +2733,25 @@ void checkAndAddRetToTriggerIfRetToEnableExists(int o1, int o2, AbcOp* op1, AbcO
     }
 }
 
+/*
+bool isEnableEventOperation(AbcOp* op){
+    bool isEnableOp = false;
+    switch(isEnableOp->opType){
+        case ABC_ENABLE_EVENT: 
+        case ABC_ENABLE_LIFECYCLE: isEnableOp = true;
+             break;
+        case 
+ 
+    }
+}
+
+bool checkAndAddRetToTriggerPost(int o1, int o2, AbcOp* op1, AbcOp* op2){
+    if(op1->opType == ABC_RET && isEnableEventOperation(op2)){
+
+    }
+}
+*/
+
 void checkAndAddAsyncNopreEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
 //    LOGE("ABC: check and add async nopre");
     if(op2->opType == ABC_CALL && op1->tid == op2->tid &&
@@ -2640,11 +2768,39 @@ void checkAndAddAsyncNopreEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
     } 
 }
 
+//return true if o1 and o2 are ABC_TRIGGER_RECEIVER so that we need not check for other
+//operator specific rules
+bool checkAndAddStickyBroadcastRegisterEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
+    bool isBothTriggerReceiver = false;
+    if(op1->opType == ABC_TRIGGER_RECEIVER && op1->arg1 == ABC_REGISTER_RECEIVER &&
+           op2->opType == ABC_TRIGGER_RECEIVER && op2->arg1 == ABC_REGISTER_RECEIVER){
+        std::map<int, AbcSticky*>::iterator it1 = AbcRegisterOnReceiveMap.find(o1);
+        std::map<int, AbcSticky*>::iterator it2 = AbcRegisterOnReceiveMap.find(o2);
+        if(it1 != AbcRegisterOnReceiveMap.end() && it2 != AbcRegisterOnReceiveMap.end()){
+            /*if registerReceiver1 < registerReceiver2 such that both are registered
+             *when corresponding action stickyintents are around or atleast the first
+             *one is sticky then onReceive1 < onReceive2 AND post(onReceive1) < post(onReceive2)
+             */
+             if(it1->second->isSticky && it2->second->isSticky){
+                 assert(it1->second->op->opId < it2->second->op->opId);
+                 addEdgeToHBGraph(it1->second->op->opId, it2->second->op->opId);
+                 AbcAsync* async1 = getAsyncBlockFromId(it1->second->op->opPtr->asyncId);
+                 AbcAsync* async2 = getAsyncBlockFromId(it2->second->op->opPtr->asyncId);
+                 addEdgeToHBGraph(async1->postId, async2->postId);
+             }
+        }
+        
+        isBothTriggerReceiver = true;
+    }
+
+    return isBothTriggerReceiver;
+}
+
 bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, AbcOp* op3){
 //    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
     //check and add edge from op1 to op3
-
+    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
     if(op1->asyncId == -1 || op3->asyncId == -1 ||
         (op1->tid != op3->tid)){
         isCondTrans = true;
@@ -2655,13 +2811,12 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
 
         AbcAsync* async1 = asyncIt1->second;
         AbcAsync* async3 = asyncIt3->second;
-     
         if(async1->callId != async3->callId &&
             adjGraph[async1->retId - 1][async3->callId - 1] == false){
             //conditional transitivity base case
-            int op2AsyncId = op2->arg2->id;
+            int op2AsyncId;
             if(op2->opType == ABC_POST && op3->opType == ABC_CALL &&
-                    op2AsyncId == op3->asyncId){
+                    ((op2AsyncId = op2->arg2->id) == op3->asyncId)){
                 isCondTrans = true;
             }
         }else{
@@ -2697,16 +2852,23 @@ void computeClosureOfHbGraph(){
         AbcOp* dest = opIt2->second;
         //ST-ASYNC-FIFO
         bool isFifo = checkAndAddAsyncFifoEdge(edge->src, edge->dest, src, dest);
-
-        /* a rule not yet in our set...got added due to event and lifecycle linkages*/
+        
+        /* uncomment this only if new rules are not sufficient
+         * a rule not yet in our set...got added due to event and lifecycle linkages
         if(!isFifo){
             //if call1 < call2 then post1 < post2
             checkAndAddSecondFifoEdge(edge->src, edge->dest, src, dest);
             checkAndAddRetToTriggerIfRetToEnableExists(edge->src, edge->dest, src, dest);
         }
+        */
+        
+        bool isBothTriggerReceiver = false;
+        if(!isFifo){
+            isBothTriggerReceiver = checkAndAddStickyBroadcastRegisterEdge(edge->src, edge->dest, src, dest);
+        }
 
         //ST-ASYNC-NOPRE
-        if(!isFifo){
+        if(!isFifo && !isBothTriggerReceiver){
             checkAndAddAsyncNopreEdge(edge->src, edge->dest, src, dest);
         }
        
@@ -3665,8 +3827,7 @@ bool abcPerformRaceDetection(){
     while(itTmp != abcTrace.end()){
         AbcOp* op = itTmp->second;
         bool shouldDelete = false;
-        if(op->opType == ABC_ENABLE_EVENT || 
-                (op->opType == ABC_ENABLE_LIFECYCLE && op->arg1 != ABC_APPBIND_DONE)){
+        if(op->opType == ABC_ENABLE_EVENT){
             if(requiredEventEnableOps.find(itTmp->first) == requiredEventEnableOps.end()){
                 shouldDelete = true;
             }
@@ -3791,7 +3952,7 @@ bool abcPerformRaceDetection(){
         shouldAbort = false;
         int opId = opIt->first;
         AbcOp* op = opIt->second;
-   //     LOGE("ABC: starting processing opid %d", opId);
+        LOGE("ABC: starting processing opid %d opType:%d", opId, op->opType);
 
         Destination* dest = NULL;
         Source* src = NULL;
@@ -3859,6 +4020,9 @@ bool abcPerformRaceDetection(){
         case ABC_TRIGGER_LIFECYCLE:
              shouldAbort = processTriggerLifecycleOperation(opId, op, threadIt->second);
              break;
+        case ABC_INSTANCE_INTENT:
+             shouldAbort = processInstanceIntentMap(opId, op, threadIt->second);
+             break;
         case ABC_TRIGGER_SERVICE:
              processTriggerServiceLifecycleOperation(opId, op, threadIt->second);
              break;
@@ -3873,7 +4037,7 @@ bool abcPerformRaceDetection(){
              return false;
         } 
         
-        if(op->opType != ABC_THREADEXIT){
+        if(op->opType != ABC_THREADEXIT && op->opType != ABC_INSTANCE_INTENT){
             if(shouldAbort || checkAndAbortIfAssumtionsFailed(opId, op, threadIt->second)){
                break;
                // return false;

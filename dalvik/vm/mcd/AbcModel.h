@@ -128,6 +128,8 @@ extern std::map<u4, AbcRequestBind*> AbcServiceConnectMap;
 extern std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
 
 
+bool isEventActivityEvent(int eventId);
+bool abcMapInstanceWithIntentId(u4 instance, int intentId);
 bool checkAndUpdateServiceState(int opId, AbcOp* op);
 void addEnableLifecycleEventToMap(int opId, AbcOp* op);
 bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp);

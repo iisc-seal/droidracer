@@ -1354,7 +1354,15 @@ public class Thread implements Runnable {
 	public void abcTriggerEvent(int viewHash, int eventType){
 		vmThread.abcTriggerEvent(viewHash, eventType);
 	}
+	
+	public void abcEnableWindowFocusChangeEvent(int windowHash){
+		vmThread.abcEnableWindowFocusChangeEvent(windowHash);
+	}
     
+	public void abcTriggerWindowFocusChangeEvent(int windowHash){
+		vmThread.abcTriggerWindowFocusChangeEvent(windowHash);
+	}
+	
 	public int abcPerformRaceDetection(){
 		int success = vmThread.abcPerformRaceDetection();
 		return success;

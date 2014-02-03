@@ -206,9 +206,22 @@ public class WindowManagerImpl implements WindowManager {
         }
         
         /*Android bug-checker*/
+        //needed for both lifecycle modelling for race detection and triggering UI events
         if(Looper.mcd != null && Looper.mcd.getPackageName() != null && 
     			Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
     		Looper.mcd.isCorrectViewOnTop = true;
+    		
+    		//enable window focus change on view being added
+    		Thread.currentThread().abcEnableWindowFocusChangeEvent(view.hashCode());
+    		//enable window focus change on current topmost view
+    		int windowStackSize = this.getViewRoots().length;
+    		if(windowStackSize > 0){
+    			View tmpTopView = getViewRoots()[windowStackSize - 1].getView();
+    			if(tmpTopView != null){
+    		        Thread.currentThread().abcEnableWindowFocusChangeEvent(
+    		    		tmpTopView.hashCode());
+    			}
+    		}
     	}
         /*Android bug-checker*/
 
@@ -403,6 +416,17 @@ public class WindowManagerImpl implements WindowManager {
         if(Looper.mcd != null && Looper.mcd.getPackageName() != null && 
     			Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
     		Looper.mcd.isCorrectViewOnTop = true;
+    		
+    		//enable window focus change on new topmost view
+    		//removal of topmost view results in the next one getting focus
+    		int windowStackSize = this.getViewRoots().length;
+    		if(windowStackSize > 0){
+    			View tmpTopView = getViewRoots()[windowStackSize - 1].getView();
+    			if(tmpTopView != null){
+    		        Thread.currentThread().abcEnableWindowFocusChangeEvent(
+    		    		tmpTopView.hashCode());
+    			}
+    		}
     	}
         /*Android bug-checker*/
     }
