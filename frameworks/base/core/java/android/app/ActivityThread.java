@@ -2946,15 +2946,18 @@ public final class ActivityThread {
             	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
             	
             	//current topmost view will lose focus resulting in FOCUS-CHANGE call. Enable this
-            	int windowStackSize = WindowManagerImpl.getDefault().getViewRoots().length;
-        		if(windowStackSize > 0){
-        			View tmpTopView = WindowManagerImpl.getDefault().getViewRoots()
+            	if(WindowManagerImpl.getDefault() != null && 
+            			WindowManagerImpl.getDefault().getViewRoots() != null){
+            	    int windowStackSize = WindowManagerImpl.getDefault().getViewRoots().length;
+             		if(windowStackSize > 0){
+        			    View tmpTopView = WindowManagerImpl.getDefault().getViewRoots()
         					[windowStackSize - 1].getView();
-        			if(tmpTopView != null){
-        		        Thread.currentThread().abcEnableWindowFocusChangeEvent(
-        		    		tmpTopView.hashCode());
-        			}
-        		}
+        		    	if(tmpTopView != null){
+        		            Thread.currentThread().abcEnableWindowFocusChangeEvent(
+        		    		    tmpTopView.hashCode());
+        			    }
+        		    }
+            	}
             }
         }
     }

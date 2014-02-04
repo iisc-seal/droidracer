@@ -110,6 +110,8 @@ std::map<std::pair<int, int>, std::pair<int,int> > abcEnabledLifecycleMap;
 //filled during analysis stage
 std::map<std::string, std::pair<int,int> > abcRegisteredReceiversMap;
 
+std::map<u4, std::pair<int, int> > abcWindowFocusChangeMap;
+
 //needed only during trace generation
 std::map<int, AbcReceiver*> abcDelayedReceiverTriggerThreadMap;
 std::map<int, AbcReceiver*> abcDelayedReceiverTriggerMsgMap;
@@ -2355,6 +2357,7 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
     if(it != abcEnabledEventMap.end()){
         it->second.second = opId;
+        addEdgeToHBGraph(it->second.first, opId);
         int postId = getAsyncBlockFromId(op->asyncId)->postId;
         //add edge from enable-event to post corresponding to trigger event 
         addEdgeToHBGraph(it->second.first, postId);
@@ -2366,6 +2369,35 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
         shouldAbort = true;
     }
     return shouldAbort;
+}
+
+void processEnableWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId;
+
+    std::map<u4, std::pair<int, int> >::iterator it = abcWindowFocusChangeMap.find(op->arg2->id);
+    if(it == abcWindowFocusChangeMap.end()){
+        abcWindowFocusChangeMap.insert(std::make_pair(op->arg2->id, std::make_pair(opId, -1)));
+    }else{
+        it->second.first = opId;
+    }
+}
+
+void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId;
+    //needed for race nature stats collection
+    AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
+    async->recentTriggerOpId = opId;
+
+    //search based on window hash stored on arg2->id
+    std::map<u4, std::pair<int, int> >::iterator it = abcWindowFocusChangeMap.find(op->arg2->id);
+    if(it != abcWindowFocusChangeMap.end()){
+        it->second.second = opId;
+        addEdgeToHBGraph(it->second.first, opId);
+        int postId = getAsyncBlockFromId(op->asyncId)->postId;
+        //add edge from enable-event to post corresponding to trigger event 
+        addEdgeToHBGraph(it->second.first, postId);
+        abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
+    }
 }
 
 void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2800,7 +2832,7 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
 //    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
     //check and add edge from op1 to op3
-    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
+//    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
     if(op1->asyncId == -1 || op3->asyncId == -1 ||
         (op1->tid != op3->tid)){
         isCondTrans = true;
@@ -4013,6 +4045,12 @@ bool abcPerformRaceDetection(){
              break;
         case ABC_TRIGGER_EVENT :
              shouldAbort = processTriggerEventOperation(opId, op, threadIt->second);       
+             break;
+        case ENABLE_WINDOW_FOCUS :
+             processEnableWindowFocusChange(opId, op, threadIt->second);
+             break;
+        case TRIGGER_WINDOW_FOCUS :
+             processTriggerWindowFocusChange(opId, op, threadIt->second);
              break;
         case ABC_ENABLE_LIFECYCLE:
              processEnableLifecycleOperation(opId, op, threadIt->second);

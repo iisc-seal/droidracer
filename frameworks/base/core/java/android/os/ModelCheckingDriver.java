@@ -3404,7 +3404,7 @@ public class ModelCheckingDriver {
 					Log.e("ABC", "traceGenTime:" + traceGenerationTime + "  raceDetectTime:" + raceDetectionTime);
 					
 					Intent intent = new Intent("android.intent.action.MAIN");
-			        intent.setComponent(ComponentName.unflattenFromString("abc.abcclientapp/abc.abcclientapp.AbcClient"));
+			        intent.setComponent(ComponentName.unflattenFromString("abc.abcclientapp/abc.abcclientapp.AbcClientActivity"));
 			        intent.addCategory("android.intent.category.LAUNCHER");
 			        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 			        

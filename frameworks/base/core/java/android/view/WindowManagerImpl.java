@@ -214,13 +214,15 @@ public class WindowManagerImpl implements WindowManager {
     		//enable window focus change on view being added
     		Thread.currentThread().abcEnableWindowFocusChangeEvent(view.hashCode());
     		//enable window focus change on current topmost view
-    		int windowStackSize = this.getViewRoots().length;
-    		if(windowStackSize > 0){
-    			View tmpTopView = getViewRoots()[windowStackSize - 1].getView();
-    			if(tmpTopView != null){
-    		        Thread.currentThread().abcEnableWindowFocusChangeEvent(
-    		    		tmpTopView.hashCode());
-    			}
+    		if(mViews != null){
+    		    int windowStackSize = this.getViewRoots().length;
+    		    if(windowStackSize > 0){
+    			    View tmpTopView = getViewRoots()[windowStackSize - 1].getView();
+    			    if(tmpTopView != null){
+    		            Thread.currentThread().abcEnableWindowFocusChangeEvent(
+    		    		    tmpTopView.hashCode());
+    			    } 
+    		    }
     		}
     	}
         /*Android bug-checker*/
