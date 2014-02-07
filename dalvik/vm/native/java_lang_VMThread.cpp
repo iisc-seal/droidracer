@@ -296,27 +296,6 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             gDvm.isRunABC = false;
         }*/
         
-        //onReceive can be posted from native thread (we have a trigger there.
-        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
-        if(it == abcThreadMap.end()){
-            abcLockMutex(selfThread, &gAbc->abcMainMutex);
-
-            selfThread->abcThreadId = abcThreadCount++;
-            abcAddThreadToMap(selfThread, dvmGetThreadName(selfThread).c_str());
-            it = abcThreadMap.find(selfThread->abcThreadId);
-            if(it != abcThreadMap.end()){
-                it->second->isOriginUntracked = true;
-            }else{
-                LOGE("ABC: error in model checking. A native thread not added to map!");
-                gDvm.isRunABC = false;
-                return;
-            }
-            addThreadToCurAsyncMap(selfThread->threadId);
-
-            abcUnlockMutex(&gAbc->abcMainMutex);
-        }
-
-
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         if(state != ABC_TRIGGER_ONRECIEVE_LATER){
             addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
@@ -342,6 +321,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
                 abcUnlockMutex(&gAbc->abcMainMutex);
             }
 
+            addNativeEntryToTrace(abcOpCount++, selfThread->threadId);
+
             AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
             receiver->action = new char[strlen(action) + 1];
             strcpy(receiver->action, action);
@@ -352,7 +333,6 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
                     selfThread->threadId, receiver));
 
-            addNativeEntryToTrace(abcOpCount++, selfThread->threadId);
             addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
                 componentId, intentId, state, delayTriggerOpid);
             addNativeExitToTrace(abcOpCount++, selfThread->threadId);

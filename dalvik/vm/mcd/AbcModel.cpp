@@ -35,7 +35,7 @@ std::map<std::pair<u4, std::string>, int> RegisterReceiverMap;
 std::map<std::pair<u4, std::string>, std::list<int> > StickyRegisterReceiverMap;
 //<intentId - intentInfo>
 std::map<int, AbcSticky*> SentIntentMap;
-std::map<int, std::pair<int, bool> > PreReceiverTriggerToRegisterMap;
+std::map<int, OnReceiveLater*> PreReceiverTriggerToRegisterMap;
 std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
 
 
@@ -123,17 +123,85 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
         updated = true;
     }else if(state == ABC_TRIGGER_ONRECIEVE_LATER){
         std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
-        std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt = 
-                StickyRegisterReceiverMap.find(compActionPair);
-        if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
-            PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, std::make_pair(stickyIt->second.front(), true)));
-            stickyIt->second.pop_front();
-        }else{
-            std::map<std::pair<u4, std::string>, int>::iterator recIter = 
+
+        std::map<int, AbcSticky*>::iterator siIt = SentIntentMap.find(intentId);
+        if(siIt != SentIntentMap.end()){
+            if(siIt->second->isSticky){
+                std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt =
+                    StickyRegisterReceiverMap.find(compActionPair);
+                if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
+                //if onReceive is due to registerBroadcastReceiver for an existing sticky intent
+                    OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                    orl->sendIntentOpid = siIt->second->op->opId;
+                    orl->registerReceiverOpid = stickyIt->second.front();
+                    orl->isSticky = true;
+                    PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+                    stickyIt->second.pop_front();
+                }else{
+                //if onReceive is due to sendStickyIntent for an already registered reciever
+                    std::map<std::pair<u4, std::string>, int>::iterator recIter =
+                        RegisterReceiverMap.find(compActionPair);
+                    if(recIter != RegisterReceiverMap.end()){
+                        OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                        orl->sendIntentOpid = siIt->second->op->opId;
+                        orl->registerReceiverOpid = recIter->second;
+                        //sticky-register rule cant be applied in this case as register
+                        //happened first and sendStickyIntent next
+                        orl->isSticky = false; 
+
+                        PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+                    }else{
+                        //probably this is a manifest registered receiver & hence has no corresponding REGISTER cpmmand
+                        OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                        orl->sendIntentOpid = siIt->second->op->opId;
+                        orl->registerReceiverOpid = -1;
+                        //sticky-register rule cant be applied in this case as register
+                        //happened first and sendStickyIntent next
+                        orl->isSticky = false; 
+
+                        PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+                    }
+                }        
+            }else{
+                //corresponding intent is not sticky; only check for non-sticky REGISTER broadcasts
+                std::map<std::pair<u4, std::string>, int>::iterator recIter =
                     RegisterReceiverMap.find(compActionPair);
-            if(recIter != RegisterReceiverMap.end()){
-                PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, std::make_pair(recIter->second, false)));
+                if(recIter != RegisterReceiverMap.end()){
+                    OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                    orl->sendIntentOpid = siIt->second->op->opId;
+                    orl->registerReceiverOpid = recIter->second;
+                    //sticky-register rule cant be applied in this case as register
+                    //happened first and sendStickyIntent next
+                    orl->isSticky = false; 
+                    PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+                }else{
+                    //probably this is a manifest registered receiver & hence has no corresponding REGISTER cpmmand
+                    OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                    orl->sendIntentOpid = siIt->second->op->opId;
+                    orl->registerReceiverOpid = -1;
+                    orl->isSticky = false;
+                    PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+                }
             }
+        }else{
+            //no corresponding sendIntent (intent sent from system process or other apps and not tracked)
+            //corresponding intent is not sticky; only check for non-sticky REGISTER broadcasts
+            std::map<std::pair<u4, std::string>, int>::iterator recIter =
+                RegisterReceiverMap.find(compActionPair);
+            if(recIter != RegisterReceiverMap.end()){
+                OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                orl->sendIntentOpid = -1;
+                orl->registerReceiverOpid = recIter->second;
+                orl->isSticky = false;
+                PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+            }else{
+                //probably this is a manifest registered receiver & hence has no corresponding REGISTER cpmmand
+                OnReceiveLater* orl = (OnReceiveLater*)malloc(sizeof(OnReceiveLater));
+                orl->sendIntentOpid = -1;
+                orl->registerReceiverOpid = -1;
+                orl->isSticky = false;
+                PreReceiverTriggerToRegisterMap.insert(std::make_pair(opId, orl));
+            }            
         }
         
         updated = true;
@@ -146,29 +214,61 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
         }
         std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
 
-        std::map<int, std::pair<int, bool> >::iterator preIter = 
+        std::map<int, OnReceiveLater* >::iterator preIter = 
                 PreReceiverTriggerToRegisterMap.find(op->arg4);
         if(preIter != PreReceiverTriggerToRegisterMap.end()){
-            addEdgeToHBGraph(preIter->second.first, opId);
-            addEdgeToHBGraph(preIter->second.first, opAsync->postId);
-            
-            AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));            
-            ast->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
-            ast->op->opId = opId;
-            ast->op->opPtr = op;
-            ast->isSticky = preIter->second.second;
-            AbcRegisterOnReceiveMap.insert(std::make_pair(preIter->second.first, ast));
+            if(preIter->second->sendIntentOpid != -1){
+                addEdgeToHBGraph(preIter->second->sendIntentOpid, opId);
+                addEdgeToHBGraph(preIter->second->sendIntentOpid, opAsync->postId);
+            }
+            if(preIter->second->registerReceiverOpid != -1){
+                addEdgeToHBGraph(preIter->second->registerReceiverOpid, opId);
+                addEdgeToHBGraph(preIter->second->registerReceiverOpid, opAsync->postId);
+
+                AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));            
+                ast->op = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+                ast->op->opId = opId;
+                ast->op->opPtr = op;
+                ast->isSticky = preIter->second->isSticky;
+                AbcRegisterOnReceiveMap.insert(std::make_pair(preIter->second->registerReceiverOpid, ast));
+            }
         }else{
             int regOpid = -1; 
             bool isSticky = false;
 
-            std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt =
-                    StickyRegisterReceiverMap.find(compActionPair);
-            if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
-                regOpid = stickyIt->second.front();
-                stickyIt->second.pop_front();
-                isSticky = true;
+            std::map<int, AbcSticky*>::iterator siIt = SentIntentMap.find(intentId);
+            if(siIt != SentIntentMap.end()){
+                //add edge from sendIntent to onReceive
+                addEdgeToHBGraph(siIt->second->op->opId, opId);
+                addEdgeToHBGraph(siIt->second->op->opId, opAsync->postId);
+
+                //check if edge should be added from sticky register or otherwise
+                if(siIt->second->isSticky){ 
+                    std::map<std::pair<u4, std::string>, std::list<int> >::iterator stickyIt =
+                        StickyRegisterReceiverMap.find(compActionPair);
+                    if(stickyIt != StickyRegisterReceiverMap.end() && !stickyIt->second.empty()){
+                        regOpid = stickyIt->second.front();
+                        stickyIt->second.pop_front();
+                        isSticky = true;
+                    }else{
+                        std::map<std::pair<u4, std::string>, int>::iterator recIter =
+                            RegisterReceiverMap.find(compActionPair);
+                        if(recIter != RegisterReceiverMap.end()){
+                            regOpid = recIter->second;
+                            isSticky = false;
+                        }
+                    }
+                }else{
+                    //onReceive corresponding to non-sticky intent
+                    std::map<std::pair<u4, std::string>, int>::iterator recIter =
+                            RegisterReceiverMap.find(compActionPair);
+                    if(recIter != RegisterReceiverMap.end()){
+                        regOpid = recIter->second;
+                        isSticky = false;
+                    }
+                }
             }else{
+                //no corresponding sendIntent for onReceive (i.e intent has been fired external to app)
                 std::map<std::pair<u4, std::string>, int>::iterator recIter =
                         RegisterReceiverMap.find(compActionPair);
                 if(recIter != RegisterReceiverMap.end()){
@@ -176,8 +276,8 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
                     isSticky = false;
                 }
             }
-             
-            //add edges
+
+            //add edges for registerReceiver operation
             if(regOpid != -1){
                 addEdgeToHBGraph(regOpid, opId);
                 addEdgeToHBGraph(regOpid, opAsync->postId);
@@ -189,13 +289,7 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
                 ast->isSticky = isSticky;
                 AbcRegisterOnReceiveMap.insert(std::make_pair(regOpid, ast));
             }
-        }
-  
-        //add edges corresponding to sendIntent if any
-        std::map<int, AbcSticky*>::iterator siIt = SentIntentMap.find(intentId);      
-        if(siIt != SentIntentMap.end()){
-            addEdgeToHBGraph(siIt->second->op->opId, opId);
-            addEdgeToHBGraph(siIt->second->op->opId, opAsync->postId);
+
         }
         
         updated = true;
@@ -601,6 +695,11 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                   default: LOGE("state %d of service %s encountered spurious previous state %d", state, serviceName.c_str(), prevOp->opPtr->arg1);
                      gDvm.isRunABC = false;
                      return updated;
+                }
+
+                if(updated){
+                    service->prevStartedServiceOp->opId = opId;
+                    service->prevStartedServiceOp->opPtr = op;
                 }
 
             }else{

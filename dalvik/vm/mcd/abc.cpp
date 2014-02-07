@@ -1097,7 +1097,7 @@ std::string getLifecycleForCode(int code, std::string lifecycle){
         case 26: lifecycle = "ABC_REGISTER_RECEIVER";break;
         case 27: lifecycle = "ABC_SEND_BROADCAST";break;
         case 28: lifecycle = "ABC_SEND_STICKY_BROADCAST";break;
-        case 29: lifecycle = "ABC_TRIGGER_RECEIVER";break;
+        case 29: lifecycle = "ABC_ONRECEIVE";break;
         case 30: lifecycle = "ABC_UNREGISTER_RECEIVER";break;
         case 31: lifecycle = "ABC_REMOVE_STICKY_BROADCAST";break;
         case 32: lifecycle = "ABC_TRIGGER_ONRECIEVE_LATER";break;
@@ -1273,7 +1273,8 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     std::ofstream outfile;
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-BROADCAST tid:" << tid << " action:" << action
-        << " component:" << componentId << " intent:"<< intentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
+        << " component:" << componentId << " intent:"<< intentId << " onRecLater:" << delayTriggerOpid
+        << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
 }
 
@@ -2802,6 +2803,7 @@ void checkAndAddAsyncNopreEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
 
 //return true if o1 and o2 are ABC_TRIGGER_RECEIVER so that we need not check for other
 //operator specific rules
+/*sticky-register rule*/
 bool checkAndAddStickyBroadcastRegisterEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
     bool isBothTriggerReceiver = false;
     if(op1->opType == ABC_TRIGGER_RECEIVER && op1->arg1 == ABC_REGISTER_RECEIVER &&
@@ -2832,7 +2834,7 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
 //    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
     //check and add edge from op1 to op3
-//    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
+    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
     if(op1->asyncId == -1 || op3->asyncId == -1 ||
         (op1->tid != op3->tid)){
         isCondTrans = true;
@@ -3872,7 +3874,8 @@ bool abcPerformRaceDetection(){
           //uncomment this after things are fine
         //    abcRWAbstractionMap.find(op->arg2->id)->second.first = traceIndex;
               shouldDelete = false; //dummy statement
-        }else if(op->opType == ABC_TRIGGER_RECEIVER){
+        }
+     /*   else if(op->opType == ABC_TRIGGER_RECEIVER){
             //logic to remap opId of onReceive-LATER held by corresponding onReceive
             if(op->arg1 == ABC_TRIGGER_ONRECIEVE_LATER){
                 oldToNewDelayedReceiverTriggerMap.insert(std::make_pair(itTmp->first, traceIndex));
@@ -3885,7 +3888,7 @@ bool abcPerformRaceDetection(){
                     op->arg4 = -1;
                 }
             }
-        }
+        } */
 
         if(shouldDelete){
             abcTrace.erase(itTmp++);
@@ -3894,8 +3897,8 @@ bool abcPerformRaceDetection(){
             if(traceIndex != itTmp->first){
                 //uncomment this after things are fine
                 
-          //      abcTrace.insert(std::make_pair(traceIndex, op));
-          //      abcTrace.erase(itTmp++);
+             //   abcTrace.insert(std::make_pair(traceIndex, op));
+             //   abcTrace.erase(itTmp++);
                 itTmp++;
             }else{
                 ++itTmp;

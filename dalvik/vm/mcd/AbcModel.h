@@ -99,6 +99,13 @@ struct receiverStruct{
 };
 typedef struct receiverStruct AbcReceiver;
 
+struct OnReceiveLaterStruct{
+    int sendIntentOpid;
+    int registerReceiverOpid;
+    bool isSticky;
+};
+typedef struct OnReceiveLaterStruct OnReceiveLater;
+
 
 //Activity lifecycle related datastructure
 extern AbcOpWithId* blankEnableResumeOp;
