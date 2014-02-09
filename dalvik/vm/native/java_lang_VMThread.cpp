@@ -304,8 +304,6 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
             std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
             if(it == abcThreadMap.end()){
-                abcLockMutex(selfThread, &gAbc->abcMainMutex);
-
                 selfThread->abcThreadId = abcThreadCount++;
                 abcAddThreadToMap(selfThread, dvmGetThreadName(selfThread).c_str());
                 it = abcThreadMap.find(selfThread->abcThreadId);
@@ -317,8 +315,6 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
                     return;
                 }
                 addThreadToCurAsyncMap(selfThread->threadId);
-
-                abcUnlockMutex(&gAbc->abcMainMutex);
             }
 
             addNativeEntryToTrace(abcOpCount++, selfThread->threadId);
