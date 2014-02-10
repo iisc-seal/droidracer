@@ -1637,23 +1637,6 @@ static void* interpThreadStart(void* arg)
      * its resources.
      */
 
-    /*Android bug-checker*/
-    if(gDvm.isRunABC == true && self->abcThreadId != -1){
-         std::map<int, AbcThread*>::iterator iter = abcThreadMap.find(self->abcThreadId);
-         if(!iter->second->isOriginUntracked){
-
-             abcLockMutex(self, &gAbc->abcMainMutex);
-             if(gDvm.isRunABC == true){
-                addThreadExitToTrace(abcOpCount++, self->threadId); 
-                abcThreadCurAsyncMap.erase(self->threadId);
-                //abcRemoveThreadFromLogicalIdMap(self->threadId);
-             }
-
-             abcUnlockMutex(&gAbc->abcMainMutex);
-         }
-    }
-    /*Android bug-checker*/
-
     dvmDetachCurrentThread();
 
     return NULL;
@@ -2223,6 +2206,26 @@ void dvmDetachCurrentThread()
     dvmLockObject(self, vmThread);
     dvmObjectNotifyAll(self, vmThread);
     dvmUnlockObject(self, vmThread);
+
+    /*Android bug-checker*/
+    //this is a safe place to log threadexit as we have finished logging any 
+    //notify for joins
+    if(gDvm.isRunABC == true && self->abcThreadId != -1){
+         std::map<int, AbcThread*>::iterator iter = abcThreadMap.find(self->abcThreadId);
+         if(!iter->second->isOriginUntracked){
+
+             abcLockMutex(self, &gAbc->abcMainMutex);
+             if(gDvm.isRunABC == true){
+                addThreadExitToTrace(abcOpCount++, self->threadId);
+                abcThreadCurAsyncMap.erase(self->threadId);
+                //abcRemoveThreadFromLogicalIdMap(self->threadId);
+             }
+
+             abcUnlockMutex(&gAbc->abcMainMutex);
+         }
+    }
+    /*Android bug-checker*/
+
 
     dvmReleaseTrackedAlloc(vmThread, self);
     vmThread = NULL;

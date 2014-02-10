@@ -79,6 +79,8 @@ std::map<std::pair<Object*, u4>, std::pair<std::set<int>, std::set<int> > > abcO
 std::map<std::string, std::pair<std::set<int>, std::set<int> > > abcDatabaseAccessMap;
 std::map<std::pair<const char*, u4>, std::pair<std::set<int>, std::set<int> > > abcStaticAccessMap;
 
+//required during analysis
+std::map<int, int> notifyWaitMap;
 
 // required during analysis
 std::map<int, AbcThreadBookKeep*> abcThreadBookKeepMap;
@@ -454,6 +456,15 @@ bool isObjectInThreadAccessMap(int abcThreadId, Object* obj){
         }
     }
     return retVal;
+}
+
+int abcGetRecursiveLockCount(Object* lockObj){
+    std::map<Object*, AbcLockCount*>::iterator it = abcLockCountMap.find(lockObj);
+    if(it == abcLockCountMap.end()){
+        return 0;
+    }else{
+        return it->second->count;
+    }
 }
 
 bool checkAndIncrementLockCount(Object* lockObj, int threadId){
@@ -960,6 +971,8 @@ void addStartToTrace(int opId){
     outfile.close(); 
 }
 
+//a test trace. this is not called anywhere by default except when 
+//a small testcase is required
 void executeTestcase(){
     Object* obj = new Object;
     Object* obj1 = new Object;
@@ -1107,6 +1120,64 @@ std::string getLifecycleForCode(int code, std::string lifecycle){
     return lifecycle;
 }
 
+bool addIntermediateReadWritesToTrace(int opId, int tid){
+    bool accessSetAdded = false;
+    std::map<int, int>::iterator accessIt = abcThreadAccessSetMap.find(tid);
+    if(accessIt != abcThreadAccessSetMap.end()){
+        addAccessToTrace(opId, tid, accessIt->second);
+        abcThreadAccessSetMap.erase(accessIt);
+        accessSetAdded = true;
+    }
+
+    return accessSetAdded;
+}
+
+void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add WAIT to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+
+    op->opType = ABC_WAIT;
+    op->arg1 = waitingThreadId;
+    op->tid = tid;
+    op->arg2 = NULL;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
+    outfile.close();
+}
+
+void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Enter - Add NOTIFY to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+
+    op->opType = ABC_NOTIFY;
+    op->arg1 = notifiedTid;
+    op->tid = tid;
+    op->arg2 = NULL;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " NOTIFY tid:" << tid << " notifiedTid:" << notifiedTid << "\n";
+    outfile.close();
+}
+
 void addAccessToTrace(int opId, int tid, u4 accessId){
     LOGE("%d ABC:Entered - Add ACCESS to trace", opId);
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
@@ -1140,17 +1211,6 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
 //     LOGE("ABC:Exit - Add ACCESS to trace");
 }
 
-bool addIntermediateReadWritesToTrace(int opId, int tid){
-    bool accessSetAdded = false;
-    std::map<int, int>::iterator accessIt = abcThreadAccessSetMap.find(tid);
-    if(accessIt != abcThreadAccessSetMap.end()){
-        addAccessToTrace(opId, tid, accessIt->second);
-        abcThreadAccessSetMap.erase(accessIt);
-        accessSetAdded = true;
-    }
-    
-    return accessSetAdded;
-}
 
 /*
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
@@ -2133,6 +2193,36 @@ bool processForkOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     return shouldAbort;
 }
 
+bool processNotifyOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    bool shouldAbort = false;
+    op->asyncId = threadBK->curAsyncId;
+    std::map<int, int>::iterator it = notifyWaitMap.find(op->arg1);
+    if(it == notifyWaitMap.end()){
+        notifyWaitMap.insert(std::make_pair(op->arg1, opId));
+    }else{
+        LOGE("ABC-ABORT: another notify %d seen when already one exists without a wait."
+             " Aborting due to unknown pattern", op->arg1 );
+        shouldAbort = true;
+    }
+
+    return shouldAbort;
+}
+
+void processWaitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+//if there exists a corresponding notify connect to this
+    op->asyncId = threadBK->curAsyncId;
+    std::map<int, int>::iterator it = notifyWaitMap.find(op->arg1);
+    if(it != notifyWaitMap.end()){
+        //edge from notify to wait 
+        /*it is unclear if we need an edge from pre-wait to notify
+         *indicating thread adding itself to wait list and notify 
+         *triggered only after that
+         */
+        addEdgeToHBGraph(it->second, opId);   
+        notifyWaitMap.erase(it);
+    }
+}
+
 void processThreadinitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing THREADINIT opid:%d", opId);
     threadBK->prevOpId = opId;
@@ -2351,7 +2441,7 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     op->asyncId = threadBK->curAsyncId;
 
     //needed for race nature stats collection
-    AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
+    AbcAsync* async = getAsyncBlockFromId(op->asyncId);
     async->recentTriggerOpId = opId;
 
     std::pair<u4, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
@@ -2359,7 +2449,7 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     if(it != abcEnabledEventMap.end()){
         it->second.second = opId;
         addEdgeToHBGraph(it->second.first, opId);
-        int postId = getAsyncBlockFromId(op->asyncId)->postId;
+        int postId = async->postId;
         //add edge from enable-event to post corresponding to trigger event 
         addEdgeToHBGraph(it->second.first, postId);
         abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
@@ -4014,7 +4104,13 @@ bool abcPerformRaceDetection(){
         case ABC_FORK :
              shouldAbort = processForkOperation(opId, op, threadIt->second);
              break;
-        case ABC_JOIN : 
+        case ABC_WAIT:
+             processWaitOperation(opId, op, threadIt->second);
+             break;
+        case ABC_NOTIFY:
+             shouldAbort = processNotifyOperation(opId, op, threadIt->second);
+             break;
+        case ABC_JOIN : //taken care by notify-wait semantics
              break;
         case ABC_ATTACH_Q :
              processAttachqOperation(opId, op, threadIt->second);

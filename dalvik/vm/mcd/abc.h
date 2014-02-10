@@ -50,7 +50,8 @@
 #define ABC_INSTANCE_INTENT 26
 #define ENABLE_WINDOW_FOCUS 27
 #define TRIGGER_WINDOW_FOCUS 28
-
+#define ABC_WAIT 29
+#define ABC_NOTIFY 30
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -341,6 +342,8 @@ void abcRemoveCallerObjectForLibMethod(int abcTid, const Method* meth);
 
 bool isObjectInThreadAccessMap(int abcThreadId, Object* obj);
 
+int abcGetRecursiveLockCount(Object* lockObj);
+
 bool checkAndIncrementLockCount(Object* lockObj, int threadId);
 
 bool checkAndDecrementLockCount(Object* lockObj, int threadId);
@@ -449,6 +452,10 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 
 void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
 
 void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
+
+void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId);
+
+void abcAddNotifyToTrace(int opId, int tid, int notifiedTid);
 
 int abcGetTraceLength();
 

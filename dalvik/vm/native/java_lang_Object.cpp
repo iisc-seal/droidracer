@@ -93,19 +93,7 @@ static void Dalvik_java_lang_Object_wait(const u4* args, JValue* pResult,
 {
     Object* thisPtr = (Object*) args[0];
 
-    /*Android bug-checker*/
-    if(gDvm.isRunABC == true){
-        abcAddUnlockOpToTrace(self, thisPtr);
-    }
-    /*Android bug-checker*/
-
     dvmObjectWait(self, thisPtr, GET_ARG_LONG(args,1), (s4)args[3], true);
-
-    /*Android bug-checker*/
-    if(gDvm.isRunABC == true){
-        abcAddLockOpToTrace(self, thisPtr);
-    }
-    /*Android bug-checker*/
 
     RETURN_VOID();
 }
