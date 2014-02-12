@@ -850,7 +850,6 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
     /*Android bug-checker*/
     std::map<int, AbcThread*>::iterator selfIter;
     if(gDvm.isRunABC == true){
-        LOGE("Entered selfIter");
         std::map<int, AbcThread*>::iterator selfIter = abcThreadMap.find(self->abcThreadId);
         if(selfIter == abcThreadMap.end()){
             abcLockMutex(self, &gAbc->abcMainMutex);

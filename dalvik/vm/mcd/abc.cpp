@@ -2073,14 +2073,16 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         async->recentDelayAsync = -1;
     }
 
+    //check if this is a cross-post
     if(op->tid != async->tid){
         async->recentCrossPostAsync = op->arg2->id; //itself
     }
+    //check if this is a delayed post
     if(async->delay > 0){
         async->recentDelayAsync = op->arg2->id; //itself
     }
 
-    //a heuristic used currently to discards delayed and front-of-Q msgs
+    //a heuristic used currently to discard traces with front-of-Q msgs
     if(async->delay == -1){
         LOGE("Found a front-of-Q msg during trace processing (which was supposed"
                 " to be deleted), which is not addressed by "
@@ -2443,6 +2445,13 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     //needed for race nature stats collection
     AbcAsync* async = getAsyncBlockFromId(op->asyncId);
     async->recentTriggerOpId = opId;
+    /*for events post is from native thread and hence this info is not useful
+     *as far as possible consider only cross posts due to app code. Also for
+     *events connections due to enable-trigger should be of importance and
+     *lack of that leading to race should be reflected (categorizing it as
+     *co-enabled race or unknown category race)
+     */
+    async->recentCrossPostAsync = -1; 
 
     std::pair<u4, int> viewEventPair = std::make_pair(op->arg2->id, op->arg1);
     std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it = abcEnabledEventMap.find(viewEventPair);
@@ -2478,6 +2487,13 @@ void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thr
     //needed for race nature stats collection
     AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
     async->recentTriggerOpId = opId;
+    /*for events post is from native thread and hence this info is not useful
+     *as far as possible consider only cross posts due to app code.Also for
+     *events connections due to enable-trigger should be of importance and
+     *lack of that leading to race should be reflected (categorizing it as
+     *co-enabled race or unknown category race)
+     */
+    async->recentCrossPostAsync = -1;
 
     //search based on window hash stored on arg2->id
     std::map<u4, std::pair<int, int> >::iterator it = abcWindowFocusChangeMap.find(op->arg2->id);
@@ -2526,6 +2542,13 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
     if(op->asyncId != -1){
         AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
         async->recentTriggerOpId = opId;
+        /*for events post is from native thread and hence this info is not useful
+         *as far as possible consider only cross posts due to app code. Also for
+         *events connections due to enable-trigger should be of importance and
+         *lack of that leading to race should be reflected (categorizing it as
+         *co-enabled race or unknown category race)
+         */
+        async->recentCrossPostAsync = -1;
     }
 
     /*both edgeAded1 and edgeAdded2 being false mean that you have seen a 
@@ -2606,6 +2629,13 @@ bool processTriggerServiceLifecycleOperation(int opId, AbcOp* op, AbcThreadBookK
            && op->arg1 != ABC_REQUEST_STOP_SERVICE && op->arg1 != ABC_REQUEST_UNBIND_SERVICE){
         AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
         async->recentTriggerOpId = opId;
+        /*for events post is from native thread and hence this info is not useful
+         *as far as possible consider only cross posts due to app code. Also for
+         *events connections due to enable-trigger should be of importance and
+         *lack of that leading to race should be reflected (categorizing it as
+         *co-enabled race or unknown category race)
+         */
+        async->recentCrossPostAsync = -1;
     }
 
     bool serviceUpdated = checkAndUpdateServiceState(opId, op);
@@ -2635,6 +2665,13 @@ bool processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* thr
     if(op->asyncId != -1 && op->arg1 == ABC_TRIGGER_ONRECIEVE){
         AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
         async->recentTriggerOpId = opId;
+        /*for events post is from native thread and hence this info is not useful
+         *as far as possible consider only cross posts due to app code. Also for
+         *events connections due to enable-trigger should be of importance and
+         *lack of that leading to race should be reflected (categorizing it as
+         *co-enabled race or unknown category race)
+         */
+        async->recentCrossPostAsync = -1;
     }
 
     bool success = checkAndUpdateBroadcastState(opId, op);
@@ -2924,7 +2961,7 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
 //    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
     //check and add edge from op1 to op3
-    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
+//    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
     if(op1->asyncId == -1 || op3->asyncId == -1 ||
         (op1->tid != op3->tid)){
         isCondTrans = true;
@@ -3459,7 +3496,8 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             bool raceCategoryDetected = false;
                             bool inserted = false;
                             //check if delayed post is a reason
-                            if(async1->recentDelayAsync != async2->recentDelayAsync){
+                            if(async1->recentDelayAsync != async2->recentDelayAsync && 
+                                   (async1->recentDelayAsync != -1 || async2->recentDelayAsync != -1)){
                                 raceCategoryDetected = true;
 
                                 if(acc1->clazz != NULL){
@@ -3478,18 +3516,15 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             }                             
 
                             //check if cross thread post is a reason
-                            if(async1->recentCrossPostAsync != async2->recentCrossPostAsync){
+                            if(!inserted && async1->recentCrossPostAsync != async2->recentCrossPostAsync &&
+                                   (async1->recentCrossPostAsync != -1 || async2->recentCrossPostAsync != -1)){
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    if(inserted == false){
-                                        crossPostRaces.insert(classField);
-                                    }
+                                    crossPostRaces.insert(classField);
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    if(inserted == false){
-                                        dbCrossPostRaces.insert(dbPath);
-                                    }
+                                    dbCrossPostRaces.insert(dbPath);
                                 }
                             }   
 
@@ -3560,7 +3595,8 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             bool raceCategoryDetected = false;
                             bool inserted = false;
                             //check if delayed post is a reason
-                            if(async1->recentDelayAsync != async2->recentDelayAsync){
+                            if(async1->recentDelayAsync != async2->recentDelayAsync &&
+                                   (async1->recentDelayAsync != -1 || async2->recentDelayAsync != -1)){
                                 raceCategoryDetected = true;
 
                                 if(acc1->clazz != NULL){
@@ -3579,18 +3615,15 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             }
 
                             //check if cross thread post is a reason
-                            if(async1->recentCrossPostAsync != async2->recentCrossPostAsync){
+                            if(!inserted && async1->recentCrossPostAsync != async2->recentCrossPostAsync &&
+                                   (async1->recentCrossPostAsync != -1 || async2->recentCrossPostAsync != -1)){
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    if(inserted == false){
-                                        crossPostRaces.insert(classField);
-                                    }
+                                    crossPostRaces.insert(classField);
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    if(inserted == false){
-                                        dbCrossPostRaces.insert(dbPath);
-                                    }
+                                    dbCrossPostRaces.insert(dbPath);
                                 }
                             }
 
