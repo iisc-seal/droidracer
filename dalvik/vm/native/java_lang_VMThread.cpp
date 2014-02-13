@@ -824,6 +824,86 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
 
     RETURN_VOID();
 }
+
+static void Dalvik_java_lang_VMThread_abcLogQueueIdle(const u4* args,
+    JValue* pResult){
+    if(gDvm.isRunABC == true){
+        Thread* selfThread = dvmThreadSelf();
+        int curTid = selfThread->threadId;
+        u4 idleHandlerHash = args[1];
+        u4 queueHash = args[2];
+
+        abcLockMutex(selfThread, &gAbc->abcMainMutex);
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
+            LOGE("Trace has a QUEUE_IDLE on native thread which is not addressed by "
+                "implementation. Cannot continue further");
+            gDvm.isRunABC = false;
+            abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }else{
+            addQueueIdleToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+        }
+        abcUnlockMutex(&gAbc->abcMainMutex);
+    }
+    
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcLogAddIdleHandler(const u4* args,
+    JValue* pResult){
+    if(gDvm.isRunABC == true){
+        Thread* selfThread = dvmThreadSelf();
+        int curTid = selfThread->threadId;
+        u4 idleHandlerHash = args[1];
+        int queueHash = args[2];
+
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
+            LOGE("Trace has a ADD_IDLE_HANDLER on native thread which is not addressed by "
+                "implementation. Cannot continue further");
+            gDvm.isRunABC = false;
+            return;
+        }else{
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(curTid)->second;
+            if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
+                abcLockMutex(selfThread, &gAbc->abcMainMutex);
+                addIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }else{
+                LOGE("ABC-DONT-LOG: found a ADD_IDLE_HANDLER in deleted async block. not logging it");
+            }
+        }
+    }
+
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler(const u4* args,
+    JValue* pResult){
+    if(gDvm.isRunABC == true){
+        Thread* selfThread = dvmThreadSelf();
+        int curTid = selfThread->threadId;
+        u4 idleHandlerHash = args[1];
+        u4 queueHash = args[2];
+
+        abcLockMutex(selfThread, &gAbc->abcMainMutex);
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
+            LOGE("Trace has a REMOVE_IDLE_HANDLER on native thread which is not addressed by "
+                "implementation. Cannot continue further");
+            gDvm.isRunABC = false;
+            abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }else{
+            addRemoveIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+        }
+        abcUnlockMutex(&gAbc->abcMainMutex);
+    }
+
+    RETURN_VOID();
+}
+
 /*Android bug-checker*/
 
 /*
@@ -1105,6 +1185,12 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintAttachQueue },
     { "abcPrintLoop","(I)V",
         Dalvik_java_lang_VMThread_abcPrintLoop },
+    { "abcLogRemoveIdleHandler","(II)V",
+        Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler },
+    { "abcLogAddIdleHandler","(II)V",
+        Dalvik_java_lang_VMThread_abcLogAddIdleHandler },
+    { "abcLogQueueIdle","(II)V",
+        Dalvik_java_lang_VMThread_abcLogQueueIdle },
     { "abcPrintRetMsg","(I)V",
         Dalvik_java_lang_VMThread_abcPrintRetMsg },
     { "abcPrintCallMsg","(I)V",

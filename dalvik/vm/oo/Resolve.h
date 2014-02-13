@@ -36,8 +36,9 @@ enum MethodType {
 };
 
 /*Android bug-checker*/
-extern "C" void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* meth, Thread * self, int accessType);
-void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field, u4 fieldIdx, Thread * self, 
+extern "C" void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int accessType);
+extern "C" void abcAddArrayAccessToTrace(ArrayObject * obj, int index, Thread * self, int accessType);
+extern "C" void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field, u4 fieldIdx, Thread * self, 
     int accessType);
 extern "C" void abcStoreInvokeMethodInfo(Thread* self, const Method* method,
     Object* caller);

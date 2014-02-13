@@ -78,6 +78,12 @@ public class MessageQueue {
             throw new NullPointerException("Can't add a null IdleHandler");
         }
         synchronized (this) {
+        	/*Android bug-checker*/
+        	if(AbcGlobal.abcLogFile != null){
+        		Thread.currentThread().abcLogAddIdleHandler(
+        				handler.hashCode(), this.hashCode());
+        	}
+        	/*Android bug-checker*/
             mIdleHandlers.add(handler);
         }
     }
@@ -132,6 +138,8 @@ public class MessageQueue {
                         msg.markInUse();
                         return msg;
                     } else {
+                    	nextPollTimeoutMillis = (int) Math.min(when - now, Integer.MAX_VALUE);
+                    	
                     	/*Android bug-checker*/
                     	if(Looper.getMainLooper() != null &&
                     			Looper.getMainLooper().getThread() == Thread.currentThread())
@@ -179,12 +187,11 @@ public class MessageQueue {
                         			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
                          		}
                          		
-                         }
+                           }
                     	 
-                     }
-                    	/*Android bug-checker*/
-                        nextPollTimeoutMillis = (int) Math.min(when - now, Integer.MAX_VALUE);
-                    }
+                       }
+                       /*Android bug-checker*/                        
+                   } 
                 } else {
                 	nextPollTimeoutMillis = -1;
                 	
@@ -253,21 +260,44 @@ public class MessageQueue {
             for (int i = 0; i < pendingIdleHandlerCount; i++) {
                 final IdleHandler idler = mPendingIdleHandlers[i];
                 mPendingIdleHandlers[i] = null; // release the reference to the handler
-
+                
+                /*Android bug-checker*/
+                /*send a dummy msg and make it seem as though QUEUE_IDLE is
+                 *an asyncblock corresponding to it. This is done so to be
+                 *compatible with our semantics
+                 */               
+                int abcQueueIdleMsgId = 0;
+                if(AbcGlobal.abcLogFile != null){
+                    abcQueueIdleMsgId = AbcGlobal.getCurrentMsgId();
+                    Thread.currentThread().abcPrintPostMsg(abcQueueIdleMsgId, 0, 0);  
+                    Thread.currentThread().abcPrintCallMsg(abcQueueIdleMsgId);
+                    Thread.currentThread().abcLogQueueIdle(idler.hashCode(), this.hashCode());
+                }
+                /*Android bug-checker*/
+                
                 boolean keep = false;
                 try {
                     keep = idler.queueIdle();
                 } catch (Throwable t) {
                     Log.wtf("MessageQueue", "IdleHandler threw exception", t);
                 }
-
+                /*Android bug-checker*/
+                if(AbcGlobal.abcLogFile != null){
+                	Thread.currentThread().abcPrintRetMsg(abcQueueIdleMsgId);
+                }
+                /*Android bug-checker*/
                 if (!keep) {
                     synchronized (this) {
+                    	/*Android bug-checker*/
+                        if(AbcGlobal.abcLogFile != null){
+                        	Thread.currentThread().abcLogRemoveIdleHandler(
+                        			idler.hashCode(), this.hashCode());
+                        }
                         mIdleHandlers.remove(idler);
                     }
                 }
             }
-
+                        
             // Reset the idle handler count to 0 so we do not run them again.
             pendingIdleHandlerCount = 0;
 

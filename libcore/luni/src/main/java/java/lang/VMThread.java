@@ -86,6 +86,12 @@ class VMThread {
     
     native void abcPrintLoop(int queueHash);
     
+    native void abcLogAddIdleHandler(int idleHandlerHash, int queueHash);
+    
+    native void abcLogRemoveIdleHandler(int idleHandlerHash, int queueHash);
+    
+    native void abcLogQueueIdle(int idleHandlerHash, int queueHash);
+    
     native void abcIncrementEventCount();
     
     native void abcPrintRemoveMsg(int msg);

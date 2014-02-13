@@ -456,6 +456,9 @@ GOTO_TARGET_DECL(exceptionThrown);
                 arrayObj->length, GET_REGISTER(vsrc2));                     \
             GOTO_exceptionThrown();                                         \
         }                                                                   \
+        /*Android bug-checker*/                                             \
+        abcAddObjectAccessToTrace(arrayObj, GET_REGISTER(vsrc2), self, 2);  \
+        /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             ((_type*)(void*)arrayObj->contents)[GET_REGISTER(vsrc2)]);      \
         ILOGV("+ AGET[%d]=%#x", GET_REGISTER(vsrc2), GET_REGISTER(vdst));   \
@@ -481,6 +484,9 @@ GOTO_TARGET_DECL(exceptionThrown);
                 arrayObj->length, GET_REGISTER(vsrc2));                     \
             GOTO_exceptionThrown();                                         \
         }                                                                   \
+        /*Android bug-checker*/                                             \
+        abcAddObjectAccessToTrace(arrayObj, GET_REGISTER(vsrc2), self, 1);  \
+        /*Android bug-checker*/                                             \
         ILOGV("+ APUT[%d]=0x%08x", GET_REGISTER(vsrc2), GET_REGISTER(vdst));\
         ((_type*)(void*)arrayObj->contents)[GET_REGISTER(vsrc2)] =          \
             GET_REGISTER##_regsize(vdst);                                   \
@@ -524,7 +530,7 @@ GOTO_TARGET_DECL(exceptionThrown);
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 2);                                    \
+        abcAddObjectAccessToTrace(obj, ref, self, 2);                                    \
         /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             dvmGetField##_ftype(obj, ifield->byteOffset));                  \
@@ -554,7 +560,7 @@ GOTO_TARGET_DECL(exceptionThrown);
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 2);                                    \
+        abcAddObjectAccessToTrace(obj, ref, self, 2);                                    \
         /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             dvmGetField##_ftype(obj, ifield->byteOffset));                  \
@@ -576,7 +582,7 @@ GOTO_TARGET_DECL(exceptionThrown);
         if (!checkForNullExportPC(obj, fp, pc))                             \
             GOTO_exceptionThrown();                                         \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 2);                                \
+        abcAddObjectAccessToTrace(obj, ref, self, 2);                                \
         /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst, dvmGetField##_ftype(obj, ref));        \
         ILOGV("+ IGETQ %d=0x%08llx", ref,                                   \
@@ -604,7 +610,7 @@ GOTO_TARGET_DECL(exceptionThrown);
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 1);                            \
+        abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
         /*Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ifield->byteOffset,                        \
             GET_REGISTER##_regsize(vdst));                                  \
@@ -634,7 +640,7 @@ GOTO_TARGET_DECL(exceptionThrown);
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 1);                            \
+        abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
         /*Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ifield->byteOffset,                        \
             GET_REGISTER##_regsize(vdst));                                  \
@@ -656,7 +662,7 @@ GOTO_TARGET_DECL(exceptionThrown);
         if (!checkForNullExportPC(obj, fp, pc))                             \
             GOTO_exceptionThrown();                                         \
         /*Android bug-checker*/                                             \
-        abcAddObjectAccessToTrace(obj, ref, curMethod, self, 1);                            \
+        abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
         /*Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ref, GET_REGISTER##_regsize(vdst));        \
         ILOGV("+ IPUTQ %d=0x%08llx", ref,                                   \

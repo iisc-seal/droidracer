@@ -800,7 +800,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
 bool abcMapInstanceWithIntentId(u4 instance, int intentId){
     bool shouldAbort = false;
     AbcInstanceIntentMap.insert(std::make_pair(instance, intentId));
-    //change key from intentId to instance iin all maps, now that you have activity instance info
+    //change key from intentId to instance in all maps, now that you have activity instance info
 
     if(ActivityStateMap.find(intentId) != ActivityStateMap.end()){
         AbcOpWithId* tmpOp = ActivityStateMap.find(intentId)->second;

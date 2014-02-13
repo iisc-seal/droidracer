@@ -114,6 +114,8 @@ std::map<std::string, std::pair<int,int> > abcRegisteredReceiversMap;
 
 std::map<u4, std::pair<int, int> > abcWindowFocusChangeMap;
 
+std::map<std::pair<u4, int>, std::pair<int, AbcAsync*> > abcIdleHandlerMap; 
+
 //needed only during trace generation
 std::map<int, AbcReceiver*> abcDelayedReceiverTriggerThreadMap;
 std::map<int, AbcReceiver*> abcDelayedReceiverTriggerMsgMap;
@@ -1720,13 +1722,82 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
 //    LOGE("ABC:Exit - Add LOOP to trace");
 }
 
+void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
+    LOGE("%d ABC:Entered - Add QUEUE_IDLE to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->id = idleHandlerHash;
+    arg2->obj = NULL;
+
+    op->opType = ABC_QUEUE_IDLE;
+    op->arg1 = queueHash;
+    op->arg2 = arg2;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " QUEUE_IDLE tid:" << tid << " idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
+    outfile.close();
+}
+
+void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
+    LOGE("%d ABC:Entered - Add ADD_IDLE_HANDLER to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->id = idleHandlerHash;
+    arg2->obj = NULL;
+
+    op->opType = ABC_ADD_IDLE_HANDLER;
+    op->arg1 = queueHash;
+    op->arg2 = arg2;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " ADD_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
+    outfile.close();
+}
+
+void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
+    LOGE("%d ABC:Entered - Add REMOVE_IDLE_HANDLER to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->id = idleHandlerHash;
+    arg2->obj = NULL;
+
+    op->opType = ABC_REMOVE_IDLE_HANDLER;
+    op->arg1 = queueHash;
+    op->arg2 = arg2;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " REMOVE_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
+    outfile.close();
+}
+
 void addLockToTrace(int opId, int tid, Object* lockObj){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
-    LOGE("%d ABC:Entered - Add LOCK to trace %p  %d", opId, lockObj, tid);
+    LOGE("%d ABC:Entered - Add LOCK to trace obj:%p tid:%d", opId, lockObj, tid);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -1755,7 +1826,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     if(accessSetAdded){
         opId = abcOpCount++;
     }
-    LOGE("%d ABC:Entered - Add UNLOCK to trace %p   %d", opId, lockObj, tid);
+    LOGE("%d ABC:Entered - Add UNLOCK to trace obj:%p tid:%d", opId, lockObj, tid);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -2170,6 +2241,51 @@ void processLoopOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing LOOP opid:%d", opId);
     threadBK->loopId = opId;
     addEdgeToHBGraph(threadBK->attachqId, threadBK->loopId);
+}
+
+void processAddIdleHandlerOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId; 
+    AbcAsync* prevAsync = NULL;
+    abcIdleHandlerMap.insert(std::make_pair(std::make_pair(op->arg2->id, op->arg1), 
+            std::make_pair(opId, prevAsync)));
+}
+
+void processQueueIdleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    op->asyncId = threadBK->curAsyncId;
+    AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
+    opAsync->recentTriggerOpId = opId;
+
+    std::pair<u4, int> idlerQueuePair = std::make_pair(op->arg2->id, op->arg1);
+    std::map<std::pair<u4, int>, std::pair<int, AbcAsync*> >::iterator it = 
+            abcIdleHandlerMap.find(idlerQueuePair);
+    if(it != abcIdleHandlerMap.end()){
+        //add edge from addIdler to queueIdle()'s dummy post
+        //dummy post bcos we added this post to be coherent with our semantics
+        addEdgeToHBGraph(it->second.first, opAsync->postId);    
+        //if addIdler is performed on the same thread and from async block
+        //add edge from ret of async block to dummy post of queueIdle
+        AbcOp* addIdlerOp = abcTrace.find(it->second.first)->second;
+        if(addIdlerOp->asyncId != -1 && addIdlerOp->tid == op->tid){
+            AbcAsync* addIdlerAsync = getAsyncBlockFromId(addIdlerOp->asyncId);
+            addEdgeToHBGraph(addIdlerAsync->retId, opAsync->postId);
+        }
+
+        //if the same idler was called earlier add HB edge between the previous and current
+        //this is just a heuristic to avoid reporting uninteresting race
+        if(it->second.second != NULL){
+            addEdgeToHBGraph(it->second.second->retId, opAsync->postId);
+        }
+        it->second.second = opAsync;
+    }
+    
+    //queueIdle() can be called only after loop()
+    addEdgeToHBGraph(threadBK->loopId, opId);
+    addEdgeToHBGraph(threadBK->loopId, opAsync->postId);
+}
+
+void processRemoveIdleHandlerOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    std::pair<u4, int> idlerQueuePair = std::make_pair(op->arg2->id, op->arg1);
+    abcIdleHandlerMap.erase(idlerQueuePair);
 }
 
 bool processForkOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -4151,6 +4267,15 @@ bool abcPerformRaceDetection(){
         case ABC_LOOP :
              processLoopOperation(opId, op, threadIt->second);
              break;
+        case ABC_ADD_IDLE_HANDLER:
+             processAddIdleHandlerOperation(opId, op, threadIt->second);
+             break;
+        case ABC_QUEUE_IDLE:
+             processQueueIdleOperation(opId, op, threadIt->second);
+             break;
+        case ABC_REMOVE_IDLE_HANDLER:
+             processRemoveIdleHandlerOperation(opId, op, threadIt->second);
+             break;
         case ABC_POST :
              shouldAbort = processPostOperation(opId, op, threadIt->second);
              break;
@@ -4207,7 +4332,8 @@ bool abcPerformRaceDetection(){
              return false;
         } 
         
-        if(op->opType != ABC_THREADEXIT && op->opType != ABC_INSTANCE_INTENT){
+        if(op->opType != ABC_THREADEXIT && op->opType != ABC_INSTANCE_INTENT && 
+                    op->opType != ABC_REMOVE_IDLE_HANDLER){
             if(shouldAbort || checkAndAbortIfAssumtionsFailed(opId, op, threadIt->second)){
                break;
                // return false;

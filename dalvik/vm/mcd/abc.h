@@ -52,6 +52,9 @@
 #define TRIGGER_WINDOW_FOCUS 28
 #define ABC_WAIT 29
 #define ABC_NOTIFY 30
+#define ABC_QUEUE_IDLE 31
+#define ABC_ADD_IDLE_HANDLER 32
+#define ABC_REMOVE_IDLE_HANDLER 33
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -412,6 +415,12 @@ void addRemoveToTrace(int opId, int tid, u4 msg);
 void addAttachQToTrace(int opId, int tid, u4 msgQ);
 
 void addLoopToTrace(int opId, int tid, u4 msgQ);
+
+void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid);
+
+void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid);
+
+void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid);
 
 void addLockToTrace(int opId, int tid, Object* lockObj);
 

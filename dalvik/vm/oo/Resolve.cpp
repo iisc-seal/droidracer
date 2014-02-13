@@ -35,7 +35,7 @@
 
 
 /*Android bug-checker*/
-void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thread * self, int accessType){
+void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int accessType){
     if(gDvm.isRunABC == true){
         if(strcmp(obj->clazz->descriptor,
                 "Ljava/lang/ClassLoader;") != 0 && strcmp(obj->clazz->descriptor,
@@ -103,7 +103,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thr
                             addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
                                 obj, "", self->threadId);
 
-                           std::ofstream outfile;
+                            std::ofstream outfile;
                             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                             outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
                                 << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
@@ -120,6 +120,30 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, const Method* met, Thr
             }
         }
     }
+    }
+}
+
+void abcAddArrayAccessToTrace(ArrayObject * obj, int index, Thread * self, int accessType){
+    if(gDvm.isRunABC == true){
+        std::string access;
+        if(accessType == ABC_WRITE)
+            access = "WRITE";
+        else if(accessType == ABC_READ)
+            access = "READ";
+        else{
+            LOGE("ABC: invalid access type");
+            return;
+        }
+        if(self->shouldABCTrack == true &&
+            strcmp("<clinit>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0 &&
+            strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0) {
+            std::ofstream outfile;
+            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ARRAY-ACCESS " << access << " tid:" << self->threadId
+                    << " obj:" << obj << " class:" << obj->clazz->descriptor << " index:" << index
+                    << "\n";
+            outfile.close();
+        }
     }
 }
 

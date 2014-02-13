@@ -1327,6 +1327,18 @@ public class Thread implements Runnable {
     	vmThread.abcPrintLoop(queueHash);
     }
     
+    public void abcLogRemoveIdleHandler(int idleHandlerHash, int queueHash){
+    	vmThread.abcLogRemoveIdleHandler(idleHandlerHash, queueHash);
+    }
+    
+    public void abcLogAddIdleHandler(int idleHandlerHash, int queueHash){
+    	vmThread.abcLogAddIdleHandler(idleHandlerHash, queueHash);
+    }
+    
+    public void abcLogQueueIdle(int idleHandlerHash, int queueHash){
+    	vmThread.abcLogQueueIdle(idleHandlerHash, queueHash);
+    }
+    
     public void abcIncrementEventCount(){
     	vmThread.abcIncrementEventCount();
     }
