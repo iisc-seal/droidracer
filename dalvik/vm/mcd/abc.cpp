@@ -1243,7 +1243,7 @@ void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, cha
     outfile.close(); 
 //    LOGE("ABC:Exit - Add REGISTER-RECEIVER to trace");
 }
-*/
+
 
 void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
@@ -1273,6 +1273,8 @@ void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char
     outfile.close(); 
 //    LOGE("ABC:Exit - Add TRIGGER-RECEIVER to trace");
 }
+*/
+
 
 void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);

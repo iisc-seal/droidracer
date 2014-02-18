@@ -458,9 +458,9 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId);
 void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 componentId, 
          int intentId, int state, int delayTriggerOpid);
 
-void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
+//void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
 
-void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
+//void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
 
 void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId);
 
