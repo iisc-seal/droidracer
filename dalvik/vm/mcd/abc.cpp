@@ -3075,6 +3075,35 @@ bool checkAndAddStickyBroadcastRegisterEdge(int o1, int o2, AbcOp* op1, AbcOp* o
     return isBothTriggerReceiver;
 }
 
+//return true if o1 and o2 are ABC_TRIGGER_RECEIVER so that we need not check for other
+//operator specific rules
+/*sticky-register rule*/
+bool checkAndAddSendBroadcastEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
+    bool isBothTriggerReceiver = false;
+    if(op1->opType == ABC_TRIGGER_RECEIVER && (op1->arg1 == ABC_SEND_BROADCAST ||
+           op1->arg1 == ABC_SEND_STICKY_BROADCAST) &&
+           op2->opType == ABC_TRIGGER_RECEIVER && (op2->arg1 == ABC_SEND_BROADCAST ||
+           op2->arg1 == ABC_SEND_STICKY_BROADCAST)){
+    
+        std::map<int, std::list<AbcOpWithId*> >::iterator it1 = AbcSendBroadcastOnReceiveMap.find(o1);
+        std::map<int, std::list<AbcOpWithId*> >::iterator it2 = AbcSendBroadcastOnReceiveMap.find(o2);
+        if(it1 != AbcSendBroadcastOnReceiveMap.end() && it2 != AbcSendBroadcastOnReceiveMap.end()){
+            for(std::list<AbcOpWithId*>::iterator i1 = it1->second.begin(); i1 != it1->second.end(); i1++){
+                AbcAsync* async1 = getAsyncBlockFromId((*i1)->opPtr->asyncId);
+                for(std::list<AbcOpWithId*>::iterator i2 = it2->second.begin(); i2 != it2->second.end(); i2++){
+                    AbcAsync* async2 = getAsyncBlockFromId((*i2)->opPtr->asyncId);
+                    addEdgeToHBGraph((*i1)->opId, (*i2)->opId);
+                    addEdgeToHBGraph(async1->postId, async2->postId);
+                }
+            }
+        }
+
+        isBothTriggerReceiver = true;
+    }
+
+    return isBothTriggerReceiver;
+}
+
 bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, AbcOp* op3){
 //    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
@@ -3141,13 +3170,18 @@ void computeClosureOfHbGraph(){
         }
         */
         
-        bool isBothTriggerReceiver = false;
+        bool isBothRegisterReceiver = false;
         if(!isFifo){
-            isBothTriggerReceiver = checkAndAddStickyBroadcastRegisterEdge(edge->src, edge->dest, src, dest);
+            isBothRegisterReceiver = checkAndAddStickyBroadcastRegisterEdge(edge->src, edge->dest, src, dest);
+        }
+
+        bool isBothSendBroadcasts = false;
+        if(!isFifo && !isBothRegisterReceiver){
+            isBothSendBroadcasts = checkAndAddSendBroadcastEdge(edge->src, edge->dest, src, dest);
         }
 
         //ST-ASYNC-NOPRE
-        if(!isFifo && !isBothTriggerReceiver){
+        if(!isFifo && !isBothRegisterReceiver && !isBothSendBroadcasts){
             checkAndAddAsyncNopreEdge(edge->src, edge->dest, src, dest);
         }
        

@@ -133,6 +133,7 @@ extern std::map<u4, AbcRequestBind*> AbcServiceConnectMap;
 
 //Broadcast Receiver related datastructure
 extern std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
+extern std::map<int, std::list<AbcOpWithId*> > AbcSendBroadcastOnReceiveMap;
 
 
 bool isEventActivityEvent(int eventId);

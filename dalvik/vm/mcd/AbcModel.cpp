@@ -37,6 +37,7 @@ std::map<std::pair<u4, std::string>, std::list<int> > StickyRegisterReceiverMap;
 std::map<int, AbcSticky*> SentIntentMap;
 std::map<int, OnReceiveLater*> PreReceiverTriggerToRegisterMap;
 std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
+std::map<int, std::list<AbcOpWithId*> > AbcSendBroadcastOnReceiveMap;
 
 
 void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid, 
@@ -220,7 +221,32 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             if(preIter->second->sendIntentOpid != -1){
                 addEdgeToHBGraph(preIter->second->sendIntentOpid, opId);
                 addEdgeToHBGraph(preIter->second->sendIntentOpid, opAsync->postId);
+
+                /*add entry to AbcSendBroadcastOnReceiveMap. This map is used to
+                 *add the edge onReceive1 < onReceive2 if sendBroadcast1 < sendBroadcast2
+                 *For this we should only consider those onReceives which are due to
+                 *sendBroadcast and not due to registerReceiver for a sticky broadcast.
+                 *Also, if the same broadcast had multiple receivers we log all
+                 *of them
+                 */
+                if(!preIter->second->isSticky){
+                    AbcOpWithId* astTmp = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+                    astTmp->opId = opId;
+                    astTmp->opPtr = op;
+                    
+                    std::map<int, std::list<AbcOpWithId*> >::iterator brRecIt = 
+                        AbcSendBroadcastOnReceiveMap.find(preIter->second->sendIntentOpid);
+                    if(brRecIt == AbcSendBroadcastOnReceiveMap.end()){
+                        std::list<AbcOpWithId*> onRecList;
+                        onRecList.push_back(astTmp);
+                        AbcSendBroadcastOnReceiveMap.insert(std::make_pair(
+                            preIter->second->sendIntentOpid, onRecList));
+                    }else{
+                        brRecIt->second.push_back(astTmp);
+                    }
+                }
             }
+
             if(preIter->second->registerReceiverOpid != -1){
                 addEdgeToHBGraph(preIter->second->registerReceiverOpid, opId);
                 addEdgeToHBGraph(preIter->second->registerReceiverOpid, opAsync->postId);
@@ -265,6 +291,28 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
                     if(recIter != RegisterReceiverMap.end()){
                         regOpid = recIter->second;
                         isSticky = false;
+                    }
+                }
+
+                /*add entry to AbcSendBroadcastOnReceiveMap. This map is used to
+                 *add the edge onReceive1 < onReceive2 if sendBroadcast1 < sendBroadcast2
+                 *For this we should only consider those onReceives which are due to
+                 *sendBroadcast and not due to registerReceiver for a sticky broadcast
+                 */
+                if(!isSticky){
+                    AbcOpWithId* astTmp = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
+                    astTmp->opId = opId;
+                    astTmp->opPtr = op;
+
+                    std::map<int, std::list<AbcOpWithId*> >::iterator brRecIt =
+                        AbcSendBroadcastOnReceiveMap.find(siIt->second->op->opId);
+                    if(brRecIt == AbcSendBroadcastOnReceiveMap.end()){
+                        std::list<AbcOpWithId*> onRecList;
+                        onRecList.push_back(astTmp);
+                        AbcSendBroadcastOnReceiveMap.insert(std::make_pair(
+                            siIt->second->op->opId, onRecList));
+                    }else{
+                        brRecIt->second.push_back(astTmp);
                     }
                 }
             }else{
