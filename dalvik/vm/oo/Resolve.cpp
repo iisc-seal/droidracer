@@ -53,15 +53,15 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
         if(self->shouldABCTrack == true && 
             strcmp("<clinit>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0 &&
             strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0) {
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){    
                 abcLockMutex(self, &gAbc->abcMainMutex);
                 if(gDvm.isRunABC == true){
                     addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
-                        obj, "", self->threadId);
+                        obj, "", self->abcThreadId);
                         std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
+                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx  
                             << "\n";
                         outfile.close(); 
@@ -76,7 +76,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
             != abcThreadBaseMethodMap.end() && strcmp("<clinit>", 
                 abcGetLastMethodInThreadStack(self->threadId)->name) != 0 &&
                 strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0){
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
                 if((strlen(obj->clazz->descriptor) > strlen(gDvm.package_ABC_app)) &&
                     (strncmp(obj->clazz->descriptor, gDvm.package_ABC_app,
@@ -84,11 +84,11 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                     abcLockMutex(self, &gAbc->abcMainMutex);
                     if(gDvm.isRunABC == true){
                         addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
-                            obj, "", self->threadId);
+                            obj, "", self->abcThreadId);
 
                         std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId  
+                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId  
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                             << "\n";
                         outfile.close(); 
@@ -101,11 +101,11 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                         abcLockMutex(self, &gAbc->abcMainMutex);
                         if(gDvm.isRunABC == true){
                             addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
-                                obj, "", self->threadId);
+                                obj, "", self->abcThreadId);
 
                             std::ofstream outfile;
                             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                            outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
+                            outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                                 << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                                 << "\n";
                             outfile.close(); 
@@ -139,7 +139,7 @@ void abcAddArrayAccessToTrace(ArrayObject * obj, int index, Thread * self, int a
             strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0) {
             std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-            outfile << "ARRAY-ACCESS " << access << " tid:" << self->threadId
+            outfile << "ARRAY-ACCESS " << access << " tid:" << self->abcThreadId
                     << " obj:" << obj << " class:" << obj->clazz->descriptor << " index:" << index
                     << "\n";
             outfile.close();
@@ -160,7 +160,7 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
             return;
         }
         if(self->shouldABCTrack == true) {
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
                 if(strcmp(clazz,"Ljava/lang/ClassLoader;") != 0 && strcmp(clazz,
                         "Ldalvik/system/PathClassLoader;") != 0 && strcmp(
@@ -171,10 +171,10 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                 if(gDvm.isRunABC == true){
                     std::string fieldName(field);
                     addReadWriteToTrace(abcRWCount++, accessType, clazz, fieldName, fieldIdx,
-                        NULL, "", self->threadId);
+                        NULL, "", self->abcThreadId);
                         std::ofstream outfile;
                         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId          
+                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                             << " class:" << clazz << " field:" << fieldIdx 
                             << "\n";
                         outfile.close(); 
@@ -188,7 +188,7 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
             }
         }else if(abcThreadBaseMethodMap.find(self->threadId)
             != abcThreadBaseMethodMap.end()){
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
             if((strlen(clazz) > strlen(gDvm.package_ABC_app)) &&
@@ -201,11 +201,11 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                 if(gDvm.isRunABC == true){
                     std::string fieldName(field);
                     addReadWriteToTrace(abcRWCount++, accessType, clazz, fieldName, fieldIdx,
-                        NULL, "", self->threadId);
+                        NULL, "", self->abcThreadId);
                 }
                 std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->threadId
+                outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId
                     << " class:" << clazz << " field:" << fieldIdx 
                     << "\n";
                 outfile.close(); 

@@ -800,7 +800,7 @@ static void notifyMonitor(Thread* self, Monitor* mon)
                         gDvm.isRunABC = false;
                         return;
                     }
-                    addThreadToCurAsyncMap(self->threadId);
+                    addThreadToCurAsyncMap(self->abcThreadId);
                 }
 
                 std::map<int, AbcThread*>::iterator it = abcThreadMap.find(thread->abcThreadId);
@@ -809,13 +809,13 @@ static void notifyMonitor(Thread* self, Monitor* mon)
                     selfIter = abcThreadMap.find(self->abcThreadId);
                     abcLockMutex(self, &gAbc->abcMainMutex);
                     if(selfIter->second->isOriginUntracked){
-                        addNativeEntryToTrace(abcOpCount++, self->threadId);
+                        addNativeEntryToTrace(abcOpCount++, self->abcThreadId);
                     }
 
-                    abcAddNotifyToTrace(abcOpCount++, self->threadId, thread->threadId);
+                    abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
 
                     if(selfIter->second->isOriginUntracked){
-                        addNativeExitToTrace(abcOpCount++, self->threadId);
+                        addNativeExitToTrace(abcOpCount++, self->abcThreadId);
                     }
                     abcUnlockMutex(&gAbc->abcMainMutex);
                 }
@@ -863,7 +863,7 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
                 gDvm.isRunABC = false;
                 return;
             }
-            addThreadToCurAsyncMap(self->threadId);
+            addThreadToCurAsyncMap(self->abcThreadId);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }
     }
@@ -884,13 +884,13 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
                     selfIter = abcThreadMap.find(self->abcThreadId);
                     abcLockMutex(self, &gAbc->abcMainMutex);
                     if(selfIter->second->isOriginUntracked){
-                        addNativeEntryToTrace(abcOpCount++, self->threadId);
+                        addNativeEntryToTrace(abcOpCount++, self->abcThreadId);
                     }
 
-                    abcAddNotifyToTrace(abcOpCount++, self->threadId, thread->threadId);
+                    abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
 
                     if(selfIter->second->isOriginUntracked){
-                        addNativeExitToTrace(abcOpCount++, self->threadId);
+                        addNativeExitToTrace(abcOpCount++, self->abcThreadId);
                     }
                     abcUnlockMutex(&gAbc->abcMainMutex);
                 }
@@ -1196,7 +1196,7 @@ void dvmObjectWait(Thread* self, Object *obj, s8 msec, s4 nsec,
          */
         if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
             abcLockMutex(self, &gAbc->abcMainMutex);
-            abcAddWaitOpToTrace(abcOpCount++, self->threadId, self->threadId);
+            abcAddWaitOpToTrace(abcOpCount++, self->abcThreadId, self->abcThreadId);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }
 

@@ -311,11 +311,11 @@ void abcAddLockOpToTrace(Thread* self, Object* obj){
     //    if(abcThreadCurAsyncMap.find(self->threadId)->second->shouldRemove == false){
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
-                bool addToTrace = checkAndIncrementLockCount(obj, self->threadId);
+                bool addToTrace = checkAndIncrementLockCount(obj, self->abcThreadId);
                 if(addToTrace){
-                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
                     if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-                        addLockToTrace(abcOpCount++, self->threadId, obj);
+                        addLockToTrace(abcOpCount++, self->abcThreadId, obj);
                     }else{
                         LOGE("ABC-DONT-LOG: found a lock operation in deleted async block. not logging it");
                     }
@@ -334,11 +334,11 @@ void abcAddLockOpToTrace(Thread* self, Object* obj){
         if(isObjectInThreadAccessMap(self->threadId,obj)){
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
-                bool addToTrace = checkAndIncrementLockCount(obj, self->threadId);
+                bool addToTrace = checkAndIncrementLockCount(obj, self->abcThreadId);
                 if(addToTrace){
-                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
                     if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-                        addLockToTrace(abcOpCount++, self->threadId, obj);
+                        addLockToTrace(abcOpCount++, self->abcThreadId, obj);
                     }else{
                         LOGE("ABC-DONT-LOG: found a lock operation in deleted async block. not logging it");
                     }
@@ -354,11 +354,11 @@ void abcAddUnlockOpToTrace(Thread* self, Object* obj){
     //    if(abcThreadCurAsyncMap.find(self->threadId)->second->shouldRemove == false){
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
-                bool addToTrace = checkAndDecrementLockCount(obj, self->threadId);
+                bool addToTrace = checkAndDecrementLockCount(obj, self->abcThreadId);
                 if(addToTrace){
-                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
                     if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-                        addUnlockToTrace(abcOpCount++, self->threadId, obj);
+                        addUnlockToTrace(abcOpCount++, self->abcThreadId, obj);
                     }else{
                         LOGE("ABC-DONT-LOG: found a unlock operation in deleted async block. not logging it");
                     }
@@ -377,11 +377,11 @@ void abcAddUnlockOpToTrace(Thread* self, Object* obj){
         if(isObjectInThreadAccessMap(self->threadId,obj)){
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
-                bool addToTrace = checkAndDecrementLockCount(obj, self->threadId);
+                bool addToTrace = checkAndDecrementLockCount(obj, self->abcThreadId);
                 if(addToTrace){
-                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+                    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
                     if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-                        addUnlockToTrace(abcOpCount++, self->threadId, obj);
+                        addUnlockToTrace(abcOpCount++, self->abcThreadId, obj);
                     }else{
                         LOGE("ABC-DONT-LOG: found a unlock operation in deleted async block. not logging it");
                     }
@@ -961,7 +961,7 @@ static void* abcInit(void* arg){
 void addStartToTrace(int opId){
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_START;
-    op->tid = dvmThreadSelf()->threadId;
+    op->tid = dvmThreadSelf()->abcThreadId;
     op->tbd = false;
     op->asyncId = -1;
 
@@ -1020,11 +1020,11 @@ void startAbcModelChecker(){
     dvmInitMutex(&gAbc->abcMainMutex);
     abcStartOpId = abcOpCount;
     addStartToTrace(abcOpCount++);
-    addThreadInitToTrace(abcOpCount++, dvmThreadSelf()->threadId); 
+    addThreadInitToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId); 
     char * component = new char[2];
     strcpy(component, "");
     component[1] = '\0';
-    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, 0, ABC_BIND);
+    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, 0, ABC_BIND);
 
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");

@@ -766,8 +766,8 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 if(gDvm.isRunABC == true){
                     self->abcThreadId = abcThreadCount++;
                     abcAddThreadToMap(self, dvmGetThreadName(self).c_str());
-                    addThreadToCurAsyncMap(self->threadId);
-                    addNativeEntryToTrace(abcOpCount++, self->threadId);
+                    addThreadToCurAsyncMap(self->abcThreadId);
+                    addNativeEntryToTrace(abcOpCount++, self->abcThreadId);
                 }
                 abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -798,7 +798,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             self->shouldABCTrack = true;
             abcPushMethodForThread(self->threadId, method);
 
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
           /*  if(curAsync->shouldRemove){
                 LOGE("Trace has reached an app method inside an async block forced to be deleted, which is not addressed by "
                     " implementation. Cannot continue further");
@@ -812,7 +812,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
         //    LOGE("APP-METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
             std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-            outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->threadId << "\t meth:"
+            outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
                 << method->name << "\t class:" << method->clazz->descriptor << "\n";
             outfile.close(); 
         }else{
@@ -823,7 +823,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
         //    LOGE("METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
                std::ofstream outfile;
                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-               outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->threadId << "\t meth:"
+               outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
                    << method->name << "\t class:" << method->clazz->descriptor << "\n";
                outfile.close(); 
             }else 
@@ -949,7 +949,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
      //       LOGE("METHOD-EXIT: %s  class: %s", method->name, method->clazz->descriptor);
                 std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                outfile << "METHOD EXIT tid:" << dvmThreadSelf()->threadId << "\t meth:"
+                outfile << "METHOD EXIT tid:" << self->abcThreadId << "\t meth:"
                     << method->name << "\t class:" << method->clazz->descriptor << "\n";
                 outfile.close(); 
             }
@@ -972,7 +972,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                     if(abcIsThreadOriginUntracked(self->abcThreadId)){
                         abcLockMutex(self, &gAbc->abcMainMutex);
                        if(gDvm.isRunABC == true){
-                            addNativeExitToTrace(abcOpCount++, self->threadId);
+                            addNativeExitToTrace(abcOpCount++, self->abcThreadId);
                             //abcRemoveThreadFromLogicalIdMap(self->threadId);
                        }
                        abcUnlockMutex(&gAbc->abcMainMutex);
@@ -995,7 +995,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                     self->shouldABCTrack = true;
                     if(isAppMethod == false){
                         abcRemoveCallerObjectForLibMethod(
-                            dvmThreadSelf()->threadId, method);
+                            self->threadId, method);
                     } 
                 }else{
                     self->shouldABCTrack = false;

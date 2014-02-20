@@ -2477,50 +2477,47 @@ void dvmDbgPostException(void* throwFp, int throwRelPc, void* catchFp,
     /*Android bug-checker*/
     if(gDvm.isRunABC && (abcThreadBaseMethodMap.find(dvmThreadSelf()->threadId) 
         != abcThreadBaseMethodMap.end())){
+        Thread* selfThread = dvmThreadSelf();
         if(catchMeth != NULL){
-            if(abcGetLastMethodInThreadStack(dvmThreadSelf()->threadId) == throwMeth
+            if(abcGetLastMethodInThreadStack(selfThread->threadId) == throwMeth
                       && catchMeth != throwMeth){
-                while(abcGetLastMethodInThreadStack(dvmThreadSelf()->threadId) != catchMeth){
+                while(abcGetLastMethodInThreadStack(selfThread->threadId) != catchMeth){
                     const Method* met = abcPopLastMethodInThreadStack(
-                            dvmThreadSelf()->threadId);
+                            selfThread->threadId);
               /*      std::ofstream outfile;
                     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                     outfile << "THROW METHOD EXIT tid:" << dvmThreadSelf()->threadId << "\t meth:"
                         << met->name << "\t class:" << met->clazz->descriptor << "\n";
                     outfile.close();*/
 
-                    const Method* tmpMeth = abcGetLastMethodInThreadStack(dvmThreadSelf()->threadId);
+                    const Method* tmpMeth = abcGetLastMethodInThreadStack(selfThread->threadId);
                     if(tmpMeth != NULL){
                         if((strlen(tmpMeth->clazz->descriptor) > strlen(gDvm.package_ABC_app)) &&
                             (strncmp(tmpMeth->clazz->descriptor, gDvm.package_ABC_app,
                                 strlen(gDvm.package_ABC_app)) == 0)){
-                            dvmThreadSelf()->shouldABCTrack = true;
+                            selfThread->shouldABCTrack = true;
                             
                             if(!((strlen(met->clazz->descriptor) > strlen(gDvm.package_ABC_app)) &&
                                 (strncmp(met->clazz->descriptor, gDvm.package_ABC_app,
                                     strlen(gDvm.package_ABC_app)) == 0))){
                                 //prev method is non-app method and current is app method. 
                                 //So, remove tracked objects.
-                                abcRemoveCallerObjectForLibMethod(
-                                dvmThreadSelf()->threadId, met);       
+                                abcRemoveCallerObjectForLibMethod(selfThread->threadId, met);       
                             }
                         }else{
-                            dvmThreadSelf()->shouldABCTrack = false;
+                            selfThread->shouldABCTrack = false;
                         }
-                    }else if(isThreadStackEmpty(dvmThreadSelf()->threadId) &&
-                        abcGetBaseMethodForThread(dvmThreadSelf()->threadId) == met){
-                        abcRemoveBaseMethodForThread(dvmThreadSelf()->threadId);
-              //          abcRemoveThreadFromStackMap(dvmThreadSelf()->abcThreadId);
-                        dvmThreadSelf()->shouldABCTrack = false;
+                    }else if(isThreadStackEmpty(selfThread->threadId) &&
+                        abcGetBaseMethodForThread(selfThread->threadId) == met){
+                        abcRemoveBaseMethodForThread(selfThread->threadId);
+                        selfThread->shouldABCTrack = false;
                         
-                        if(abcIsThreadOriginUntracked(dvmThreadSelf()->abcThreadId)){
-                            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+                        if(abcIsThreadOriginUntracked(selfThread->abcThreadId)){
+                            abcLockMutex(selfThread, &gAbc->abcMainMutex);
                             if(gDvm.isRunABC == true){
-                                addNativeExitToTrace(abcOpCount++, dvmThreadSelf()->threadId);
-                                //abcRemoveThreadFromLogicalIdMap(dvmThreadSelf()->threadId);
+                                addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
                             }
                             abcUnlockMutex(&gAbc->abcMainMutex);
-                            //dvmThreadSelf()->abcThreadId = -1;
                         }
                         break;
                     }

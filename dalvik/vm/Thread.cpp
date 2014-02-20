@@ -1462,7 +1462,7 @@ bool dvmCreateInterpThread(Object* threadObj, int reqStackSize)
     /*Android bug-checker*/
     if(gDvm.isRunABC == true && newThread->abcThreadId != -1){
   //   && abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end())
-        std::map<int, AbcCurAsync*>::iterator curAsyncIter = abcThreadCurAsyncMap.find(self->threadId);
+        std::map<int, AbcCurAsync*>::iterator curAsyncIter = abcThreadCurAsyncMap.find(self->abcThreadId);
         if(curAsyncIter != abcThreadCurAsyncMap.end()){
          
         AbcCurAsync* curAsync = curAsyncIter->second;
@@ -1471,7 +1471,7 @@ bool dvmCreateInterpThread(Object* threadObj, int reqStackSize)
 
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
-                addForkToTrace(abcOpCount++, self->threadId, newThread->threadId);
+                addForkToTrace(abcOpCount++, self->abcThreadId, newThread->abcThreadId);
             }
             abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
@@ -1527,7 +1527,7 @@ static void* interpThreadStart(void* arg)
     if(gDvm.isRunABC == true && self->abcThreadId != -1){
         abcLockMutex(self, &gAbc->abcMainMutex);
         abcAddThreadToMap(self, threadName.c_str());
-        addThreadToCurAsyncMap(self->threadId);
+        addThreadToCurAsyncMap(self->abcThreadId);
         abcUnlockMutex(&gAbc->abcMainMutex);
       //  self->shouldABCTrack = true;
 
@@ -1623,7 +1623,7 @@ static void* interpThreadStart(void* arg)
     if(gDvm.isRunABC == true && self->abcThreadId != -1){
          abcLockMutex(self, &gAbc->abcMainMutex);
          if(gDvm.isRunABC == true){
-            addThreadInitToTrace(abcOpCount++, self->threadId);        
+            addThreadInitToTrace(abcOpCount++, self->abcThreadId);        
          }
          abcUnlockMutex(&gAbc->abcMainMutex);
     }
@@ -2216,8 +2216,8 @@ void dvmDetachCurrentThread()
 
              abcLockMutex(self, &gAbc->abcMainMutex);
              if(gDvm.isRunABC == true){
-                addThreadExitToTrace(abcOpCount++, self->threadId);
-                abcThreadCurAsyncMap.erase(self->threadId);
+                addThreadExitToTrace(abcOpCount++, self->abcThreadId);
+                abcThreadCurAsyncMap.erase(self->abcThreadId);
                 //abcRemoveThreadFromLogicalIdMap(self->threadId);
              }
 

@@ -153,7 +153,7 @@ static void Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId(const u4* args,
         int intentId = args[2];
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        addInstanceIntentMapToTrace(abcOpCount++, dvmThreadSelf()->threadId, instance, intentId);
+        addInstanceIntentMapToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, instance, intentId);
         abcUnlockMutex(&gAbc->abcMainMutex);
     }    
     RETURN_VOID();
@@ -215,10 +215,10 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
         u4 componentId = args[2];
         int state = args[3];
 
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
             abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-            addTriggerServiceLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, componentId, state);
+            addTriggerServiceLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
             LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
@@ -238,10 +238,10 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
         u4 componentId = args[2];
         int state = args[3];
         
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
             abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-            addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, componentId, state);
+            addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
             LOGE("ABC-DONT-LOG: enable lifecycle found in a deleted async block. aborting trace creation");
@@ -264,7 +264,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
         int state = args[3];
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        addTriggerLifecycleToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, componentId, state);
+        addTriggerLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
 
@@ -296,9 +296,9 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             gDvm.isRunABC = false;
         }*/
         
-        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+        abcLockMutex(selfThread, &gAbc->abcMainMutex);
         if(state != ABC_TRIGGER_ONRECIEVE_LATER){
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
                 componentId, intentId, state, delayTriggerOpid);
         }else{
             //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
@@ -314,10 +314,10 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
                     gDvm.isRunABC = false;
                     return;
                 }
-                addThreadToCurAsyncMap(selfThread->threadId);
+                addThreadToCurAsyncMap(selfThread->abcThreadId);
             }
 
-            addNativeEntryToTrace(abcOpCount++, selfThread->threadId);
+            addNativeEntryToTrace(abcOpCount++, selfThread->abcThreadId);
 
             AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
             receiver->action = new char[strlen(action) + 1];
@@ -329,9 +329,9 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
                     selfThread->threadId, receiver));
 
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->threadId, action, 
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
                 componentId, intentId, state, delayTriggerOpid);
-            addNativeExitToTrace(abcOpCount++, selfThread->threadId);
+            addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
 
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -365,7 +365,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
                 outfile << "NO-TRIGGER  viewHash:" << view << "  event:" << event << "\n";
                 outfile.close();
             }else{
-                addTriggerEventToTrace(abcOpCount++, dvmThreadSelf()->threadId, view, event);
+                addTriggerEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
             }
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -380,7 +380,7 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
         int event = args[2];
 
         //view = 0 indicates the event to be BACK PRESS / MENU CLICK / ROTATE-SCREEN
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
@@ -389,12 +389,12 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
             std::set<int> eventSet;
             eventSet.insert(event);
             abcViewEventMap.insert(std::make_pair(view, eventSet));
-            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->threadId, view, event);
+            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
         }else{
             if(it->second.find(event) == it->second.end()){
                 it->second.insert(event);
             } 
-            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->threadId, view, event);
+            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -448,7 +448,7 @@ static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, J
         u4 view = args[1];
         int event = args[2];
 
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
@@ -457,11 +457,11 @@ static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, J
             std::set<int> eventSet;
             eventSet.insert(event);
             abcViewEventMap.insert(std::make_pair(view, eventSet));
-            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->threadId, view, event);
+            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
         }else{
             if(it->second.find(event) == it->second.end()){
                 it->second.insert(event);
-                addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->threadId, view, event);
+                addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
             }    
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -484,10 +484,10 @@ static void Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent(const u4* 
         u4 windowHash = args[1];
  
         Thread* selfThread = dvmThreadSelf();
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
         if(!curAsync->hasMQ || curAsync->asyncId != -1){
             abcLockMutex(selfThread, &gAbc->abcMainMutex);
-            addEnableWindowFocusChangeEventToTrace(abcOpCount++, selfThread->threadId, windowHash);
+            addEnableWindowFocusChangeEventToTrace(abcOpCount++, selfThread->abcThreadId, windowHash);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
             LOGE("ABC-ABORT: ENABLE-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
@@ -507,10 +507,10 @@ static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4*
         u4 windowHash = args[1];
 
         Thread* selfThread = dvmThreadSelf();
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
         if(!curAsync->hasMQ || curAsync->asyncId != -1){
             abcLockMutex(selfThread, &gAbc->abcMainMutex);
-            addTriggerWindowFocusChangeEventToTrace(abcOpCount++, selfThread->threadId, windowHash);
+            addTriggerWindowFocusChangeEventToTrace(abcOpCount++, selfThread->abcThreadId, windowHash);
             abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
             LOGE("ABC-ABORT: TRIGGER-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
@@ -528,7 +528,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4*
 static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true && abcThreadBaseMethodMap.find(dvmThreadSelf()->threadId)
             != abcThreadBaseMethodMap.end()){
-    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
+    AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
     StringObject* dbPathStr = (StringObject*) args[1];
@@ -549,12 +549,12 @@ static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         if(gDvm.isRunABC == true){
             addReadWriteToTrace(abcRWCount++, accessType, NULL, "", 0,
-                NULL, pathStr, dvmThreadSelf()->threadId);
-         /*   std::ofstream outfile;
+                NULL, pathStr, dvmThreadSelf()->abcThreadId);
+            std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << dvmThreadSelf()->threadId
+                        outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << dvmThreadSelf()->abcThreadId
                             << " database:" << dbPath << "\n";
-            outfile.close(); */
+            outfile.close(); 
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
 
@@ -577,7 +577,6 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
     if(gDvm.isRunABC == true){
 
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 msgHash = args[1];
         s8 delay = GET_ARG_LONG(args,2);
         int isFrontPost = args[4];
@@ -607,7 +606,7 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
                 gDvm.isRunABC = false;
                 return;
             }
-            addThreadToCurAsyncMap(selfThread->threadId);
+            addThreadToCurAsyncMap(selfThread->abcThreadId);
               
             abcUnlockMutex(&gAbc->abcMainMutex);
         }
@@ -624,7 +623,7 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
 
         //delete front-of-queue messages and its descendents
-        if(delay == -1 || abcThreadCurAsyncMap.find(selfThread->threadId)->second->shouldRemove){
+        if(delay == -1 || abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second->shouldRemove){
              //indicate that this async block should be removed
              abcAsyncStateMap.insert(std::make_pair(msg->msgId, std::make_pair(true, false)));
 //             LOGE("ABC: message to be removed %d", msg->msgId);
@@ -639,13 +638,13 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         abcAsyncStateMap.insert(std::make_pair(msg->msgId, std::make_pair(false, false)));
         if(it->second->isOriginUntracked == true){
             if(gDvm.isRunABC == true){
-                addNativeEntryToTrace(nativeEntryId, curTid);
-                msg->postId = addPostToTrace(msg->postId, curTid, msg->msgId, -1, delay);
-                addNativeExitToTrace(abcOpCount++, curTid);
+                addNativeEntryToTrace(nativeEntryId, selfThread->abcThreadId);
+                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, -1, delay);
+                addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
             }
         }else{
             if(gDvm.isRunABC == true){
-                msg->postId = addPostToTrace(msg->postId, curTid, msg->msgId, -1, delay);
+                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, -1, delay);
             }
         }
         }
@@ -658,7 +657,6 @@ static void Dalvik_java_lang_VMThread_abcPrintCallMsg(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 msgHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
@@ -670,11 +668,12 @@ static void Dalvik_java_lang_VMThread_abcPrintCallMsg(const u4* args,
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         } 
+        int curTid = selfThread->abcThreadId;
 
         if(gDvm.isRunABC == true){
             std::map<u4, AbcMsg*>::iterator msgIter = abcUniqueMsgMap.find(msgHash); 
             std::map<int, std::pair<bool,bool> >::iterator msgState = abcAsyncStateMap.find(msgIter->second->msgId);
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(curTid)->second;
             curAsync->asyncId = msgIter->second->msgId;
             curAsync->shouldRemove = msgState->second.first;
             //if(msgIter != abcUniqueMsgMap.end()){
@@ -717,15 +716,14 @@ static void Dalvik_java_lang_VMThread_abcPrintRetMsg(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 msgHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         if(gDvm.isRunABC == true){
 
             std::map<u4,AbcMsg*>::iterator msgIter = abcUniqueMsgMap.find(msgHash);
-            if(abcThreadCurAsyncMap.find(selfThread->threadId)->second->shouldRemove == false){
-                addRetToTrace(abcOpCount++, curTid, msgIter->second->msgId);
+            if(abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second->shouldRemove == false){
+                addRetToTrace(abcOpCount++, selfThread->abcThreadId, msgIter->second->msgId);
             }else{
                 //no need to maintain info of an async block which is deleted
                 abcAsyncStateMap.erase(msgIter->second->msgId);
@@ -734,7 +732,7 @@ static void Dalvik_java_lang_VMThread_abcPrintRetMsg(const u4* args,
             abcUniqueMsgMap.erase(msgHash);
             free(tmpPtr);
 
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->threadId)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
             curAsync->asyncId = -1;
             curAsync->shouldRemove = false;
 
@@ -776,7 +774,6 @@ static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 queueHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
@@ -790,7 +787,7 @@ static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
         }
 
         if(gDvm.isRunABC == true){
-            addAttachQToTrace(abcOpCount++, curTid, queueHash);
+            addAttachQToTrace(abcOpCount++, selfThread->abcThreadId, queueHash);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
@@ -802,7 +799,6 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 queueHash = args[1];
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
@@ -816,8 +812,8 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
         }
 
         if(gDvm.isRunABC == true){
-            abcThreadCurAsyncMap.find(selfThread->threadId)->second->hasMQ = true;
-            addLoopToTrace(abcOpCount++, curTid, queueHash);
+            abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second->hasMQ = true;
+            addLoopToTrace(abcOpCount++, selfThread->abcThreadId, queueHash);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
@@ -829,7 +825,6 @@ static void Dalvik_java_lang_VMThread_abcLogQueueIdle(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 idleHandlerHash = args[1];
         u4 queueHash = args[2];
 
@@ -842,7 +837,7 @@ static void Dalvik_java_lang_VMThread_abcLogQueueIdle(const u4* args,
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }else{
-            addQueueIdleToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+            addQueueIdleToTrace(abcOpCount++, idleHandlerHash, queueHash, selfThread->abcThreadId);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
@@ -854,7 +849,6 @@ static void Dalvik_java_lang_VMThread_abcLogAddIdleHandler(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 idleHandlerHash = args[1];
         int queueHash = args[2];
 
@@ -865,10 +859,10 @@ static void Dalvik_java_lang_VMThread_abcLogAddIdleHandler(const u4* args,
             gDvm.isRunABC = false;
             return;
         }else{
-            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(curTid)->second;
+            AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
                 abcLockMutex(selfThread, &gAbc->abcMainMutex);
-                addIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+                addIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, selfThread->abcThreadId);
                 abcUnlockMutex(&gAbc->abcMainMutex);
             }else{
                 LOGE("ABC-DONT-LOG: found a ADD_IDLE_HANDLER in deleted async block. not logging it");
@@ -883,7 +877,6 @@ static void Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
         Thread* selfThread = dvmThreadSelf();
-        int curTid = selfThread->threadId;
         u4 idleHandlerHash = args[1];
         u4 queueHash = args[2];
 
@@ -896,7 +889,7 @@ static void Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler(const u4* args,
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }else{
-            addRemoveIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, curTid);
+            addRemoveIdleHandlerToTrace(abcOpCount++, idleHandlerHash, queueHash, selfThread->abcThreadId);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
