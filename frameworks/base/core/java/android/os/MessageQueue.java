@@ -154,13 +154,13 @@ public class MessageQueue {
 
                          		if(Looper.mcd.getLastPausedActivity() == null)
                          			fireEvent = true;
-                         		else if(!Looper.mcd.getVisibleActivity().getLocalClassName().equals(
-                         				Looper.mcd.getLastPausedActivity().getLocalClassName()))
+                         		else if(Looper.mcd.getVisibleActivity().hashCode() != 
+                         				Looper.mcd.getLastPausedActivity().hashCode())
                  					fireEvent = true;
                  				else if(Looper.mcd.resumedTime > Looper.mcd.pausedTime)
                  					fireEvent = true;
                  				else if(Looper.mcd.isPreviousBackClickEvent && (Looper.mcd.getLastPausedActivity().
-                 						getLocalClassName().equals(Looper.mcd.getLastDestroyedActivity().getLocalClassName()))
+                 						hashCode()  == Looper.mcd.getLastDestroyedActivity().hashCode())
                  						&& Looper.mcd.destroyTime > Looper.mcd.pausedTime)
                  					backtrack = true;	 //pressing BACK has taken control outside the app under test
                          		
@@ -209,13 +209,14 @@ public class MessageQueue {
 
                       		if(Looper.mcd.getLastPausedActivity() == null)
                       			fireEvent = true;
-                      		else if(!Looper.mcd.getVisibleActivity().getLocalClassName().equals(Looper.mcd.getLastPausedActivity().getLocalClassName()))
+                      		else if(Looper.mcd.getVisibleActivity().hashCode() != 
+                      				Looper.mcd.getLastPausedActivity().hashCode())
               					fireEvent = true;
               				else if(Looper.mcd.resumedTime > Looper.mcd.pausedTime)
               					fireEvent = true;
               				else if(Looper.mcd.getLastDestroyedActivity() != null && Looper.mcd.isPreviousBackClickEvent 
-              						&& (Looper.mcd.getLastPausedActivity().
-             						getLocalClassName().equals(Looper.mcd.getLastDestroyedActivity().getLocalClassName()))
+              						&& (Looper.mcd.getLastPausedActivity().hashCode() == 
+              						Looper.mcd.getLastDestroyedActivity().hashCode())
              						&& Looper.mcd.destroyTime > Looper.mcd.pausedTime)
              					backtrack = true;	 //pressing BACK has taken control outside the app under test
                       		

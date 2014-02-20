@@ -53,8 +53,10 @@ import android.os.Debug;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.McdDB;
 import android.os.Message;
 import android.os.MessageQueue;
+import android.os.ModelCheckingDriver;
 import android.os.ParcelFileDescriptor;
 import android.os.Process;
 import android.os.RemoteException;
@@ -1247,6 +1249,18 @@ public final class ActivityThread {
                 case DESTROY_ACTIVITY:                	
                     handleDestroyActivity((IBinder)msg.obj, msg.arg1 != 0,
                             msg.arg2, false);
+                    /*Android bug-checker*/
+                    if(AbcGlobal.abcLogFile != null){
+                    	if(Looper.mcd.getVisibleActivity().hashCode() == 
+                    			Looper.mcd.getLastDestroyedActivity().hashCode()){
+                    		//event has taken control outside the app under test
+                    		//because visible activity hash not yet changed
+                    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+                			SQLiteDatabase database = mcdDB.getWritableDatabase();
+                			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+                    	}
+                    }
+                    /*Android bug-checker*/
                     break;
                 case BIND_APPLICATION:
                 	/*Android bug-checker*/
