@@ -685,9 +685,9 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
 
                     updated = true;
 
-                    delete[] service->prevStartedServiceOp;
-                    delete[] service->prevBoundServiceOp;
-                    delete[] service;
+                    free(service->prevStartedServiceOp);
+                    free(service->prevBoundServiceOp);
+                    delete service;
                     AbcServiceMap.erase(serviceName);
                 }else{
                     LOGE("state %d of service %s encountered spurious previous states "
@@ -799,7 +799,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
         }
         else if(state == ABC_REQUEST_STOP_SERVICE){
             if(serIter != AbcServiceMap.end()){
-                if(serIter->second->firstStopServiceRequest != -1){
+                if(serIter->second->firstStopServiceRequest == -1){
                     serIter->second->firstStopServiceRequest = opId;
                 }
             }
@@ -939,12 +939,6 @@ void addEnableLifecycleEventToMap(int opId, AbcOp* op){
         lst->prev = NULL;
         
         AbcEnableTriggerLcMap.insert(std::make_pair(instanceStatePair, lst));
-        
-        //debugging
-        it  = AbcEnableTriggerLcMap.find(instanceStatePair);
-        if(it != AbcEnableTriggerLcMap.end()){
-            LOGE("instance %d state %d just added to enable map", instance, state);
-        }
     }
 }
 
@@ -1087,13 +1081,11 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
     /*in all the states except LAUNCH check if prevOperation of the activity is in 
      *the expected state, only then perform other task
      */
-    LOGE("Activity state machine entered: instance %d, state %d", instance, state);
     switch(state){
       case ABC_LAUNCH:
         //if any instance with same id remaining clear it
         //should not happen usually. but not considering as a serious error...
         ActivityStateMap.erase(instance); 
-        LOGE("LAUNCH-ACT state machine entered: instance %d, state %d", instance, state);
  
         //add an entry to activity state tracking map
         /*for LAUNCH instance is actually intentId. Instance will be sent later

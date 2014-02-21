@@ -3647,7 +3647,6 @@ public class ModelCheckingDriver {
 			return;
 		}
 		if(abcSilentReturn){
-			Log.e("ABC", "ABC return silently");
 			return;
 		}else{ 
 		//add extra check for BACK button press later checking if removeView was 
@@ -3656,14 +3655,15 @@ public class ModelCheckingDriver {
 			if(isCorrectViewOnTop == false){
 				return;
 			}else if(popupWindows.size() == 0){
-				//maybe only this check is sufficient and isCorrectViewOnTop is not needed, 
-				//but not sure of this
-//				if(isViewRootFocused(WindowManagerImpl.getDefault().getViewRoots().length - 1) 
-//						== false){
-//					return;
-//				}
-				if(getViewRootInFocus() == -1){
-					return;
+				//check if topmost view has focus if not any view has focus
+				if(isViewRootFocused(WindowManagerImpl.getDefault().getViewRoots().length - 1) == false){
+					if(abcHangCounter < HANG_LIMIT){
+					    abcHangCounter++;
+					    return;
+					}else if(getViewRootInFocus() == -1){
+						Log.e(TAG, "no view has focus. cannot continue further till a view gets focus");
+						return;
+					}					
 				}
 			}
 		}else if(popupWindows.size() == 0){
@@ -4204,6 +4204,11 @@ public class ModelCheckingDriver {
 	    			data = getTextDataStoredForPathNode(nodeToExecute, database);
     			}
     			
+    			viewRes.close();
+    			viewRes = null;
+    			screen.close();
+    			screen = null;
+    			
     			popupsCreatedOnLastEvent = 0;
 				isCorrectViewOnTop = false;
 	        	previousEventActivity = getVisibleActivity().hashCode();
@@ -4213,10 +4218,6 @@ public class ModelCheckingDriver {
     			triggerUIEvent(targetView, tmpUiEventType, data);
     			
     			targetView = null; //to avoid any window leak
-    			viewRes.close();
-    			viewRes = null;
-    			screen.close();
-    			screen = null;
     		}else if(eventType == INTENT_EVENT){
     			Log.v(TAG,"intent event");
     		}
