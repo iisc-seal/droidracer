@@ -33,6 +33,10 @@ LOCAL_LDLIBS += -lX11
    $./adb shell "echo dalvik.vm.execution-mode = int:portable >> /data/local.prop"
    #this shifts emulator's interpreter from assembly (fast) to C mode..some of
    droidRacer instrumentation is on this C code.
+   ->also, install google services apk (com.google.android.gms.apk) and google play
+   apk (com.android.vending-4.4.21.apk) only if you want to test google apps or
+   apps those need google apps or google service to be present. Uninstall them when testing
+   other apps to avoid unnecessary logs
 
 6. create sdcard using mksdcard tool provided with android SDK. E.g.,
    $/mksdcard 8192M <path-leading-to-droidRacer>/out/target/product/generic/sdcard.img
