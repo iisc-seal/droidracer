@@ -1883,9 +1883,20 @@ public class ModelCheckingDriver {
 		long eventID;
 		Cursor cursor;
 		int priority;
-		int viewType = getSimplifiedClassOfView(v.getClass());
-		
+		int viewType = getSimplifiedClassOfView(v.getClass());		
+				
 		if(v.getVisibility() == View.VISIBLE && v.isEnabled()){
+			boolean ignoreEvent = false;
+			if(viewType == VIEW_SEARCH_VIEW){
+				ignoreEvent = true; //dont trigger click/long-click on search view
+			}else if(v instanceof EditText){
+				if(((EditText)v).getText() == null || 
+						((EditText)v).getText().toString() == ""){
+					ignoreEvent = true; //trigger click/long-click only for non empty string
+				}
+			}
+			
+			if(!ignoreEvent){
 			if(v.isClickable() && !(v instanceof EditText) &&
 					!(parentViewType == VIEW_LIST_VIEW || parentViewType == VIEW_SPINNER || 
 					parentViewType == VIEW_ABS_LIST_VIEW || parentViewType == VIEW_ABS_SPINNER ||
@@ -2075,6 +2086,8 @@ public class ModelCheckingDriver {
 				}
 				tmp.close();
 				tmp = null;
+			}
+			
 			}
 			
 			if(v.isClickable()){	
@@ -4966,7 +4979,7 @@ public class ModelCheckingDriver {
         	
         	if(getVisibleActivity() != null){
         		addEventToUnexploredList(BACK_CLICK_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
-        		addEventToUnexploredList(MENU_CLICK_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
+        		addEventToUnexploredList(MENU_CLICK_EVENT_ID, UI_EVENT, pathNodeID, 15, database);
         		addEventToUnexploredList(ROTATE_SCREEN_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
         	}
         	

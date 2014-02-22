@@ -1,5 +1,3 @@
-** this one has the version submitted to PLDI 2014 **
-
 Note: use a machine with atleast 16 threads and more than 16GB RAM for faster builds
 (first build nearly 25 mins...incremental builds between 2-6 minutes)...otherwise may
 take hours based on resources provided.
@@ -24,6 +22,8 @@ LOCAL_LDLIBS += -lX11
 3. make sure your android source builds and runs fine. Then, replace the original
    corresponding files with the files provided in droidRacer repo. When there is 
    no corresponding file/folder in the original source add it from droidRacer.
+   ->copy com.google.android.maps.jar to out/target/product/generic/system/framework/
+   ->copy com.google.android.maps.xml to frameworks/base/data/etc/
 
 4. $make update-api   #needed as the replaced files modify some Java APIs
    $make -j<n>

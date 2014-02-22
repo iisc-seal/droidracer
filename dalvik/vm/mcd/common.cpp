@@ -40,10 +40,10 @@ void addEdgeToHBGraph(int op1, int op2){
             LOGE("ABC-MISSING: adjMap has no entry for %d or %d operations", op1, op2);
         }
 
-        std::ofstream outfile;
+/*        std::ofstream outfile;
         outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
         outfile << "( " << op1 << ", " << op2  << " ) \n";
-        outfile.close();  
+        outfile.close();  */
     }
  //   LOGE("ABC: exit HB graph");
 }
