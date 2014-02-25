@@ -3680,8 +3680,15 @@ public class ModelCheckingDriver {
 				}
 			}
 		}else if(popupWindows.size() == 0){
-			if(getViewRootInFocus() == -1){
-				return;
+			//check if topmost view has focus if not any view has focus
+			if(isViewRootFocused(WindowManagerImpl.getDefault().getViewRoots().length - 1) == false){
+				if(abcHangCounter < HANG_LIMIT){
+				    abcHangCounter++;
+				    return;
+				}else if(getViewRootInFocus() == -1){
+					Log.e(TAG, "no view has focus. cannot continue further till a view gets focus");
+					return;
+				}					
 			}
 		}
 		
