@@ -34,6 +34,7 @@ import android.os.AbcGlobal;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.StrictMode;
@@ -654,6 +655,19 @@ public final class LoadedApk {
                 if (rd != null) {
                 	/*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
+                		//set class loader before doing a get on bundle
+                		if(intent.getExtras() != null){
+							try {
+								Class appClass = Class.forName(Looper.mcd.sampleAppClass);
+								intent.setExtrasClassLoader(
+		            					appClass.getClassLoader());
+							} catch (ClassNotFoundException e) {
+								if(rd.mReceiver != null){
+									intent.setExtrasClassLoader(
+											rd.mReceiver.getClass().getClassLoader());
+								}
+							}            			    
+                		}
                 	    Thread.currentThread().abcTriggerBroadcastLifecycle(
                 	    		intent.getAction(), rd.mReceiver.hashCode(), 
                 	    		intent.getIntExtra("androidBugCheckerIntentId", -9), 

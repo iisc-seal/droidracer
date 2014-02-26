@@ -1908,6 +1908,23 @@ public final class ActivityThread {
         /*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
     		if(r.intent != null){
+    			if(r.intent.getExtras() != null){
+    				
+					try {
+						Class appClass = Class.forName(Looper.mcd.sampleAppClass);
+						r.intent.setExtrasClassLoader(
+	    						appClass.getClassLoader());
+					} catch (ClassNotFoundException e) {
+						e.printStackTrace();
+						if (r.packageInfo == null) {
+				            LoadedApk appPackage = getPackageInfo(r.activityInfo.applicationInfo, r.compatInfo,
+				                    Context.CONTEXT_INCLUDE_CODE);
+				            r.intent.setExtrasClassLoader(appPackage.getClassLoader());
+				        }else{
+				        	r.intent.setExtrasClassLoader(r.packageInfo.getClassLoader());
+				        }
+					}    				
+    			}
     			if(r.intent.getIntExtra(
     					"androidBugCheckerIntentId", -1) == -1){
     				r.intent.putExtra("androidBugCheckerIntentId", 
@@ -2097,6 +2114,21 @@ public final class ActivityThread {
         /*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
     		if(r.intent != null){
+    			if(r.intent.getExtras() != null){
+    				try {
+						Class appClass = Class.forName(Looper.mcd.sampleAppClass);
+						r.intent.setExtrasClassLoader(
+	    						appClass.getClassLoader());
+					} catch (ClassNotFoundException e) {
+				        if (r.packageInfo == null) {
+				            LoadedApk appPackage = getPackageInfo(r.activityInfo.applicationInfo, r.compatInfo,
+				                    Context.CONTEXT_INCLUDE_CODE);
+				            r.intent.setExtrasClassLoader(appPackage.getClassLoader());
+				        }else{
+				        	r.intent.setExtrasClassLoader(r.packageInfo.getClassLoader());
+				        }
+					}    				    				
+    			}
     			if(r.intent.getIntExtra(
     					"androidBugCheckerIntentId", -1) == -1){
     				r.intent.putExtra("androidBugCheckerIntentId", 
@@ -2126,6 +2158,10 @@ public final class ActivityThread {
         if (a != null) {
         	/*Android bug-checker*/
         	if(AbcGlobal.abcLogFile != null){
+        		if(r.intent.getExtras() != null){
+        			r.intent.setExtrasClassLoader(a.getClassLoader());				
+    			}
+        		
         		Thread.currentThread().abcMapInstanceWithIntentId(a.hashCode(), 
         				r.intent.getIntExtra("androidBugCheckerIntentId", -4));
         	}
@@ -2813,6 +2849,10 @@ public final class ActivityThread {
             /*Android bug-checker*/
             if(AbcGlobal.abcLogFile != null && !AbcGlobal.isRelaunchInProgress){
             	if(AbcGlobal.abcLaunchStopMap.size() > 0){
+            		if(r.intent.getExtras() != null){
+        				r.intent.setExtrasClassLoader(
+        						r.activity.getClassLoader());
+        			}
         			AbcHashNamePair stopActvity = AbcGlobal.abcLaunchStopMap.get(
         					r.intent.getIntExtra("androidBugCheckerIntentId", 4444));
         			if(stopActvity != null){

@@ -2124,7 +2124,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         /*Android bug-checker*/
 //        return chooseBestActivity(intent, resolvedType, flags, query);
         ResolveInfo chosenActivity = chooseBestActivity(intent, resolvedType, flags, query);
-        if(intent.getStringExtra("androidBugCheckerAppUT") != null){
+        /*if(intent.getStringExtra("androidBugCheckerAppUT") != null){
         	if(!chosenActivity.activityInfo.packageName.equals(
         			intent.getStringExtra("androidBugCheckerAppUT"))){
         		boolean foundCompatibleActivity = false;
@@ -2144,7 +2144,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         					"after passing all checks");
         		}
         	}
-        }
+        }*/
         
         return chosenActivity;
         /*Android bug-checker*/
@@ -2502,7 +2502,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                 
                 /*Android bug-checker*/
             	ResolveInfo chosenService = query.get(0);
-                if(intent.getStringExtra("androidBugCheckerAppUT") != null){
+             /*   if(intent.getStringExtra("androidBugCheckerAppUT") != null){
                 	if(!query.get(0).serviceInfo.packageName.equals(
                 			intent.getStringExtra("androidBugCheckerAppUT"))){
                 		boolean foundCompatibleService = false;
@@ -2522,7 +2522,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                 					"after passing all checks");
                 		}
                 	}
-                }
+                }*/
                 
                 return chosenService;
                 /*Android bug-checker*/

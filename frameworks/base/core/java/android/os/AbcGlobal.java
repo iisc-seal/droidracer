@@ -131,6 +131,7 @@ public class AbcGlobal {
 	    	String appUT = null;
 	    	int event_depth = 0;
 	    	int initDelay = 0;
+	    	String sampleAppClass = null;
 			try {
 				BufferedReader br = new BufferedReader(new FileReader(
 						"/mnt/sdcard/Download/abc.txt"));
@@ -139,6 +140,7 @@ public class AbcGlobal {
 				//read the depth for event to be executed (should be greater than one)
 				//it is in 3rd line of abc.txt
 			   	br.readLine(); //skip second line
+			   	sampleAppClass = br.readLine();
 			   	event_depth = Integer.valueOf(br.readLine());
 			    initDelay = Integer.valueOf(br.readLine());
 				br.close();	
@@ -149,9 +151,12 @@ public class AbcGlobal {
 			if(appName.equals(appUT)){
 				Looper.mcd.appUT = appName; 
 				abcLogFile = "/data/data/" + appUT + "/abc_log.txt";
+				Looper.mcd.sampleAppClass = sampleAppClass;
 				ModelCheckingDriver.DEPTH_LIMIT = event_depth;
 				ModelCheckingDriver.initDelay = initDelay;
-				Log.e("abc", "abcFile: " + abcLogFile + " event-depth-limit:" 
+				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
+						Looper.mcd.sampleAppClass +
+						" event-depth-limit:" 
 						+ event_depth + " init-delay:" + initDelay);
 				Looper.mcd.abcSilentReturn = false;
 				
@@ -251,52 +256,18 @@ public class AbcGlobal {
 		if(v.getVisibility() == View.VISIBLE && v.isEnabled()){
 		    switch(eventType){
 		    case ModelCheckingDriver.EVENT_CLICK: 
-		    	if(v.isClickable()){
-		    		/*File file = new File(abcLogFile);
-		    		String msgTxt = "ENABLE EVENT  view:" + v.toString() + "  hash:"
-		    				+ v.hashCode() + "  event:" + String.valueOf(eventType) + "\n";
-		    	
-		    		try {
-		    			byte[] contentInBytes = msgTxt.getBytes();
-		    			FileOutputStream fop = new FileOutputStream(file, true);
-		    			fop.write(contentInBytes);
-		    			fop.flush();
-		    			fop.close();
-		    		} catch (FileNotFoundException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		} catch (IOException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		}*/
-		    		
+		    	if(v.isClickable()){		    		
 		    		Thread.currentThread().abcAddEnableEventForView(
-		    				v.hashCode(), eventType);
-		    		abcEnableSpecialEvents(v, false);
+		    				v.hashCode(), eventType);	
 		    	}else{
 		    		abcRemoveAllEventsOfView(v, ModelCheckingDriver.EVENT_LONG_CLICK);
 		    	}
+		    	//special events are added even if view is not clickable but visible & enabled(because
+		    	//a parent view containing spl.event view could be clickable)
+		    	abcEnableSpecialEvents(v, false);
 		    	break;
 		    case ModelCheckingDriver.EVENT_LONG_CLICK:
 		    	if(v.isLongClickable()){
-		    		/*File file = new File(abcLogFile);
-		    		String msgTxt = "ENABLE EVENT  view:" + v.toString() + "  hash:"
-		    				+ v.hashCode() + "  event:" + String.valueOf(eventType) + "\n";
-		    	
-		    		try {
-		    			byte[] contentInBytes = msgTxt.getBytes();
-		    			FileOutputStream fop = new FileOutputStream(file, true);
-		    			fop.write(contentInBytes);
-		    			fop.flush();
-		    			fop.close();
-		    		} catch (FileNotFoundException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		} catch (IOException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		}*/
-		    		
 		    		Thread.currentThread().abcAddEnableEventForView(
 		    				v.hashCode(), eventType);
 		    	}else{
@@ -346,25 +317,7 @@ public class AbcGlobal {
 			if(EditText.class.isInstance(v)){
 				if(forceAdd){
 					abcForceAddEnableEvent(v, ModelCheckingDriver.EVENT_SET_TEXT);
-				}else{
-					/*File file = new File(abcLogFile);
-		    		String msgTxt = "ENABLE EVENT  view:" + v.toString() + "  hash:"
-		    				+ v.hashCode() + "  event:" + String.valueOf(ModelCheckingDriver.EVENT_SET_TEXT) + "\n";
-		    	
-		    		try {
-		    			byte[] contentInBytes = msgTxt.getBytes();
-		    			FileOutputStream fop = new FileOutputStream(file, true);
-		    			fop.write(contentInBytes);
-		    			fop.flush();
-		    			fop.close();
-		    		} catch (FileNotFoundException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		} catch (IOException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		}*/
-		    		
+				}else{					
 					Thread.currentThread().abcAddEnableEventForView(
 							v.hashCode(), ModelCheckingDriver.EVENT_SET_TEXT);
 				}
@@ -391,27 +344,9 @@ public class AbcGlobal {
 		 */
 		
 		int viewHash = 0;
-		if(v != null) //for BACK, MENU, ROTATE events
-			viewHash = v.hashCode();
-		
-		/*File file = new File(abcLogFile);
-		String msgTxt = "FORCE-ENABLE EVENT  view:" + ((v != null)? v.toString() : "") + "  hash:"
-				+ viewHash + "  event:" + String.valueOf(eventCode) + "\n";
-	
-		try {
-			byte[] contentInBytes = msgTxt.getBytes();
-			FileOutputStream fop = new FileOutputStream(file, true);
-			fop.write(contentInBytes);
-			fop.flush();
-			fop.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
+		if(v != null){ //for BACK, MENU, ROTATE events
+			viewHash = v.hashCode();		
+		}
 		Thread.currentThread().abcForceAddEnableEvent(viewHash, eventCode);
 	}
 	
@@ -424,25 +359,6 @@ public class AbcGlobal {
 	//on a high level only 2 types of UI events are possible i.e
 	//click and long-click
 	public static void abcRemoveAllEventsOfView(View v, int ignoreEvent){
-		/*File file = new File(abcLogFile);
-		String msgTxt = "REMOVE-EVENT  view:" + v.toString() + "  hash:"
-				+ v.hashCode() + "  IgnoreEvent:" + String.valueOf(ignoreEvent);
-		msgTxt += "  tid:" + String.valueOf(Thread.currentThread().getId()) 
-				+ "\n";
-		try {
-			byte[] contentInBytes = msgTxt.getBytes();
-			FileOutputStream fop = new FileOutputStream(file, true);
-			fop.write(contentInBytes);
-			fop.flush();
-			fop.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
-		
 		Thread.currentThread().abcRemoveAllEventsOfView(v.hashCode(), ignoreEvent);
 	}
 	
@@ -467,11 +383,14 @@ public class AbcGlobal {
     			if(v.isClickable()){
     				abcForceAddEnableEvent(v, 
     			    		ModelCheckingDriver.EVENT_CLICK);
-    			    abcEnableSpecialEvents(v, true);
     			}
-    			if(v.isLongClickable())
+    			if(v.isLongClickable()){
     				abcForceAddEnableEvent(v, 
     			    		ModelCheckingDriver.EVENT_LONG_CLICK);
+    			}
+    			//special events are added even if view is not clickable but visible & enabled(because
+		    	//a parent view containing spl.event view could be clickable)
+		    	abcEnableSpecialEvents(v, true);
     		}
     				
     		if(ViewGroup.class.isInstance(v)){
@@ -486,26 +405,6 @@ public class AbcGlobal {
 		int viewHash = 0;
 		if(v != null) //for BACK, MENU, ROTATE events
 			viewHash = v.hashCode();
-		
-	/*	File file = new File(abcLogFile);
-		
-		String msgTxt = "TRIGGER EVENT  view:" + ((v != null)? v.toString() : "") + "  hash:"
-				+ viewHash + "  event:" + String.valueOf(eventType) + "\n";
-		if(v instanceof Button)
-			msgTxt += " btnText:" + ((Button)v).getText() + "\n";
-		try {
-			byte[] contentInBytes = msgTxt.getBytes();
-			FileOutputStream fop = new FileOutputStream(file, true);
-			fop.write(contentInBytes);
-			fop.flush();
-			fop.close();
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}*/
 		
 		Thread.currentThread().abcTriggerEvent(viewHash, eventType);
 	}

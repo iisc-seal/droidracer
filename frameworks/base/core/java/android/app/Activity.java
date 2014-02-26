@@ -3222,9 +3222,10 @@ public class Activity extends ContextThemeWrapper
 	    		intent.putExtra("androidBugCheckerIntentId", 
 	    				AbcGlobal.getAndIncrementAbcIntentId());
 	    		
-	    		//connection logs for race detection
-//	    		AbcGlobal.setIsPrevEventStartActivity(true);
-	    		
+	    		//set class loader before doing a get on bundle
+    			intent.setExtrasClassLoader(
+    					this.getClass().getClassLoader());
+    			
 	    		synchronized (AbcGlobal.parentAndStartedActivitiesMap) {
 	    			/* issue PAUSE for current Activity from the first startActivity
 	    			 * call. The next Activity launched before handling a preceding
@@ -3249,14 +3250,9 @@ public class Activity extends ContextThemeWrapper
 		    					intent.getIntExtra("androidBugCheckerIntentId", 
 			    						AbcGlobal.getAbcIntentId()));
 	    			}
-		    		
-//		    		AbcGlobal.abcActivityLaunchList.add(
-//		    				intent.getIntExtra("androidBugCheckerIntentId", 
-//		    						AbcGlobal.getAbcIntentId()));
 				}
 	    			    		
 	    		if(requestCode != -1){
-//	    			AbcGlobal.isStartActivityForResult = true;
 	    			AbcGlobal.abcResultSendingActivityIntents.put(
 	    					intent.getIntExtra("androidBugCheckerIntentId", -1), 
 	    					new AbcHashNamePair(this.hashCode(), this.getLocalClassName()));
@@ -3821,6 +3817,11 @@ public class Activity extends ContextThemeWrapper
                 		this.getLocalClassName(), this.hashCode(), 
                 		AbcGlobal.ABC_DESTROY);
                     
+                  //set class loader before doing a get on bundle
+                    if(mIntent.getExtras() != null){
+        			    mIntent.setExtrasClassLoader(
+        					this.getClass().getClassLoader());
+                    }
                     AbcHashNamePair tmpPair = AbcGlobal.abcResultSendingActivityIntents.remove(
                 			mIntent.getIntExtra("androidBugCheckerIntentId", 6789));
                     if(tmpPair != null){

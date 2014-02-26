@@ -149,6 +149,7 @@ public class ModelCheckingDriver {
 	public long destroyTime = 0;
 	String packageName = null;
 	public String appUT = "";
+	public String sampleAppClass = "";
 	Context context = null;
 	public List<PopupWindow> popupWindows = new ArrayList<PopupWindow>();
 	
@@ -914,7 +915,7 @@ public class ModelCheckingDriver {
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_VIEW_TYPE, VIEW_SEARCH_VIEW);
 		values.put(McdDB.COLUMN_UI_EVENT_TYPE, EVENT_SET_QUERY);
-		values.put(McdDB.COLUMN_EVENT_PRIORITY, 46);
+		values.put(McdDB.COLUMN_EVENT_PRIORITY, 59);
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 		
 		values = new ContentValues();
@@ -1402,21 +1403,29 @@ public class ModelCheckingDriver {
 		switch(viewType){
 		case VIEW_CALENDAR_VIEW:eventCodeSet.add(EVENT_SET_DATE_ANIMATE);
 			break;
-		case VIEW_DATE_PICKER:eventCodeSet.add(EVENT_UPDATE_DATE);
+		case VIEW_DATE_PICKER:
+			eventCodeSet.add(EVENT_UPDATE_DATE);
 			break;
-		case VIEW_TIME_PICKER:eventCodeSet.add(EVENT_SET_CURRENT_HOUR_MIN);
+		case VIEW_TIME_PICKER:
+			eventCodeSet.add(EVENT_SET_CURRENT_HOUR_MIN);
 			break;
-		case VIEW_NUMBER_PICKER:eventCodeSet.add(EVENT_SET_VALUE);
+		case VIEW_NUMBER_PICKER:
+			eventCodeSet.add(EVENT_SET_VALUE);
 			break;
-		case VIEW_RATING_BAR:eventCodeSet.add(EVENT_SET_RATING);
+		case VIEW_RATING_BAR:
+			eventCodeSet.add(EVENT_SET_RATING);
 			break;
-		case VIEW_SEARCH_VIEW:eventCodeSet.add(EVENT_SET_QUERY);
+		case VIEW_SEARCH_VIEW:
+			eventCodeSet.add(EVENT_SET_QUERY);
 			break;
-		case VIEW_SEEK_BAR:eventCodeSet.add(EVENT_SET_PROGRESS);
+		case VIEW_SEEK_BAR:
+			eventCodeSet.add(EVENT_SET_PROGRESS);
 			break;
-		case VIEW_SLIDING_DRAWER:eventCodeSet.add(EVENT_TOGGLE);
+		case VIEW_SLIDING_DRAWER:
+			eventCodeSet.add(EVENT_TOGGLE);
 			break;
-		case VIEW_STACK_VIEW:eventCodeSet.add(EVENT_SHOW_NEXT_OR_PREV);
+		case VIEW_STACK_VIEW:
+			eventCodeSet.add(EVENT_SHOW_NEXT_OR_PREV);
 			break;
 		}
 		return eventCodeSet;
@@ -2089,8 +2098,7 @@ public class ModelCheckingDriver {
 			}
 			
 			}
-			
-			if(v.isClickable()){	
+				
 			HashSet<Integer> splEvents = getSpecialEventsForView(viewType);
 			if(splEvents.size() != 0){
 				for(Integer eventCode : splEvents){
@@ -2165,7 +2173,6 @@ public class ModelCheckingDriver {
 		        cursor.close();
 		        cursor = null;
 			}
-		    }
 		}
 		
 		return viewType;
@@ -3364,10 +3371,10 @@ public class ModelCheckingDriver {
 			//contacting local server willnot work if the app does not have INTERNET permission
 		    //this is done by contacting our own app which has necessary perms and it informs the server
 			
-//		    Runnable computeRaceRunnable = new Runnable() {
-//				
-//				@Override
-//				public void run() {
+		    Runnable computeRaceRunnable = new Runnable() {
+				
+				@Override
+				public void run() {
 		            //collect stats
 		            AbcGlobal.abcSetTraceEndTime(SystemClock.uptimeMillis());
 		            AbcGlobal.abcSetRaceDetectionStartTime(SystemClock.uptimeMillis());
@@ -3439,12 +3446,12 @@ public class ModelCheckingDriver {
 			        intent.putExtra("nonUiRaceCount", nonUiRaceCount);
 			        
 			        getContext().startActivity(intent);
-//				}
-//			};
-//		    
-//			Thread.currentThread().abcStopTraceGeneration(); 
-//		    Thread raceDetectionThread = new Thread(computeRaceRunnable);
-//		    raceDetectionThread.start();
+				}
+			};
+		    
+			Thread.currentThread().abcStopTraceGeneration(); 
+		    Thread raceDetectionThread = new Thread(computeRaceRunnable);
+		    raceDetectionThread.start();
 		    
 		/*	if(errorFlag != FLAG_ERROR){
 				long count = Long.MAX_VALUE;

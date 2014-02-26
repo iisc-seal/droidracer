@@ -900,6 +900,11 @@ class ContextImpl extends Context {
         try {
         	/*Android bug-checker*/
         	if(AbcGlobal.abcLogFile != null){
+        		//we dont set classLoader for broadcast intent's
+        		//bundle assuming that this intent might
+        		//be processed by many apps and thus developer
+        		//might not have put a Parcelable of custom class
+        		//if misbehavior observed add set classLoader
         		intent.putExtra("androidBugCheckerIntentId", 
 	    				AbcGlobal.getAndIncrementAbcIntentId());
         	    Thread.currentThread().abcTriggerBroadcastLifecycle(
@@ -1189,6 +1194,9 @@ class ContextImpl extends Context {
 	    	    		service.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
 	    	    		service.putExtra("androidBugCheckerIntentId", 
 	    	    				AbcGlobal.getAndIncrementAbcIntentId());
+	    	    		//set class loader before doing a get on bundle
+						service.setExtrasClassLoader(this.getClassLoader());
+						
 	    	    		//connection logs for race detection
 	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
 	    	    				service.getIntExtra("androidBugCheckerIntentId", 8888), 
