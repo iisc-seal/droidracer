@@ -814,7 +814,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
                 << method->name << "\t class:" << method->clazz->descriptor << "\n";
-            outfile.close(); 
+            outfile.close();   
         }else{
             if(abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
                abcPushMethodForThread(self->threadId, method); 

@@ -4015,6 +4015,8 @@ void detectRaceUsingHbGraph(){
 
 
 bool abcPerformRaceDetection(){
+    ThreadStatus oldStatus = dvmThreadSelf()->status;
+    dvmThreadSelf()->status = THREAD_VMWAIT;
     //cleanup temporary maps
     if(abcThreadAccessSetMap.size() > 0){
         std::map<int, int>::iterator itTmp = abcThreadAccessSetMap.begin();
@@ -4102,6 +4104,7 @@ bool abcPerformRaceDetection(){
              }else{
                  LOGE("ABC: found a trigger event without corresponding enable. view:%d event %d", op->arg2->id, op->arg1);
                  gDvm.isRunABC = false;
+                 dvmThreadSelf()->status = oldStatus;
                  return false;
              }
              break;
@@ -4271,6 +4274,7 @@ bool abcPerformRaceDetection(){
         if(op->opType == ABC_NATIVE_ENTRY){
             shouldAbort = processNativeEntryOperation(opId, op);
             if(shouldAbort){
+                dvmThreadSelf()->status = oldStatus;
                 return false;
             }
         }else{
@@ -4365,14 +4369,16 @@ bool abcPerformRaceDetection(){
              break;
         default: LOGE("ABC: found an unknown opType when processing abcTrace. Aborting.");
                  gDvm.isRunABC = false;
+             dvmThreadSelf()->status = oldStatus;
              return false;
         } 
         
         if(op->opType != ABC_THREADEXIT && op->opType != ABC_INSTANCE_INTENT && 
                     op->opType != ABC_REMOVE_IDLE_HANDLER){
             if(shouldAbort || checkAndAbortIfAssumtionsFailed(opId, op, threadIt->second)){
-               break;
-               // return false;
+              //  break;
+                dvmThreadSelf()->status = oldStatus;
+                return false;
             }
             checkAndAdd_PO_edge(opId, op, threadIt->second->prevOpId);
             if(op->opType != ABC_NATIVE_EXIT && op->opType != ABC_RET && op->opType != ABC_LOOP){
@@ -4385,7 +4391,7 @@ bool abcPerformRaceDetection(){
         }else{
             LOGE("ABC: an operation associated with no thread or logged before its"
                 " corresponding thread creation log found. Trace processing aborted.");
-            gDvm.isRunABC = false;
+            dvmThreadSelf()->status = oldStatus;
             return false;
         }
         }
@@ -4401,6 +4407,7 @@ bool abcPerformRaceDetection(){
     detectRaceUsingHbGraph();
     LOGE("ABC: Race detection completed");
     
+    dvmThreadSelf()->status = oldStatus;
 
     return true;
 }

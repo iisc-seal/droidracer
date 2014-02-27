@@ -330,6 +330,7 @@ public class ModelCheckingDriver {
 	
 	public static int DEPTH_LIMIT = 5; //this should be supplied by a file and set in the beginning
 	public static int initDelay = 0;
+	public static int abcPort = 0;
 	
 	public void initKeyPressEventsAndRotateScreen(SQLiteDatabase db){
 		ContentValues values;
@@ -3444,6 +3445,7 @@ public class ModelCheckingDriver {
 			        intent.putExtra("crossPostRaceCount", crossPostRaceCount);
 			        intent.putExtra("uiRacecount", uiRacecount);
 			        intent.putExtra("nonUiRaceCount", nonUiRaceCount);
+			        intent.putExtra("abcPort", abcPort);
 			        
 			        getContext().startActivity(intent);
 				}

@@ -132,6 +132,7 @@ public class AbcGlobal {
 	    	int event_depth = 0;
 	    	int initDelay = 0;
 	    	String sampleAppClass = null;
+	    	int port = 0;
 			try {
 				BufferedReader br = new BufferedReader(new FileReader(
 						"/mnt/sdcard/Download/abc.txt"));
@@ -143,6 +144,7 @@ public class AbcGlobal {
 			   	sampleAppClass = br.readLine();
 			   	event_depth = Integer.valueOf(br.readLine());
 			    initDelay = Integer.valueOf(br.readLine());
+			    port = Integer.valueOf(br.readLine());
 				br.close();	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -154,6 +156,7 @@ public class AbcGlobal {
 				Looper.mcd.sampleAppClass = sampleAppClass;
 				ModelCheckingDriver.DEPTH_LIMIT = event_depth;
 				ModelCheckingDriver.initDelay = initDelay;
+				ModelCheckingDriver.abcPort = port;
 				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
 						Looper.mcd.sampleAppClass +
 						" event-depth-limit:" 
@@ -173,6 +176,11 @@ public class AbcGlobal {
 		 if(Looper.mcd != null && Looper.mcd.getContext() == null){
 	        	if(Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
 			        Looper.mcd.setContext(appContext);
+			        
+			        //disable Strictmode
+			        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+			        StrictMode.setThreadPolicy(policy);
+			        
 			        if(Looper.mcd.getContext() != null){
 	                    //database creation
 			        	File dbFile = Looper.mcd.getContext().getDatabasePath("abc.db");
@@ -258,13 +266,10 @@ public class AbcGlobal {
 		    case ModelCheckingDriver.EVENT_CLICK: 
 		    	if(v.isClickable()){		    		
 		    		Thread.currentThread().abcAddEnableEventForView(
-		    				v.hashCode(), eventType);	
+		    				v.hashCode(), eventType);
 		    	}else{
 		    		abcRemoveAllEventsOfView(v, ModelCheckingDriver.EVENT_LONG_CLICK);
 		    	}
-		    	//special events are added even if view is not clickable but visible & enabled(because
-		    	//a parent view containing spl.event view could be clickable)
-		    	abcEnableSpecialEvents(v, false);
 		    	break;
 		    case ModelCheckingDriver.EVENT_LONG_CLICK:
 		    	if(v.isLongClickable()){
@@ -274,7 +279,10 @@ public class AbcGlobal {
 		    		abcRemoveAllEventsOfView(v, ModelCheckingDriver.EVENT_CLICK);
 		    	}
 		    	break;
-		    }
+		    }    		
+	    	//special events are added even if view is not clickable but visible & enabled(because
+	    	//a parent view containing spl.event view could be clickable)
+	    	abcEnableSpecialEvents(v, false);
 		}else{
 			abcRemoveAllEventsOfView(v, -1);
 		}
@@ -291,25 +299,7 @@ public class AbcGlobal {
 			for(Integer eventType : splEvents){
 				if(forceAdd){
 					abcForceAddEnableEvent(v, eventType.intValue());
-				}else{
-					/*File file = new File(abcLogFile);
-		    		String msgTxt = "ENABLE EVENT  view:" + v.toString() + "  hash:"
-		    				+ v.hashCode() + "  event:" + String.valueOf(eventType) + "\n";
-		    	
-		    		try {
-		    			byte[] contentInBytes = msgTxt.getBytes();
-		    			FileOutputStream fop = new FileOutputStream(file, true);
-		    			fop.write(contentInBytes);
-		    			fop.flush();
-		    			fop.close();
-		    		} catch (FileNotFoundException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		} catch (IOException e) {
-		    			// TODO Auto-generated catch block
-		    			e.printStackTrace();
-		    		}*/
-		    		
+				}else{		    		
 					Thread.currentThread().abcAddEnableEventForView(
 							v.hashCode(), eventType.intValue());
 				}
@@ -364,8 +354,7 @@ public class AbcGlobal {
 	
 	public static void abcRemoveEventsEnabledForRootView(View v){
 		if(v != null){
-			if(v.isEnabled() && v.getVisibility() == View.VISIBLE &&
-			        (v.isClickable() || v.isLongClickable())){
+			if(v.isEnabled() && v.getVisibility() == View.VISIBLE){
 				abcRemoveAllEventsOfView(v, -1);
 			}
 			
