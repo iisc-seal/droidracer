@@ -389,11 +389,6 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 rb->requestBindOp->opPtr = op;
                 
                 rb->serviceClassname.assign(serviceName);
-               /* rb->serviceClassname = new char[serviceName.size() + 1];
-                std::copy(serviceName.begin(), serviceName.end(), rb->serviceClassname);
-                rb->serviceClassname[serviceName.size()] = '\0';*/
-          
-           //     rb->serviceConnectedOp = NULL;
                 rb->requestUnbindOp = -1;
                 rb->prev = NULL;
 
@@ -751,7 +746,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 }
 
             }else{
-                LOGE("ABC-SERVICE-ARGS: STOP-SERVICE seen without a prior ServiceMap entry"
+                LOGE("ABC-ABORT: onStartCommand seen without a prior ServiceMap entry"
                      " or with no existing CREATE-SERVICE call, for service %s", serviceName.c_str());
                 gDvm.isRunABC = false;
                 return updated;
@@ -764,7 +759,6 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync == NULL){
                     LOGE("ABC-ABORT: missing async block for CONNECT-SERVICE of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
                     return updated;
                 }
 
@@ -792,8 +786,8 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 }
                 updated = true;
             }else{
-                LOGE("ABC-MISSING: calling onServiceConnected after UNBIND-SERVICE on %s. cant make any connections", serviceName.c_str());
-                updated = true;
+                LOGE("ABC-ABORT: calling onServiceConnected without bindService on %s", serviceName.c_str());
+                updated = false;
             }
 
         }
