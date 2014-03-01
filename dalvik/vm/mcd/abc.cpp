@@ -1562,7 +1562,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
     if(accessSetAdded){
         opId = abcOpCount++;
     }
-    LOGE("%d ABC:Enter - Add POST to trace", opId);
+    LOGE("%d ABC:Entered - Add POST to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
@@ -3602,17 +3602,21 @@ int getOpIdOfReadWrite(int rwId){
 }
 
 //o1 and o2 coresponds to opIds of corresponding accessIds
-void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2){
-
+void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2){
+    bool inserted = false;
+    std::pair<std::set<std::pair<const char*, u4> >::iterator, bool> result; 
+    std::pair<std::set<std::string>::iterator, bool> resultDb;
     //check if the race is a multithreaded race
     if(acc1->tid != acc2->tid){
         //set semantics ensures uniqueness of elements...a field wont be added more than once
         if(acc1->clazz != NULL){
             std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-            multiThreadRaces.insert(classField);
+            result = multiThreadRaces.insert(classField);
+            inserted = result.second;
         }else{
             std::string dbPath(acc1->dbPath);
-            dbMultiThreadRaces.insert(dbPath);
+            resultDb = dbMultiThreadRaces.insert(dbPath);
+            inserted = resultDb.second;
         } 
     }else{
 
@@ -3654,16 +3658,12 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
 
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    if(delayPostRaces.find(classField) == delayPostRaces.end()){
-                                        delayPostRaces.insert(classField);
-                                        inserted = true;
-                                    }
+                                    result = delayPostRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    if(dbDelayPostRaces.find(dbPath) == dbDelayPostRaces.end()){
-                                        dbDelayPostRaces.insert(dbPath);
-                                        inserted = true;
-                                    }
+                                    resultDb = dbDelayPostRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }                             
 
@@ -3673,10 +3673,12 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    crossPostRaces.insert(classField);
+                                    result = crossPostRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    dbCrossPostRaces.insert(dbPath);
+                                    resultDb = dbCrossPostRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }   
 
@@ -3684,10 +3686,12 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             if(!raceCategoryDetected){
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    uncategorizedRaces.insert(classField);
+                                    result = uncategorizedRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    dbUncategorizedRaces.insert(dbPath);
+                                    resultDb = dbUncategorizedRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }
 
@@ -3717,17 +3721,23 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                             std::string clazz(acc1->clazz);
                             if(UiWidgetSet.find(clazz) != UiWidgetSet.end()){
                                 std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                coEnabledEventUiRaces.insert(std::make_pair(classField, std::make_pair(
+                                std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resUi 
+                                        = coEnabledEventUiRaces.insert(std::make_pair(classField, std::make_pair(
                                         async1->recentTriggerOpId, async2->recentTriggerOpId)));   
+                                inserted = resUi.second;
                             }else{
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    coEnabledEventNonUiRaces.insert(std::make_pair(classField, std::make_pair(
+                                    std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resNonUi 
+                                        = coEnabledEventNonUiRaces.insert(std::make_pair(classField, std::make_pair(
                                         async1->recentTriggerOpId, async2->recentTriggerOpId)));
+                                    inserted = resNonUi.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    dbCoEnabledEventRaces.insert(std::make_pair(dbPath, std::make_pair(
+                                    std::pair<std::map<std::string, std::pair<int,int> >::iterator, bool> resNonUiDb 
+                                        = dbCoEnabledEventRaces.insert(std::make_pair(dbPath, std::make_pair(
                                         async1->recentTriggerOpId, async2->recentTriggerOpId))); 
+                                    inserted = resNonUiDb.second;
                                 }
                             }
                            
@@ -3753,16 +3763,12 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
 
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    if(delayPostRaces.find(classField) == delayPostRaces.end()){
-                                        delayPostRaces.insert(classField);
-                                        inserted = true;
-                                    }
+                                    result = delayPostRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    if(dbDelayPostRaces.find(dbPath) == dbDelayPostRaces.end()){
-                                        dbDelayPostRaces.insert(dbPath);
-                                        inserted = true;
-                                    }
+                                    resultDb = dbDelayPostRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }
 
@@ -3772,20 +3778,24 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    crossPostRaces.insert(classField);
+                                    result = crossPostRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    dbCrossPostRaces.insert(dbPath);
+                                    resultDb = dbCrossPostRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }
 
                             if(!raceCategoryDetected){
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    uncategorizedRaces.insert(classField);
+                                    result = uncategorizedRaces.insert(classField);
+                                    inserted = result.second;
                                 }else{
                                     std::string dbPath(acc1->dbPath);
-                                    dbUncategorizedRaces.insert(dbPath);
+                                    resultDb = dbUncategorizedRaces.insert(dbPath);
+                                    inserted = resultDb.second;
                                 }
                             }
                     }
@@ -3799,6 +3809,47 @@ void collectStatsOnTheRace(AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2)
         }else{
             LOGE("ABC-MISSSING: either of operations %d and %d do not have an entry in abcTrace", o1, o2);
         }
+    }
+  
+    //print only one race per category per field
+    if(inserted){
+        std::string accType1 = "";
+        std::string accType2 = "";
+
+        if(acc1->accessType == ABC_READ)
+            accType1 = "READ";
+        else
+            accType1 = "WRITE";
+
+        if(acc2->accessType == ABC_READ)
+            accType2 = "READ";
+        else
+            accType2 = "WRITE";
+
+        std::string clazz1, clazz2;
+        if(acc1->clazz == NULL){
+            clazz1 = "";
+        }else{
+            clazz1 = acc1->clazz;
+        }
+        if(acc2->clazz == NULL){
+            clazz2 = "";
+        }else{
+            clazz2 = acc2->clazz;
+        }
+
+        std::ofstream outfile;
+        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+        outfile << "RACE rwId1:" << rwId1 << " type - " << accType1 << "  obj - "
+                << acc1->obj << "  class - " << clazz1 << " field - " << acc1->field << "  fieldIdx - "
+                <<  acc1->fieldIdx << "  dbPath - " << acc1->dbPath << "  tid - "
+                << acc1->tid << "  accessId - " << acc1->accessId << "\n";
+        outfile << "     rwId2:" << rwId2 << " type - " << accType2 << "  obj - "
+                << acc2->obj << "  class - " << clazz1 << " field - " << acc2->field  << "  fieldIdx - "
+                <<  acc2->fieldIdx << "  dbPath - " << acc2->dbPath << "  tid - "
+                << acc2->tid << "  accessId - " << acc2->accessId << "\n\n";
+        outfile.close();
+
     }
 }
 
@@ -3917,10 +3968,10 @@ void detectRaceBetweenTwoSetOfOps(std::set<int> set1, std::set<int> set2, bool i
                          
                 if(acc1 != NULL && acc2 != NULL){
                 //needed only to categorize race based on some pre-defined natures
-                collectStatsOnTheRace(acc1, acc2, op1, op2);
+                collectStatsOnTheRace(*it1, *it2, acc1, acc2, op1, op2);
                
                 //back to race detection
-                std::string accType1 = "";
+            /*    std::string accType1 = "";
                 std::string accType2 = "";
         
                 if(acc1->accessType == ABC_READ)
@@ -3955,7 +4006,7 @@ void detectRaceBetweenTwoSetOfOps(std::set<int> set1, std::set<int> set2, bool i
                     << acc2->obj << "  class - " << clazz1 << " field - " << acc2->field  << "  fieldIdx - " 
                     <<  acc2->fieldIdx << "  dbPath - " << acc2->dbPath << "  tid - " 
                     << acc2->tid << "  accessId - " << acc2->accessId << "\n\n";
-                outfile.close(); 
+                outfile.close(); */
                
                 }
             }else{

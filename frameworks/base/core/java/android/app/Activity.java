@@ -3212,6 +3212,7 @@ public class Activity extends ContextThemeWrapper
 	    	}
 	    	
 	    	if(!performStart){
+	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to start an Activity of another app");
 	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
     			SQLiteDatabase database = mcdDB.getWritableDatabase();
     			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);

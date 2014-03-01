@@ -1185,6 +1185,7 @@ class ContextImpl extends Context {
     	    	}
     	    	
 	    	    	if(!performStart){
+	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to start a Service of another app");
 	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
 	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
 	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
@@ -1245,6 +1246,7 @@ class ContextImpl extends Context {
     	    	}
     	    	
 	    	    	if(!performStart){
+	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to stop a Service of another app");
 	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
 	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
 	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
@@ -1315,6 +1317,7 @@ class ContextImpl extends Context {
     	    	}
     	    	
 	    	    	if(!performStart){
+	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
 	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
 	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
 	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
