@@ -1643,10 +1643,10 @@ void addRetToTrace(int opId, int tid, u4 msg){
     outfile.close(); 
 //    LOGE("ABC:Exit - Add RET to trace");
     //special check added only to gwt whatsapp running
-  /*  if(opId >= 2500){
+    if(opId >= 2500){
         gDvm.isRunABC = false;
-        LOGE("Trace truncated as hit 2500 mark");
-    }*/
+        LOGE("Trace truncated as hit 2300 mark");
+    } 
 }
 
 void addRemoveToTrace(int opId, int tid, u4 msg){
@@ -2918,17 +2918,19 @@ bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
             if(adjGraph[async1->retId - 1][async2->callId - 1] == false){    
                 if(op1->arg4 == 0){
                     addEdgeToHBGraph(async1->retId, async2->callId); 
+     //               LOGE("ABC: fifo edge added between  message %d and %d", o1, o2);
                 }else if(op2->arg4 != 0){ //both op1 and op2 are delayed messages
+     //               LOGE("3 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     if(op1->arg4 <= op2->arg4){
                         addEdgeToHBGraph(async1->retId, async2->callId);
                     }else if(isDelayedAsyncFifo(op2->arg2->id, async1, async2)){
                         addEdgeToHBGraph(async1->retId, async2->callId);
-//                        LOGE("ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
+    //                    LOGE("1 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     } 
                 }else{  //only op1 is delayed message
                     if(isDelayedAsyncFifo(op2->arg2->id, async1, async2)){
                         addEdgeToHBGraph(async1->retId, async2->callId);
-//                        LOGE("ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
+   //                     LOGE("2 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     } 
                 }
             }
@@ -3031,7 +3033,6 @@ bool checkAndAddRetToTriggerPost(int o1, int o2, AbcOp* op1, AbcOp* op2){
 */
 
 void checkAndAddAsyncNopreEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
-//    LOGE("ABC: check and add async nopre");
     if(op2->opType == ABC_CALL && op1->tid == op2->tid &&
             op1->asyncId != -1){
         std::map<int, AbcAsync*>::iterator iter1 = abcAsyncMap.find(op1->asyncId);
@@ -3650,7 +3651,6 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                             }
 
                             bool raceCategoryDetected = false;
-                            bool inserted = false;
                             //check if delayed post is a reason
                             if(async1->recentDelayAsync != async2->recentDelayAsync && 
                                    (async1->recentDelayAsync != -1 || async2->recentDelayAsync != -1)){
@@ -3755,7 +3755,6 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                             }
                             
                             bool raceCategoryDetected = false;
-                            bool inserted = false;
                             //check if delayed post is a reason
                             if(async1->recentDelayAsync != async2->recentDelayAsync &&
                                    (async1->recentDelayAsync != -1 || async2->recentDelayAsync != -1)){

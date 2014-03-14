@@ -668,8 +668,12 @@ public final class LoadedApk {
 								}
 							}            			    
                 		}
+                		String actionString = "";
+                		if(intent.getAction() != null){
+                			actionString = intent.getAction();
+                		}
                 	    Thread.currentThread().abcTriggerBroadcastLifecycle(
-                	    		intent.getAction(), rd.mReceiver.hashCode(), 
+                	    		actionString, rd.mReceiver.hashCode(), 
                 	    		intent.getIntExtra("androidBugCheckerIntentId", -9), 
                 	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE_LATER);	
                 	}

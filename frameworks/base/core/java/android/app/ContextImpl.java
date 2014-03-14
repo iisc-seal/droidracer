@@ -1175,20 +1175,33 @@ class ContextImpl extends Context {
     	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
     	    			tmpIntent, 0);
     	    	boolean performStart = false;
-    	    	for(int i=0;i<pkgAppsList.size();i++){
-    	    		ResolveInfo ri = pkgAppsList.get(i);
-    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
-    	    			performStart = true;
-    	    			resolvedService = ri.serviceInfo.name;
-    	    			break;
-    	    		}
-    	    	}
+    	    	if(pkgAppsList != null){
+    	        	for(int i=0;i<pkgAppsList.size();i++){
+    	        		ResolveInfo ri = pkgAppsList.get(i);
+    	    	    	if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	    	    		performStart = true;
+    	    	    		resolvedService = ri.serviceInfo.name;
+    	    	    		break;
+    	    	    	}
+    	    	    }
     	    	
 	    	    	if(!performStart){
-	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to start a Service of another app");
-	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
-	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    		if(pkgAppsList.size() > 0){
+	    	    			resolvedService = pkgAppsList.get(0).serviceInfo.name;
+	    	    			
+		    	    		//connection logs for race detection
+	    	    			//assign a random no. (8888) as unique identifier as this wont be necessary to
+	    	    			//track service outside app
+		    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
+		    	    				8888, AbcGlobal.ABC_REQUEST_START_SERVICE);
+	    	    		}else{
+	    	    	//     	Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
+//	    	    	     	Log.e(ModelCheckingDriver.TAG, "backtracking as no service found for requested intent");
+//	    	    	    	McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+//	        			    SQLiteDatabase database = mcdDB.getWritableDatabase();
+//	        			    Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    			Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+	    	    		}
 	    	    	}else{
 	    	    		//a tag for the system service to know that the startActivity request originated 
 	    	    		//from the app under test
@@ -1203,6 +1216,10 @@ class ContextImpl extends Context {
 	    	    				service.getIntExtra("androidBugCheckerIntentId", 8888), 
 	    	    				AbcGlobal.ABC_REQUEST_START_SERVICE);
 	    	    	}
+    	    	}else{
+    	    		Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+    	    	}
+    	    	
         		}
         	}
         	/*Android bug-checker*/
@@ -1236,20 +1253,32 @@ class ContextImpl extends Context {
     	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
     	    			tmpIntent, 0);
     	    	boolean performStart = false;
-    	    	for(int i=0;i<pkgAppsList.size();i++){
-    	    		ResolveInfo ri = pkgAppsList.get(i);
-    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
-    	    			performStart = true;
-    	    			resolvedService = ri.serviceInfo.name;
-    	    			break;
-    	    		}
-    	    	}
+    	    	if(pkgAppsList != null){
+    	        	for(int i=0;i<pkgAppsList.size();i++){
+    	        		ResolveInfo ri = pkgAppsList.get(i);
+    	        		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	        			performStart = true;
+    	        			resolvedService = ri.serviceInfo.name;
+    	        			break;
+    	        		}
+    	        	}
     	    	
 	    	    	if(!performStart){
-	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to stop a Service of another app");
-	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
-	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    		if(pkgAppsList.size() > 0){
+	    	    			resolvedService = pkgAppsList.get(0).serviceInfo.name;
+	    	    			
+		    	    		//connection logs for race detection
+	    	    			///connection logs for race detection
+		    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
+		    	    				8999, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
+	    	    		}else{
+	    	    	//     	Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
+//	    	    	     	Log.e(ModelCheckingDriver.TAG, "backtracking as no service found for requested intent");
+//	    	    	    	McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+//	        			    SQLiteDatabase database = mcdDB.getWritableDatabase();
+//	        			    Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    			Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+	    	    		}
 	    	    	}else{
 	    	    		//a tag for the system service to know that the startActivity request originated 
 	    	    		//from the app under test
@@ -1259,6 +1288,10 @@ class ContextImpl extends Context {
 	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
 	    	    				8999, AbcGlobal.ABC_REQUEST_STOP_SERVICE);
 	    	    	}
+    	    	}else{
+    	    		Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+    	    	}
+    	    	
         		}
         	}
         	/*Android bug-checker*/
@@ -1302,25 +1335,35 @@ class ContextImpl extends Context {
         	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
         		if(!(service.getComponent() != null && 
         				service.getComponent().getPackageName().equals("abc.abcclientapp"))){
-        	    String resolvedService = "";
-    	    	final Intent tmpIntent = service;
-    	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
+            	    String resolvedService = "";
+    	        	final Intent tmpIntent = service;
+    	        	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentServices(
     	    			tmpIntent, 0);
-    	    	boolean performStart = false;
-    	    	for(int i=0;i<pkgAppsList.size();i++){
-    	    		ResolveInfo ri = pkgAppsList.get(i);
-    	    		if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
-    	    			performStart = true;
-    	    			resolvedService = ri.serviceInfo.name;
-    	    			break;
-    	    		}
-    	    	}
+    	          	boolean performStart = false;
+    	          	if(pkgAppsList != null){
+    	        	for(int i=0;i<pkgAppsList.size();i++){
+    	    	    	ResolveInfo ri = pkgAppsList.get(i);
+    	    	    	if(ri.serviceInfo.packageName.equals(Looper.mcd.appUT)){
+    	    	    		performStart = true;
+    	    	    		resolvedService = ri.serviceInfo.name;
+    	    	    		break;
+    	    	    	}
+    	    	    }
     	    	
 	    	    	if(!performStart){
-	    	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
-	    	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-	        			SQLiteDatabase database = mcdDB.getWritableDatabase();
-	        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    		if(pkgAppsList.size() > 0){
+	    	    			resolvedService = pkgAppsList.get(0).serviceInfo.name;
+	    	    					    	    			    	    		
+		    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService,
+		    	    				conn.hashCode(), AbcGlobal.ABC_REQUEST_BIND_SERVICE);
+	    	    		}else{
+	    	    	//     	Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
+//	    	    	     	Log.e(ModelCheckingDriver.TAG, "backtracking as no service found for requested intent");
+//	    	    	    	McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+//	        			    SQLiteDatabase database = mcdDB.getWritableDatabase();
+//	        			    Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    	    			Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+	    	    		}
 	    	    	}else{
 	    	    		//a tag for the system service to know that the startActivity request originated 
 	    	    		//from the app under test
@@ -1329,6 +1372,10 @@ class ContextImpl extends Context {
 	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService,
 	    	    				conn.hashCode(), AbcGlobal.ABC_REQUEST_BIND_SERVICE);
 	    	    	}
+	    	    	
+    	          	}else{
+    	          		Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+    	          	}
         		}
         	}
             /*Android bug-checker*/

@@ -1,4 +1,5 @@
 package android.os;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -2237,9 +2238,6 @@ public class ModelCheckingDriver {
 		return sum;
 	}
 	
-
-	
-	
 	public int getMappedInputType(int rawType){
 		int mappedType = -1; //-1 is default and if no matching type is found
 		//switch case with the list of input types for which you have customized input
@@ -2874,18 +2872,20 @@ public class ModelCheckingDriver {
     	    		Log.v(ModelCheckingDriver.TAG, "error: SCREEN ROTATE event");
     	    	}
         	}else if(eventType == EVENT_CLICK){
+        		viewClickDone = false;			    	        
+     	        
         		clickDown(v); 	
     	    	clickUp(v);			    	        
-    	        viewClickDone = false;			    	        
-    	        
+    	       
     	      //log this to a file later
         		if(ModelCheckingDriver.MODE == ModelCheckingDriver.PLAY){
     	    		Log.v(ModelCheckingDriver.TAG, "error: CLICK event on view " + v.getClass() 
     	    				+ " viewID:" + v.getId());
     	    	}
     		}else if(eventType == EVENT_LONG_CLICK){
-    			clickDown(v);			    			
-    	    	viewLongClickDone = false;
+    			viewLongClickDone = false;
+    			
+    			clickDown(v);	
     	    	
     	    	//log this to a file later
         		if(ModelCheckingDriver.MODE == ModelCheckingDriver.PLAY){
@@ -3372,11 +3372,11 @@ public class ModelCheckingDriver {
 			//contacting local server willnot work if the app does not have INTERNET permission
 		    //this is done by contacting our own app which has necessary perms and it informs the server
 			
-		    Runnable computeRaceRunnable = new Runnable() {
-				
-				@Override
-				public void run() {
-		            //collect stats
+//		    Runnable computeRaceRunnable = new Runnable() {
+//				
+//				@Override
+//				public void run() {
+//		            collect stats
 		            AbcGlobal.abcSetTraceEndTime(SystemClock.uptimeMillis());
 		            AbcGlobal.abcSetRaceDetectionStartTime(SystemClock.uptimeMillis());
 		            
@@ -3448,12 +3448,12 @@ public class ModelCheckingDriver {
 			        intent.putExtra("abcPort", abcPort);
 			        
 			        getContext().startActivity(intent);
-				}
-			};
-		    
-			Thread.currentThread().abcStopTraceGeneration(); 
-		    Thread raceDetectionThread = new Thread(computeRaceRunnable);
-		    raceDetectionThread.start();
+//				}
+//			};
+//		    
+//			Thread.currentThread().abcStopTraceGeneration(); 
+//		    Thread raceDetectionThread = new Thread(computeRaceRunnable);
+//		    raceDetectionThread.start();
 		    
 		/*	if(errorFlag != FLAG_ERROR){
 				long count = Long.MAX_VALUE;
@@ -3546,8 +3546,8 @@ public class ModelCheckingDriver {
 	//ui_envID - to get the events to ignore for the given screen
 	//note: this method arguments have to be modified when you want to express apps with no UI
 	//returns int array of size 2. [0]:eventID, [1]:eventType
-	public int[] selectNextEventToTrigger(int pathNodeID, int ui_envID, SQLiteDatabase database) 
-			throws McdException{
+	public int[] selectNextEventToTrigger(int pathNodeID, int ui_envID, int activityId,
+			SQLiteDatabase database) throws McdException{
 		int[] eventInfo = {-1, -1};
 		
 		//if event selected is of the type text input, then do not remove it here from
@@ -3561,10 +3561,12 @@ public class ModelCheckingDriver {
 					McdDB.TABLE_UNEXPLORED_EVENTS + 
 					" WHERE " + McdDB.COLUMN_NODE_ID + " = ? AND " + McdDB.COLUMN_EVENT_ID + 
 					" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_IGNORE_EVENT
-					+ " WHERE " + McdDB.COLUMN_UI_ENV_ID + " = ?)"+
+					+ " WHERE " + McdDB.COLUMN_UI_ENV_ID + " = ?) AND " + McdDB.COLUMN_EVENT_ID +
+					" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_ACTIVITY_WIDE_IGNORE_EVENT
+					+ " WHERE " + McdDB.COLUMN_ACTIVITY_ID + " = ?)" +
 					" ORDER BY " + McdDB.COLUMN_EVENT_PRIORITY + " DESC, " + McdDB.COLUMN_ID +
 					" ASC LIMIT 1", new String[]{String.valueOf(pathNodeID), 
-				 String.valueOf(ui_envID)});
+				 String.valueOf(ui_envID), String.valueOf(activityId)});
 		 if(cursor.moveToFirst()){
 			 eventInfo[0] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_ID));
 			 eventInfo[1] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_TYPE));
@@ -4018,22 +4020,22 @@ public class ModelCheckingDriver {
     		
     		
 			int viewRootLimit = -1;
-			
+			int activityID = -1;
+					
     		if(activityInfo.moveToFirst()){
-    			String activityNameTmp = activityInfo.getString(
-						activityInfo.getColumnIndexOrThrow(McdDB.COLUMN_ACTIVITY_NAME));
-    			String curActivityName = getVisibleActivity().getLocalClassName();
-    			
     			if(!(activityInfo.getCount() == 1 && 
     				getVisibleActivity().getLocalClassName().equals(activityInfo.getString(
     						activityInfo.getColumnIndexOrThrow(McdDB.COLUMN_ACTIVITY_NAME))))){
     				mcdRaiseException("Android Bug-checker found some mismatch in Activity table", database);
     			}
+    			
+    			activityID = activityInfo.getInt(
+						activityInfo.getColumnIndexOrThrow(McdDB.COLUMN_ID));
+						
     			ContentValues tmpVal = new ContentValues();
     			tmpVal.put(McdDB.COLUMN_TMP_ACTIVITY_HASH, getVisibleActivity().hashCode());
     			database.update(McdDB.TABLE_ACTIVITY, tmpVal, McdDB.COLUMN_ID + " = ?", new String[]
-    					{String.valueOf(activityInfo.getInt(
-    							activityInfo.getColumnIndexOrThrow(McdDB.COLUMN_ID)))});
+    					{String.valueOf(activityID)});
     			
     			//update activity-screen-hash
     			long tmpScreenHash = 0;
@@ -4108,7 +4110,7 @@ public class ModelCheckingDriver {
     		if(eventType == -1){
     			//control has reached the backtrack node, select a new event and explore
     			
-    			int[] nextEvent = selectNextEventToTrigger(nodeToExecute, uiEnvID, database);
+    			int[] nextEvent = selectNextEventToTrigger(nodeToExecute, uiEnvID, activityID, database);
             	updatePathNodeWithEvent(nodeToExecute, nextEvent[0], nextEvent[1], database);
             	if(nextEvent[1] == -1){
             		//no event to be triggered at this point. so backtrack
@@ -4451,9 +4453,10 @@ public class ModelCheckingDriver {
         					ContentValues cv = new ContentValues();
 							cv.put(McdDB.COLUMN_EVENT_ID, prevEventID);
 							cv.put(McdDB.COLUMN_EVENT_TYPE, UI_EVENT);
-							cv.put(McdDB.COLUMN_UI_ENV_ID, prevUIEnvID);
+							cv.put(McdDB.COLUMN_ACTIVITY_ID, activityInfo.getInt(
+									activityInfo.getColumnIndexOrThrow(McdDB.COLUMN_ID)));
 							cv.put(McdDB.COLUMN_NODE_ID, prevNodeID);
-							database.insert(McdDB.TABLE_IGNORE_EVENT, null,
+							database.insert(McdDB.TABLE_ACTIVITY_WIDE_IGNORE_EVENT, null,
 									cv);
         				}else{ 
         					if(prevViewID > 0){
@@ -4999,7 +5002,7 @@ public class ModelCheckingDriver {
         		addEventToUnexploredList(ROTATE_SCREEN_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
         	}
         	
-        	int[] nextEvent = selectNextEventToTrigger(pathNodeID, ui_envID, database);
+        	int[] nextEvent = selectNextEventToTrigger(pathNodeID, ui_envID, activityID, database);
         	updatePathNodeWithEvent(pathNodeID, nextEvent[0], nextEvent[1], database);
         	if(nextEvent[1] == -1){
         		//no event to be triggered at this point. so backtrack

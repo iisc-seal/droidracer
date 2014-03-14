@@ -592,17 +592,17 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                                 if(tmpArb->serviceClassname == serviceName){
                                     if(tmpArbAhead == NULL){
                                         if(tmpArb->prev == NULL){
-                                            delete[] tmpArb;
                                             AbcServiceConnectMap.erase(identifier);
+                                            delete tmpArb;
                                             break;
                                         }else{
                                             bindIter->second = tmpArb->prev;
-                                            delete[] tmpArb;
+                                            delete tmpArb;
                                             break;
                                         }
                                     }else{
                                         tmpArbAhead->prev = tmpArb->prev;
-                                        delete[] tmpArb;
+                                        delete tmpArb;
                                         break;
                                     }
                                 }
@@ -716,8 +716,9 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     addEdgeToHBGraph(startIter->second->opId, opAsync->postId);
 
                     //clear entry from AbcRequestStartServiceMap as wont be used again
-                    delete[] startIter->second;
+                    AbcOpWithId* tmpPtr = startIter->second;
                     AbcRequestStartServiceMap.erase(identifier);
+                    free(tmpPtr);
                 }else{
                     LOGE("ABC-ABORT: onStartCommand seen without corresponding startService");
                     gDvm.isRunABC = false;
@@ -783,13 +784,41 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                         }
                         tmpArb = tmpArb->prev;  
                     }while(tmpArb != NULL);
+                }else{
+                    LOGE("ABC-MISSING: missing bindService request");
                 }
+
                 updated = true;
             }else{
-                LOGE("ABC-ABORT: calling onServiceConnected without bindService on %s", serviceName.c_str());
-                updated = false;
-            }
+                AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
+                if(opAsync == NULL){
+                    LOGE("ABC-ABORT: missing async block for CONNECT-SERVICE of service: %s", serviceName.c_str());
+                    return updated;
+                }
+            //    LOGE("ABC-ABORT: calling onServiceConnected without bindService on %s", serviceName.c_str());
+            //    updated = false;
+                //add edge from request-bind to onServiceConnected
+                bindIter = AbcServiceConnectMap.find(identifier);
+                if(bindIter != AbcServiceConnectMap.end()){
+                    AbcRequestBind* tmpArb = bindIter->second;
+                    do{
+                        if(serviceName == tmpArb->serviceClassname){
+                            if(tmpArb->requestBindOp->opId < opAsync->postId){
+                                addEdgeToHBGraph(tmpArb->requestBindOp->opId, opId);
+                                addEdgeToHBGraph(tmpArb->requestBindOp->opId, opAsync->postId);
+                            }//else onServiceConnected seen is corresponding to a request which has been unbound
+                             //our modelling cannot capture all possible states for service accurately but 
+                             //can work in most cases
+                            break;
+                        }
+                        tmpArb = tmpArb->prev;
+                    }while(tmpArb != NULL);
+                }else{
+                    LOGE("ABC-MISSING: missing bindService request");
+                }
 
+                updated = true;
+            }
         }
         else if(state == ABC_REQUEST_STOP_SERVICE){
             if(serIter != AbcServiceMap.end()){
@@ -1200,8 +1229,8 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
         prevOperation->opId = opId;
         prevOperation->opPtr = op;
     }else{
-        free(prevOperation);
         ActivityStateMap.erase(instance);
+        free(prevOperation);
     }
 
     return updated;

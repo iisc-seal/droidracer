@@ -809,7 +809,6 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 //set the app entry check for async block to true
                 abcAsyncStateMap.find(curAsync->asyncId)->second.second = true;
             }
-        //    LOGE("APP-METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
             std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
@@ -820,7 +819,6 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                abcPushMethodForThread(self->threadId, method); 
                self->shouldABCTrack = false;
 
-        //    LOGE("METHOD-ENTRY: %s class: %s", method->name, method->clazz->descriptor);
                std::ofstream outfile;
                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
@@ -942,11 +940,9 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
         /*Android bug-checker*/
         if(gDvm.isRunABC == true &&
             abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
-            //LOGE("ABC:method return: %s, class: %s",method->name,method->clazz->descriptor);
             if(abcGetLastMethodInThreadStack(self->threadId) == method){
                 abcPopLastMethodInThreadStack(self->threadId);
              
-     //       LOGE("METHOD-EXIT: %s  class: %s", method->name, method->clazz->descriptor);
                 std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                 outfile << "METHOD EXIT tid:" << self->abcThreadId << "\t meth:"

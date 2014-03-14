@@ -2554,6 +2554,12 @@ public final class ViewRootImpl extends Handler implements ViewParent,
                             .softInputMode &=
                                 ~WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION;
                     mHasHadWindowFocus = true;
+                    
+                    /*Android bug-checker*/
+                    if(AbcGlobal.abcLogFile != null){
+                        AbcGlobal.abcForceEnableEvnetsForRootView(mView);
+                    }
+                    /*Android bug-checker*/
                 }
 
                 if (hasWindowFocus && mView != null) {

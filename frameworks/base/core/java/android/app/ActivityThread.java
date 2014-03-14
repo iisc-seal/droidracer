@@ -2326,8 +2326,13 @@ public final class ActivityThread {
 
         /*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
+    		String actionString = "";
+    		if(data.intent.getAction() != null){
+    			actionString = data.intent.getAction();
+    		}
+    		
     	    Thread.currentThread().abcTriggerBroadcastLifecycle(
-    	    		data.intent.getAction(), receiver.hashCode(), 
+    	    		actionString, receiver.hashCode(), 
     	    		data.intent.getIntExtra("androidBugCheckerIntentId", -7), 
     	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE);	
     	}
@@ -2881,7 +2886,11 @@ public final class ActivityThread {
     private Bitmap mAvailThumbnailBitmap = null;
     private Canvas mThumbnailCanvas = null;
 
-    private Bitmap createThumbnailBitmap(ActivityClientRecord r) {
+    final void performUserLeavingActivity(ActivityClientRecord r) {
+	    mInstrumentation.callActivityOnUserLeaving(r.activity);
+	}
+
+	private Bitmap createThumbnailBitmap(ActivityClientRecord r) {
         Bitmap thumbnail = mAvailThumbnailBitmap;
         try {
             if (thumbnail == null) {
@@ -3014,10 +3023,6 @@ public final class ActivityThread {
             	}
             }
         }
-    }
-
-    final void performUserLeavingActivity(ActivityClientRecord r) {
-        mInstrumentation.callActivityOnUserLeaving(r.activity);
     }
 
     final Bundle performPauseActivity(IBinder token, boolean finished,
@@ -3237,36 +3242,49 @@ public final class ActivityThread {
         if (!r.isPreHoneycomb()) {
             QueuedWork.waitToFinish();
         }
-
-        // Tell activity manager we have been stopped.
-        try {
-            ActivityManagerNative.getDefault().activityStopped(
-                r.token, r.state, info.thumbnail, info.description);
-        } catch (RemoteException ex) {
-        }
-
+        
         /*Android bug-checker*/
         if(AbcGlobal.abcLogFile != null){
-        	//hanling happens before, if startActivity was issued from this activity's context after its paused
+        	//handling happens before, if startActivity was issued from this activity's context after its paused
         	if(AbcGlobal.parentAndStartedActivitiesMap.containsKey(r.activity.hashCode())){
     			for(Integer i : AbcGlobal.parentAndStartedActivitiesMap.get(r.activity.hashCode())){
     				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
     						AbcGlobal.ABC_LAUNCH);
     				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
     						AbcGlobal.ABC_RESUME);
+    				//if activity to be started has launch mode singleTop
+    				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+    						AbcGlobal.ABC_START_NEW_INTENT);
     			}
     		}
         	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());
         	
-        	if(AbcGlobal.abcResultExpectingActivities.contains(this.hashCode())){
+        	if(AbcGlobal.abcResultExpectingActivities.contains(r.activity.hashCode())){
         	    Thread.currentThread().abcEnableLifecycleEvent(
         			r.activity.getLocalClassName(), 
         			r.activity.hashCode(),
         			AbcGlobal.ABC_RESULT);
         	}
-        	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
+        	AbcGlobal.abcResultExpectingActivities.remove(r.activity.hashCode());
+        	
+        	//check if control has been passed to an activity of another app 
+        	//If an Activiy of same package is started but in a different process
+        	//you may not be able to detect it in startActivityForResult
+        	if(Looper.mcd.getVisibleActivity().hashCode() == r.activity.hashCode()
+      			 && Looper.mcd.resumedTime < SystemClock.uptimeMillis()){
+        		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+    			SQLiteDatabase database = mcdDB.getWritableDatabase();
+    			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+        	}
         }
         /*Android bug-checker*/
+
+        // Tell activity manager we have been stopped.
+        try {
+            ActivityManagerNative.getDefault().activityStopped(
+                r.token, r.state, info.thumbnail, info.description);
+        } catch (RemoteException ex) {
+        }        
     }
 
     final void performRestartActivity(IBinder token) {
@@ -3640,6 +3658,9 @@ public final class ActivityThread {
         						AbcGlobal.ABC_LAUNCH);
         				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
         						AbcGlobal.ABC_RESUME);
+        				//if activity to be started has launch mode sungleTop
+        				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
+        						AbcGlobal.ABC_START_NEW_INTENT);
         			}
         		}
             	AbcGlobal.parentAndStartedActivitiesMap.remove(r.activity.hashCode());

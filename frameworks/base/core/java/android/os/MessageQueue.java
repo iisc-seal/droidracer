@@ -200,8 +200,9 @@ public class MessageQueue {
                 			Looper.getMainLooper().getThread() == Thread.currentThread()){
                     	
                       if(Looper.mcd != null && Looper.mcd.getPackageName() != null &&
-                    		 Looper.mcd.getPackageName().equals(Looper.mcd.appUT)
-                    		  && Looper.mcd.getVisibleActivity() != null &&
+                    		 Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
+                    	  
+                    	  if(Looper.mcd.getVisibleActivity() != null &&
                     		  Looper.mcd.activityResumed){
                          
                       		boolean fireEvent = false;
@@ -232,9 +233,9 @@ public class MessageQueue {
                     			SQLiteDatabase database = mcdDB.getWritableDatabase();
                     			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
                      		}
-                      		
-	                    	nextPollTimeoutMillis = 0;
-                    	
+                    	  }
+                    	  //dont allow main thread of app being tested to go to native sleep
+	                      nextPollTimeoutMillis = 0;                    	
                       }
                 }
                 	/*Android bug-checker*/

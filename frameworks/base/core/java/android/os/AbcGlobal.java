@@ -382,11 +382,17 @@ public class AbcGlobal {
 		    	abcEnableSpecialEvents(v, true);
     		}
     				
-    		if(ViewGroup.class.isInstance(v)){
-    			for(int i=0; i < ((ViewGroup)v).getChildCount(); i++){
-    				abcForceEnableEvnetsForRootView(((ViewGroup)v).getChildAt(i));
+    		try {
+				if(ViewGroup.class.isInstance(v) && !Looper.mcd.isIgnoreChildrenViews(
+						Looper.mcd.getSimplifiedClassOfView(v.getClass()))){
+					for(int i=0; i < ((ViewGroup)v).getChildCount(); i++){
+						abcForceEnableEvnetsForRootView(((ViewGroup)v).getChildAt(i));
+					}
 				}
-    		}
+			} catch (McdException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 	}
 	

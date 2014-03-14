@@ -3200,6 +3200,7 @@ public class Activity extends ContextThemeWrapper
     		if(!(intent.getComponent() != null && 
     				intent.getComponent().getPackageName().equals("abc.abcclientapp"))){
 	    	final Intent tmpIntent = intent;
+	    	String resolvedActivity = "";
 	    	final List<ResolveInfo> pkgAppsList = this.getPackageManager().queryIntentActivities(
 	    			tmpIntent, 0);
 	    	boolean performStart = false;
@@ -3207,6 +3208,7 @@ public class Activity extends ContextThemeWrapper
 	    		ResolveInfo ri = pkgAppsList.get(i);
 	    		if(ri.activityInfo.packageName.equals(Looper.mcd.appUT)){
 	    			performStart = true;
+	    			resolvedActivity = ri.activityInfo.name;
 	    			break;
 	    		}
 	    	}
@@ -3241,7 +3243,7 @@ public class Activity extends ContextThemeWrapper
 			    				this.getLocalClassName(), this.hashCode(),
 			    				AbcGlobal.ABC_PAUSE);
 	    				}
-		    			
+	    					    				
 		    			ArrayList<Integer> tmpStartedActivities = new ArrayList<Integer>();
 		    			tmpStartedActivities.add(intent.getIntExtra("androidBugCheckerIntentId", 
 			    						AbcGlobal.getAbcIntentId()));
@@ -3250,7 +3252,16 @@ public class Activity extends ContextThemeWrapper
 	    				AbcGlobal.parentAndStartedActivitiesMap.get(this.hashCode()).add(
 		    					intent.getIntExtra("androidBugCheckerIntentId", 
 			    						AbcGlobal.getAbcIntentId()));
-	    			}
+	    			}	    			
+				}
+
+    			//if activity to be started is same as the activity visible and if its of
+				//type singleTop, then it may directly call performNewIntent() instead of
+				//calling hanleLaunchActivity first
+				if(Looper.mcd.getVisibleActivity().getLocalClassName().equals(resolvedActivity)){
+					Thread.currentThread().abcEnableLifecycleEvent("", 
+							intent.getIntExtra("androidBugCheckerIntentId", AbcGlobal.getAbcIntentId()), 
+    						AbcGlobal.ABC_START_NEW_INTENT);
 				}
 	    			    		
 	    		if(requestCode != -1){
@@ -4730,7 +4741,6 @@ public class Activity extends ContextThemeWrapper
     		  Looper.mcd.getPackageName() != null && Looper.mcd.getPackageName().equals(
     		Looper.mcd.appUT)){
 		Looper.mcd.setLastPausedActivity(this);
-//		Looper.mcd.hasMenu = false;
 		Looper.mcd.pausedTime = SystemClock.uptimeMillis();
 		Looper.mcd.activityResumed = false;
 		Log.v("model_checking", "Activity " + this.getComponentName() + " has been paused");

@@ -12,6 +12,7 @@ public class McdDB extends SQLiteOpenHelper{
 	  public static final String TABLE_ACTIVITY = "Activity_Tab";
 	  public static final String TABLE_UNEXPLORED_EVENTS = "UnexploredEvents_Tab";
 	  public static final String TABLE_IGNORE_EVENT = "IgnoreEvents_Tab";
+	  public static final String TABLE_ACTIVITY_WIDE_IGNORE_EVENT = "ActivityWideIgnoreEvent_Tab";
 	  public static final String TABLE_UI_EVENT = "UiEvent_Tab";
 	  public static final String TABLE_INTENT = "Intent_Tab";
 	  public static final String TABLE_POPUP = "Popup_Tab";
@@ -191,6 +192,18 @@ public class McdDB extends SQLiteOpenHelper{
 	      + " FOREIGN KEY ("+ COLUMN_UI_ENV_ID +") REFERENCES "+ TABLE_UI_ENV
 	      + "("+ COLUMN_ID +") ON DELETE SET NULL ON UPDATE SET NULL);";
       
+      private static final String TABLE_ACTIVITY_WIDE_IGNORE_EVENT_CREATE = "create table "
+    	      + TABLE_ACTIVITY_WIDE_IGNORE_EVENT + "(" + COLUMN_ID
+    	      + " integer primary key autoincrement, " + COLUMN_EVENT_ID
+    	      + " integer not null, " + COLUMN_EVENT_TYPE
+    	      + " integer not null, " + COLUMN_ACTIVITY_ID
+    	      + " integer not null, " + COLUMN_NODE_ID
+    	      + " integer not null,"
+    	      + " FOREIGN KEY ("+ COLUMN_NODE_ID +") REFERENCES "+ TABLE_PATH_NODE
+    	      + "("+ COLUMN_ID +") ON DELETE SET NULL ON UPDATE SET NULL,"
+    	      + " FOREIGN KEY ("+ COLUMN_ACTIVITY_ID +") REFERENCES "+ TABLE_ACTIVITY
+    	      + "("+ COLUMN_ID +") ON DELETE SET NULL ON UPDATE SET NULL);";
+      
       private static final String TABLE_UNEXPLORED_EVENTS_CREATE = "create table "
 	      + TABLE_UNEXPLORED_EVENTS + "(" + COLUMN_ID
 	      + " integer primary key autoincrement, " + COLUMN_NODE_ID
@@ -301,6 +314,7 @@ public class McdDB extends SQLiteOpenHelper{
 	    database.execSQL(TABLE_UI_EVENT_CREATE);
 	    database.execSQL(TABLE_UNEXPLORED_EVENTS_CREATE);
 	    database.execSQL(TABLE_IGNORE_EVENT_CREATE);
+	    database.execSQL(TABLE_ACTIVITY_WIDE_IGNORE_EVENT_CREATE);
 	    database.execSQL(TABLE_PATH_NODE_CREATE);
 	    database.execSQL(TABLE_PATH_CREATE);
 	    database.execSQL(TABLE_PATH_NODE_DATA_CREATE);
@@ -330,6 +344,7 @@ public class McdDB extends SQLiteOpenHelper{
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UI_EVENT);
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_UNEXPLORED_EVENTS);
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_IGNORE_EVENT);
+	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_ACTIVITY_WIDE_IGNORE_EVENT);
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE);
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH);
 	    db.execSQL("DROP TABLE IF EXISTS " + TABLE_PATH_NODE_DATA);
