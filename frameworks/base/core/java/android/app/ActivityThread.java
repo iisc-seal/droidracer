@@ -567,7 +567,7 @@ public final class ActivityThread {
             r.autoStopProfiler = autoStopProfiler;
 
             updatePendingConfiguration(curConfig);
-
+            
             queueOrSendMessage(H.LAUNCH_ACTIVITY, r);
         }
 

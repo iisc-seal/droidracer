@@ -1643,10 +1643,10 @@ void addRetToTrace(int opId, int tid, u4 msg){
     outfile.close(); 
 //    LOGE("ABC:Exit - Add RET to trace");
     //special check added only to gwt whatsapp running
-    if(opId >= 2500){
+/*    if(opId >= 2500){
         gDvm.isRunABC = false;
         LOGE("Trace truncated as hit 2300 mark");
-    } 
+    } */
 }
 
 void addRemoveToTrace(int opId, int tid, u4 msg){
