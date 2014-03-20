@@ -4234,7 +4234,7 @@ public final class ActivityThread {
         /*Android bug-checker*/
         AbcGlobal.abcCheckAndSetAppToTest(data.processName);
         /*Android bug-checker*/
-        
+                
         if (data.persistent) {
             // Persistent processes on low-memory devices do not get to
             // use hardware accelerated drawing, since this can add too much

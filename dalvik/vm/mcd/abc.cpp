@@ -137,6 +137,27 @@ std::set<std::pair<const char*, u4> > raceyFieldSet; //keeps count of disinct as
 
 std::set<std::pair<const char*, u4> > uncategorizedRaces;
 
+//taking count of races with object,field sensitivity wherever applicable
+std::set<std::pair<Object*, u4> > multiThreadRacesObj;
+std::set<std::pair<Object*, u4> > delayPostRacesObj;
+std::set<std::pair<Object*, u4> > crossPostRacesObj;
+//maintain info on the co-enabled events i.e events whose triggers have no HB relation
+std::map<std::pair<Object*, u4>, std::pair<int,int> > coEnabledEventUiRacesObj;
+std::map<std::pair<Object*, u4>, std::pair<int,int> > coEnabledEventNonUiRacesObj;
+
+std::set<std::pair<Object*, u4> > uncategorizedRacesObj;
+
+//taking count of races with class,field sensitivity wherever applicable
+std::set<std::pair<const char*, u4> > multiThreadRacesClass;
+std::set<std::pair<const char*, u4> > delayPostRacesClass;
+std::set<std::pair<const char*, u4> > crossPostRacesClass;
+//maintain info on the co-enabled events i.e events whose triggers have no HB relation
+std::map<std::pair<const char*, u4>, std::pair<int,int> > coEnabledEventUiRacesClass;
+std::map<std::pair<const char*, u4>, std::pair<int,int> > coEnabledEventNonUiRacesClass;
+
+std::set<std::pair<const char*, u4> > uncategorizedRacesClass;
+
+
 //for databases
 std::set<std::string> dbMultiThreadRaces;
 std::set<std::string> dbDelayPostRaces;
@@ -1643,7 +1664,7 @@ void addRetToTrace(int opId, int tid, u4 msg){
     outfile.close(); 
 //    LOGE("ABC:Exit - Add RET to trace");
     //special check added only to gwt whatsapp running
-/*    if(opId >= 2500){
+/*    if(opId >= 2300){
         gDvm.isRunABC = false;
         LOGE("Trace truncated as hit 2300 mark");
     } */
@@ -3603,22 +3624,31 @@ int getOpIdOfReadWrite(int rwId){
 }
 
 //o1 and o2 coresponds to opIds of corresponding accessIds
+//we do not report races on database as we do not capture it accurately
 void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess* acc2, int o1, int o2){
     bool inserted = false;
-    std::pair<std::set<std::pair<const char*, u4> >::iterator, bool> result; 
+    std::pair<std::set<std::pair<const char*, u4> >::iterator, bool> resultClass; 
+    std::pair<std::set<std::pair<Object*, u4> >::iterator, bool> resultObj; 
     std::pair<std::set<std::string>::iterator, bool> resultDb;
     //check if the race is a multithreaded race
     if(acc1->tid != acc2->tid){
         //set semantics ensures uniqueness of elements...a field wont be added more than once
         if(acc1->clazz != NULL){
             std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-            result = multiThreadRaces.insert(classField);
-            inserted = result.second;
-        }else{
+            multiThreadRaces.insert(classField);
+            if(acc1->obj != NULL){
+                std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                resultObj = multiThreadRacesObj.insert(objField);
+                inserted = resultObj.second;
+            }else{
+                resultClass = multiThreadRacesClass.insert(classField);
+                inserted = resultClass.second;
+            }
+        }/*else{
             std::string dbPath(acc1->dbPath);
             resultDb = dbMultiThreadRaces.insert(dbPath);
             inserted = resultDb.second;
-        } 
+        } */
     }else{
 
     //categorize the async race..it may belong to multiple categories
@@ -3658,13 +3688,20 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
 
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = delayPostRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    delayPostRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = delayPostRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = delayPostRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbDelayPostRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }                             
 
                             //check if cross thread post is a reason
@@ -3673,26 +3710,41 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = crossPostRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    crossPostRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = crossPostRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = crossPostRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbCrossPostRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }   
 
 
                             if(!raceCategoryDetected){
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = uncategorizedRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    uncategorizedRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = uncategorizedRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = uncategorizedRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbUncategorizedRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }
 
                         }else{
@@ -3721,24 +3773,45 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                             std::string clazz(acc1->clazz);
                             if(UiWidgetSet.find(clazz) != UiWidgetSet.end()){
                                 std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resUi 
-                                        = coEnabledEventUiRaces.insert(std::make_pair(classField, std::make_pair(
-                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));   
-                                inserted = resUi.second;
+                               /* coEnabledEventUiRaces.insert(std::make_pair(classField, std::make_pair(
+                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));   */
+                                if(acc1->obj != NULL){
+                                    std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                    std::pair<std::map<std::pair<Object*, u4>, std::pair<int,int> >::iterator, bool> resUiObj
+                                        = coEnabledEventUiRacesObj.insert(std::make_pair(objField, std::make_pair(
+                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));
+                                    inserted = resUiObj.second;
+                                }else{
+                                    std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resUiClass
+                                        = coEnabledEventUiRacesClass.insert(std::make_pair(classField, std::make_pair(
+                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));
+                                    inserted = resUiClass.second;
+                                }
                             }else{
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resNonUi 
-                                        = coEnabledEventNonUiRaces.insert(std::make_pair(classField, std::make_pair(
-                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));
-                                    inserted = resNonUi.second;
-                                }else{
+                                   /* coEnabledEventNonUiRaces.insert(std::make_pair(classField, std::make_pair(
+                                        async1->recentTriggerOpId, async2->recentTriggerOpId)));*/
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        std::pair<std::map<std::pair<Object*, u4>, std::pair<int,int> >::iterator, bool> resUiObj
+                                            = coEnabledEventNonUiRacesObj.insert(std::make_pair(objField, std::make_pair(
+                                            async1->recentTriggerOpId, async2->recentTriggerOpId)));
+                                        inserted = resUiObj.second;
+                                    }else{
+                                        std::pair<std::map<std::pair<const char*, u4>, std::pair<int,int> >::iterator, bool> resUiClass
+                                            = coEnabledEventNonUiRacesClass.insert(std::make_pair(classField, std::make_pair(
+                                            async1->recentTriggerOpId, async2->recentTriggerOpId)));
+                                        inserted = resUiClass.second;
+                                    }
+
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     std::pair<std::map<std::string, std::pair<int,int> >::iterator, bool> resNonUiDb 
                                         = dbCoEnabledEventRaces.insert(std::make_pair(dbPath, std::make_pair(
                                         async1->recentTriggerOpId, async2->recentTriggerOpId))); 
                                     inserted = resNonUiDb.second;
-                                }
+                                }*/
                             }
                            
                     /*        }//end of filter  */
@@ -3762,13 +3835,21 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
 
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = delayPostRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    delayPostRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = delayPostRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = delayPostRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbDelayPostRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }
 
                             //check if cross thread post is a reason
@@ -3777,25 +3858,41 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                                 raceCategoryDetected = true;
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = crossPostRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    crossPostRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = crossPostRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = crossPostRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbCrossPostRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }
 
                             if(!raceCategoryDetected){
                                 if(acc1->clazz != NULL){
                                     std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
-                                    result = uncategorizedRaces.insert(classField);
-                                    inserted = result.second;
-                                }else{
+                                    uncategorizedRaces.insert(classField);
+                                    if(acc1->obj != NULL){
+                                        std::pair<Object*, u4> objField = std::make_pair(acc1->obj, acc1->fieldIdx);
+                                        resultObj = uncategorizedRacesObj.insert(objField);
+                                        inserted = resultObj.second;
+                                    }else{
+                                        resultClass = uncategorizedRacesClass.insert(classField);
+                                        inserted = resultClass.second;
+                                    }
+
+                                }/*else{
                                     std::string dbPath(acc1->dbPath);
                                     resultDb = dbUncategorizedRaces.insert(dbPath);
                                     inserted = resultDb.second;
-                                }
+                                }*/
                             }
                     }
                 }else{
@@ -3852,6 +3949,7 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
     }
 }
 
+/*we dont report database races as we do not track them in detail*/
 void printRacesDetectedToFile(){
     std::ofstream outfile;
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
@@ -3861,6 +3959,7 @@ void printRacesDetectedToFile(){
     std::set<std::pair<const char*, u4> >::iterator classIt;
     std::set<std::string>::iterator dbIt;
     std::map<std::pair<const char*, u4>, std::pair<int, int> >::iterator classMapIt;
+    std::map<std::pair<Object*, u4>, std::pair<int, int> >::iterator objMapIt;
     std::map<std::string, std::pair<int, int> >::iterator dbMapIt;
 
     classIt = multiThreadRaces.begin();
@@ -3869,11 +3968,11 @@ void printRacesDetectedToFile(){
         ++classIt;
     }
 
-    dbIt = dbMultiThreadRaces.begin();
+/*    dbIt = dbMultiThreadRaces.begin();
     while(dbIt != dbMultiThreadRaces.end()){
         outfile << "database path: " << (*dbIt).c_str() << "\n" ;
         ++dbIt;
-    }
+    }*/
 
     outfile << "\nAsync races (on single thread)" << "\n" ;
     outfile << "\nRaces due to a delayed post in ancestor asyncblocks" << "\n" ;
@@ -3884,11 +3983,11 @@ void printRacesDetectedToFile(){
         ++classIt;
     }
 
-    dbIt = dbDelayPostRaces.begin();
+/*    dbIt = dbDelayPostRaces.begin();
     while(dbIt != dbDelayPostRaces.end()){
         outfile << "database path: " << (*dbIt).c_str() << "\n" ;
         ++dbIt;
-    }
+    }*/
 
     outfile << "\nRaces due to cross thread post in ancestor asyncblocks" << "\n";
     classIt = crossPostRaces.begin();
@@ -3897,35 +3996,47 @@ void printRacesDetectedToFile(){
         ++classIt;
     }
 
-    dbIt = dbCrossPostRaces.begin();
+/*    dbIt = dbCrossPostRaces.begin();
     while(dbIt != dbCrossPostRaces.end()){
         outfile << "database path: " << (*dbIt).c_str() << "\n" ;
         ++dbIt;
-    }
+    }*/
 
     outfile << "\nRaces due to co-enabled events" << "\n";
-    classMapIt = coEnabledEventUiRaces.begin();
-    while(classMapIt != coEnabledEventUiRaces.end()){
+    classMapIt = coEnabledEventUiRacesClass.begin();
+    while(classMapIt != coEnabledEventUiRacesClass.end()){
         outfile << "class: " << classMapIt->first.first << "  field:" << classMapIt->first.second 
             << " co-enabled trigger opIds:" << classMapIt->second.first << ", " << classMapIt->second.second << "\n";
         ++classMapIt;
     }
+    objMapIt = coEnabledEventUiRacesObj.begin();
+    while(objMapIt != coEnabledEventUiRacesObj.end()){
+        outfile << "object: " << objMapIt->first.first << "  field:" << objMapIt->first.second
+            << " co-enabled trigger opIds:" << objMapIt->second.first << ", " << objMapIt->second.second << "\n";
+        ++objMapIt;
+    }
     
     outfile << "\n";   
 
-    classMapIt = coEnabledEventNonUiRaces.begin();
-    while(classMapIt != coEnabledEventNonUiRaces.end()){
+    classMapIt = coEnabledEventNonUiRacesClass.begin();
+    while(classMapIt != coEnabledEventNonUiRacesClass.end()){
         outfile << "class: " << classMapIt->first.first << "  field:" << classMapIt->first.second
             << " co-enabled trigger opIds:" << classMapIt->second.first << ", " << classMapIt->second.second << "\n";
         ++classMapIt;
     }
+    objMapIt = coEnabledEventNonUiRacesObj.begin();
+    while(objMapIt != coEnabledEventNonUiRacesObj.end()){
+        outfile << "object: " << objMapIt->first.first << "  field:" << objMapIt->first.second
+            << " co-enabled trigger opIds:" << objMapIt->second.first << ", " << objMapIt->second.second << "\n";
+        ++objMapIt;
+    }
 
-    dbMapIt = dbCoEnabledEventRaces.begin();
+/*    dbMapIt = dbCoEnabledEventRaces.begin();
     while(dbMapIt != dbCoEnabledEventRaces.end()){
         outfile << "database path: " << dbMapIt->first 
             << " co-enabled trigger opIds:" << dbMapIt->second.first << ", " << dbMapIt->second.second << "\n";
         ++dbMapIt;
-    }
+    }*/
 
     outfile << "\n Uncategorized races\n" ;
     classIt = uncategorizedRaces.begin();
@@ -4506,15 +4617,18 @@ int abcGetEventTriggerCount(){
 
 //this is a sum of (class + field) + database
 int abcGetFieldCount(){
-    int fieldCount = fieldSet.size() + dbFieldSet.size();
+//    int fieldCount = fieldSet.size() + dbFieldSet.size();
+    int fieldCount = fieldSet.size();
     return fieldCount;
 }
 
 int abcGetMultiThreadedRaceCount(){
-    int count = multiThreadRaces.size() + dbMultiThreadRaces.size();
+//    int count = multiThreadRaces.size() + dbMultiThreadRaces.size();
+    int count = multiThreadRacesObj.size() + multiThreadRacesClass.size();
     return count;
 }
 
+//this is some dummy thing..does not matter what you compute here 
 int abcGetAsyncRaceCount(){
     //not a correct formula because if there is both async and multi race on a field that will be missed in async count
     //have a separate counter for async races
@@ -4523,20 +4637,25 @@ int abcGetAsyncRaceCount(){
 }
 
 int abcGetDelayPostRaceCount(){
-    int count = delayPostRaces.size() + dbDelayPostRaces.size();
+//    int count = delayPostRaces.size() + dbDelayPostRaces.size();
+    int count = delayPostRacesObj.size() + delayPostRacesClass.size();
     return count;
 }
 
 int abcGetCrossPostRaceCount(){
-    int count = crossPostRaces.size() + dbCrossPostRaces.size();
+//    int count = crossPostRaces.size() + dbCrossPostRaces.size();
+    int count = crossPostRacesObj.size() + crossPostRacesClass.size();
     return count;
 }
 
 int abcGetCoEnabledEventUiRaces(){
-    return coEnabledEventUiRaces.size();
+    int count = coEnabledEventUiRacesObj.size() + coEnabledEventUiRacesClass.size();
+//    return coEnabledEventUiRaces.size();
+    return count;
 }
 
 int abcGetCoEnabledEventNonUiRaces(){
-    int count = coEnabledEventNonUiRaces.size() + dbCoEnabledEventRaces.size();
+    int count = coEnabledEventNonUiRacesObj.size() + coEnabledEventNonUiRacesClass.size();
+//    int count = coEnabledEventNonUiRaces.size() + dbCoEnabledEventRaces.size();
     return count;
 }

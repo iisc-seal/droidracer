@@ -705,13 +705,13 @@ public class ModelCheckingDriver {
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_VIEW_TYPE, VIEW_IMAGE_BUTTON);
 		values.put(McdDB.COLUMN_UI_EVENT_TYPE, EVENT_CLICK);
-		values.put(McdDB.COLUMN_EVENT_PRIORITY, 32);
+		values.put(McdDB.COLUMN_EVENT_PRIORITY, 35);
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_VIEW_TYPE, VIEW_IMAGE_VIEW);
 		values.put(McdDB.COLUMN_UI_EVENT_TYPE, EVENT_CLICK);
-		values.put(McdDB.COLUMN_EVENT_PRIORITY, 32);
+		values.put(McdDB.COLUMN_EVENT_PRIORITY, 35);
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 		
 		values = new ContentValues();
