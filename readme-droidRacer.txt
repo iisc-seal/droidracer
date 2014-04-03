@@ -238,6 +238,15 @@ Understanding DroidRacer implementation
    By default higher priority is given to data input events, so that data
    is supplied before navigating from one screen to another.
 
+
+About droidRacer repository
+----------------------------
+droidRacer repository has several branches. To know which branch has
+the latest code view the information displayed in 
+https://bitbucket.org/hppulse/droidracer/branches . 
+To reproduce results corresponding to our paper at PLDI 2014 please
+switch to branch pldi-2014 and follow instructions given on this page.
+
 ---------------------------------------------------------------------------------
 
 For any further queries drop an e-mail to pallavi.maiya@csa.iisc.ernet.in
