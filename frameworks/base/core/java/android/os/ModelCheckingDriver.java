@@ -1173,7 +1173,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 1);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "+91-9449970222"; 
+		data = "+91-7777887788"; 
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PHONE);
@@ -1266,7 +1266,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 1);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "whats happening"; 		
+		data = "test data"; 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);

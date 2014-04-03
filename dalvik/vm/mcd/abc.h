@@ -331,8 +331,7 @@ extern int abcMsgCount;
 extern int abcAccessSetCount;
 extern int abcRWCount;
 extern int abcEventCount;
-extern int abcEventLimit;
-
+extern int abcTraceLengthLimit;
 
 /*Android bug-checker library methods*/
 void abcAddLockOpToTrace(Thread* self, Object* obj);

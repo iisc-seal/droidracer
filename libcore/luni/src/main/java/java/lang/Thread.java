@@ -1339,10 +1339,6 @@ public class Thread implements Runnable {
     	vmThread.abcLogQueueIdle(idleHandlerHash, queueHash);
     }
     
-    public void abcIncrementEventCount(){
-    	vmThread.abcIncrementEventCount();
-    }
-    
     public void abcPrintRemoveMessage(int msg, String target, int what){ 
     	vmThread.abcPrintRemoveMsg(msg);
     }

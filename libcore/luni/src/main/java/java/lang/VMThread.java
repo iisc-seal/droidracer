@@ -92,8 +92,6 @@ class VMThread {
     
     native void abcLogQueueIdle(int idleHandlerHash, int queueHash);
     
-    native void abcIncrementEventCount();
-    
     native void abcPrintRemoveMsg(int msg);
     
     native void abcSendDbAccessInfo(String dbPath, int dbAction);

@@ -135,6 +135,7 @@ extern std::map<u4, AbcRequestBind*> AbcServiceConnectMap;
 extern std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
 extern std::map<int, std::list<AbcOpWithId*> > AbcSendBroadcastOnReceiveMap;
 
+extern int abcAppBindPost;
 
 bool isEventActivityEvent(int eventId);
 bool abcMapInstanceWithIntentId(u4 instance, int intentId);

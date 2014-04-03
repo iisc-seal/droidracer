@@ -39,6 +39,9 @@ std::map<int, OnReceiveLater*> PreReceiverTriggerToRegisterMap;
 std::map<int, AbcSticky*> AbcRegisterOnReceiveMap;
 std::map<int, std::list<AbcOpWithId*> > AbcSendBroadcastOnReceiveMap;
 
+int timeTickBroadcastPrevPostOpId = -1;
+int abcAppBindPost = -1;
+
 
 void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid, 
         int prevOpid, AbcAsync* curOpAsync, AbcAsync* prevOpAsync){
@@ -213,6 +216,20 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             gDvm.isRunABC = false;
             return updated;
         }
+
+        //check if action is android.intent.action.TIME_TICK
+        if(action == "android.intent.action.TIME_TICK"){
+            //TIME_TICK is a periodic broadcast and hence inherently happens-before
+            //exists between adjacent TIME_TICKs and thus between posts of corresponding onReceive
+            if(timeTickBroadcastPrevPostOpId != -1){
+                addEdgeToHBGraph(timeTickBroadcastPrevPostOpId, opAsync->postId);
+            }
+            timeTickBroadcastPrevPostOpId = opAsync->postId;
+        }
+
+        //post for broadcast receiver could happen only after BIND_APPLICATION's post
+        addEdgeToHBGraph(abcAppBindPost, opAsync->postId);
+
         std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
 
         std::map<int, OnReceiveLater* >::iterator preIter = 
@@ -944,7 +961,6 @@ void addEnableLifecycleEventToMap(int opId, AbcOp* op){
     std::map<std::pair<u4, int>, AbcEnableTriggerList*>::iterator it =
             AbcEnableTriggerLcMap.find(instanceStatePair);
 
-//    LOGE("adding enable lifecycle: instance: %d lc: %d", instance, state);
     if(it != AbcEnableTriggerLcMap.end()){
         AbcEnableTriggerList* lst = (AbcEnableTriggerList*)malloc(sizeof(AbcEnableTriggerList));
         lst->enable = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
@@ -968,30 +984,6 @@ void addEnableLifecycleEventToMap(int opId, AbcOp* op){
 //add edges: ENABLE -> TRIGGER and ENABLE -> postOf(TRIGGER)
 //ENABLE to callOf(TRIGGER) should get derived conditional-transitively
 bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp){
-/*    addEdgeToHBGraph(enableOpid, triggerOpid);    
-    if(triggerOp->asyncId != -1){
-        AbcAsync* triggerAsync = getAsyncBlockFromId(triggerOp->asyncId);
-        if(triggerAsync != NULL){
-            addEdgeToHBGraph(enableOpid, triggerAsync->postId);
-        }  
-        
-        //check if trigger is for send_result
-        if(triggerOp->arg1 == ABC_RESULT){
-            if(ActivityResultMap.find(triggerOp->arg2->id) != ActivityResultMap.end()){
-                AbcActivityResult* ar = ActivityResultMap.find(triggerOp->arg2->id)->second;
-                addEdgeToHBGraph(ar->enable1->opId, triggerOpid);
-                addEdgeToHBGraph(ar->enable2->opId, triggerOpid);
-                if(triggerAsync != NULL){
-                    addEdgeToHBGraph(ar->enable1->opId, triggerAsync->postId);
-                    addEdgeToHBGraph(ar->enable2->opId, triggerAsync->postId);
-                }
-                //update corresponding AbcActivityResult struct
-                ar->trigger = (AbcOpWithId*)malloc(sizeof(AbcOpWithId));
-                ar->trigger->opId = triggerOpid;
-                ar->trigger->opPtr = triggerOp;
-            }
-        }
-    }*/
 
     u4 instance = triggerOp->arg2->id;
     int state = triggerOp->arg1;
@@ -1146,7 +1138,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
       case ABC_PAUSE:
         switch(prevOperation->opPtr->arg1){
@@ -1159,7 +1150,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
       case ABC_STOP:
         switch(prevOperation->opPtr->arg1){
@@ -1172,7 +1162,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
       case ABC_DESTROY:
         switch(prevOperation->opPtr->arg1){
@@ -1185,7 +1174,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
       case ABC_RESULT:
         switch(prevOperation->opPtr->arg1){
@@ -1199,7 +1187,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
       case ABC_NEW_INTENT:
         switch(prevOperation->opPtr->arg1){
@@ -1214,7 +1201,6 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
                      gDvm.isRunABC = false;
                      updated = false;
         }
-        updated = true;
         break;
     /*  case ABC_START_NEW_INTENT:
         updated = true;

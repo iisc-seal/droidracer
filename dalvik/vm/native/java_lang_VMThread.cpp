@@ -26,26 +26,6 @@
 
 
 /*Android bug-checker*/
-//a temporary technique to indicate end of trace collection
-static void Dalvik_java_lang_VMThread_abcIncrementEventCount(const u4* args, 
-    JValue* pResult){
-    if(gDvm.isRunABC == true){
-        bool detectRace = false;
-        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        abcEventCount++;
-            LOGE("ABC: event count incremented");
-        if(abcEventCount > abcEventLimit){
-            LOGE("ABC: event count limit reached");
-            gDvm.isRunABC = false;
-            detectRace = true;
-        }
-        abcUnlockMutex(&gAbc->abcMainMutex);
-        
-        if(detectRace){
-            abcPerformRaceDetection();
-        }
-    }
-}
 
 static void Dalvik_java_lang_VMThread_abcStopTraceGeneration(const u4* args,
     JValue* pResult){
@@ -1172,8 +1152,6 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintRemoveMsg },
     { "abcSendDbAccessInfo", "(Ljava/lang/String;I)V", 
         Dalvik_java_lang_VMThread_abcSendDbAccessInfo},
-    { "abcIncrementEventCount","()V",
-        Dalvik_java_lang_VMThread_abcIncrementEventCount },
     { "abcPrintAttachQueue","(I)V",
         Dalvik_java_lang_VMThread_abcPrintAttachQueue },
     { "abcPrintLoop","(I)V",

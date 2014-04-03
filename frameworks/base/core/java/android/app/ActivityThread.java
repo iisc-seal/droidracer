@@ -2110,24 +2110,18 @@ public final class ActivityThread {
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
         unscheduleGcIdler();        
-
+        
         /*Android bug-checker*/
     	if(AbcGlobal.abcLogFile != null){
     		if(r.intent != null){
     			if(r.intent.getExtras() != null){
-    				try {
-						Class appClass = Class.forName(Looper.mcd.sampleAppClass);
-						r.intent.setExtrasClassLoader(
-	    						appClass.getClassLoader());
-					} catch (ClassNotFoundException e) {
-				        if (r.packageInfo == null) {
-				            LoadedApk appPackage = getPackageInfo(r.activityInfo.applicationInfo, r.compatInfo,
+    				if (r.packageInfo == null) {
+				        LoadedApk appPackage = getPackageInfo(r.activityInfo.applicationInfo, r.compatInfo,
 				                    Context.CONTEXT_INCLUDE_CODE);
-				            r.intent.setExtrasClassLoader(appPackage.getClassLoader());
-				        }else{
-				        	r.intent.setExtrasClassLoader(r.packageInfo.getClassLoader());
-				        }
-					}    				    				
+				        r.intent.setExtrasClassLoader(appPackage.getClassLoader());
+				    }else{
+				      	r.intent.setExtrasClassLoader(r.packageInfo.getClassLoader());
+				    }			    				
     			}
     			if(r.intent.getIntExtra(
     					"androidBugCheckerIntentId", -1) == -1){
@@ -3658,7 +3652,7 @@ public final class ActivityThread {
         						AbcGlobal.ABC_LAUNCH);
         				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
         						AbcGlobal.ABC_RESUME);
-        				//if activity to be started has launch mode sungleTop
+        				//if activity to be started has launch mode singleTop
         				Thread.currentThread().abcEnableLifecycleEvent("", i.intValue(), 
         						AbcGlobal.ABC_START_NEW_INTENT);
         			}

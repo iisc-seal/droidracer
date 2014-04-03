@@ -581,7 +581,7 @@ GOTO_TARGET_DECL(exceptionThrown);
         obj = (Object*) GET_REGISTER(vsrc1);                                \
         if (!checkForNullExportPC(obj, fp, pc))                             \
             GOTO_exceptionThrown();                                         \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker*/                                            \
         abcAddObjectAccessToTrace(obj, ref, self, 2);                                \
         /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst, dvmGetField##_ftype(obj, ref));        \

@@ -20,8 +20,6 @@
 #include "Dalvik.h"
 #include "native/InternalNativePriv.h"
 /*Android bug-checker*/
-#include <iostream>
-#include <fstream>
 #include <cutils/process_name.h>
 #include <mcd/abc.h>
 /*Android bug-checker*/
@@ -87,14 +85,20 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
                 std::copy(str.begin(), str.end(), gDvm.app_for_ABC);
                 gDvm.app_for_ABC[str.size()] = '\0';
                 LOGE("ABC: string in file - %s", gDvm.app_for_ABC);
-                j++;
             }else if(j == 2){
                 gDvm.package_ABC_app = new char[str.size() + 1];
                 std::copy(str.begin(), str.end(), gDvm.package_ABC_app);
                 gDvm.package_ABC_app[str.size()] = '\0';
                 LOGE("ABC: second string in file - %s", gDvm.package_ABC_app);
-                j++;
+            }else if(j == 7){
+                abcTraceLengthLimit = atoi(str.c_str());
+                LOGE("trace length limit: %d", abcTraceLengthLimit);
+                if(abcTraceLengthLimit < 1){
+                    //ignore this limit by setting it to 1
+                    abcTraceLengthLimit = -1;
+                }
             }
+            j++;
         }
         if(strcmp(gDvm.app_for_ABC, get_process_name()) == 0){
             gDvm.abcLogFile = std::string("/data/data/") + gDvm.app_for_ABC

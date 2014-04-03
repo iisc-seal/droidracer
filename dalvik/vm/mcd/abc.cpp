@@ -178,10 +178,9 @@ int abcOpCount = 1;
 int abcAccessSetCount = 1;
 int abcRWCount = 1;
 int abcEventCount = 0;
-int abcEventLimit = 8;
+int abcTraceLengthLimit = -1;
 
 int abcStartOpId;
-int abcAppBind = -1;
 bool ** adjGraph;
 WorklistElem* worklist = NULL; //a list 
 std::map<int, std::pair<Destination*, Source*> > adjMap; 
@@ -430,11 +429,6 @@ void abcAddCallerObjectForLibMethod(int abcTid, const Method* meth, Object* obj)
         }else{
             abcLibCallerObjectMap.insert(std::make_pair(abcTid,mo));
         }
-
-     /*   std::ofstream outfile;
-        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-        outfile << "ABC: ADD " << meth->name << " of class " << meth->clazz->descriptor << "\n";
-        outfile.close();*/
    }
 }
 
@@ -762,11 +756,6 @@ void abcAddLogicalIdToMap(int threadId, int abcThreadId){
         ati->prevAbcId = NULL;
         abcLogicalThreadIdMap.insert(std::make_pair(threadId, ati));
     }
-
-    /*std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << "ADDED logical threadId:" << abcThreadId << "\t physical Tid:" << threadId << "\n";
-    outfile.close();*/
 }
 
 int abcGetAbcThreadId(int threadId){
@@ -783,10 +772,6 @@ void abcRemoveThreadFromLogicalIdMap(int threadId){
     if(it != abcLogicalThreadIdMap.end()){
         abcLogicalThreadIdMap.erase(it);
     }
-    /*std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << "REMOVED physical Tid:" << threadId << "\n";
-    outfile.close();*/
 }
 
 bool abcIsThreadOriginUntracked(int abcThreadId){
@@ -840,43 +825,6 @@ void abcAddDbAccessInfo(std::string dbPath, int trId, int accessType, int abcThr
             tmpDba = tmpDba->nextThreadDb;
         }
     }
-    
-    
-
-/*    LOGE("ABC: point 1 cleared tid: %d", abcThreadId);
-    std::map<std::string, AbcDbAccess*>::iterator it = abcDbAccessMap.find(dbPath);
-    if(it == abcDbAccessMap.end()){
-        LOGE("ABC: point 2 cleared");
-        AbcDbAccess* ada = (AbcDbAccess *)malloc(sizeof(AbcDbAccess));
-        LOGE("ABC: address %p", ada);
-        abcDbAccessMap.insert(std::make_pair(dbPath, ada));
-        //it = abcDbAccessMap.find(dbPath);
-        LOGE("ABC: point 3 cleared");
-    }
-    std::map<std::string, AbcDbAccess*>::iterator it1 = abcDbAccessMap.find(dbPath);
-
-    if(it1 != abcDbAccessMap.end()){
-    LOGE("ABC:addresss %p", it1->second);
-
-    LOGE("ABC: hello reached");
-    std::map<int, AbcDbAccessType*>::iterator it_accessType =
-           (it1->second->dbAccessMap).find(abcThreadId);
-        LOGE("ABC: point 7 cleared");
-    AbcDbAccessType* acType = (AbcDbAccessType *)malloc(sizeof(AbcDbAccessType));
-    acType->accessType = accessType;
-    acType->transitionId = trId;
-    LOGE("ABC: point 4 cleared");
-    if(it_accessType != (it1->second->dbAccessMap).end()){
-        LOGE("ABC: point xi5 cleared");
-        acType->prevAccess = it_accessType->second;
-        it_accessType->second = acType;
-    }else{ 
-        LOGE("ABC: point xi7 cleared");
-        acType->prevAccess = NULL;
-        (it1->second->dbAccessMap).insert(std::make_pair(abcThreadId, acType));
-    }
-    LOGE("ABC: point 5 cleared");
-    } */
 }
 
 /*print stack trace associated with a thread*/
@@ -1176,6 +1124,11 @@ void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
@@ -1199,6 +1152,11 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NOTIFY tid:" << tid << " notifiedTid:" << notifiedTid << "\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addAccessToTrace(int opId, int tid, u4 accessId){
@@ -1231,71 +1189,12 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
     outfile << opId << " ACCESS tid:" << tid << "\t accessId:"
        << accessId << "\n";
     outfile.close(); 
-//     LOGE("ABC:Exit - Add ACCESS to trace");
-}
 
-
-/*
-void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
-    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
-    if(accessSetAdded){
-        opId = abcOpCount++;
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
     }
-    LOGE("%d ABC:Enter - Add REGISTER-RECEIVER to trace", opId);
-
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
-    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
-    arg2->obj = NULL;
-    arg2->id = 0;
-
-    op->opType = ABC_REGISTER_RECEIVER;
-    op->tid = tid;
-    op->arg2 = arg2;
-    op->arg5 = new char[strlen(action) + 1];
-    strcpy(op->arg5, action);
-    op->tbd = false;
-    op->asyncId = -1;
-
-    abcTrace.insert(std::make_pair(opId, op));
-    std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << opId << " REGISTER-RECEIVER tid:" << tid << " component:" << component
-        << " action:" << action <<"\n";
-    outfile.close(); 
-//    LOGE("ABC:Exit - Add REGISTER-RECEIVER to trace");
 }
-
-
-void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action){
-    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
-    if(accessSetAdded){
-        opId = abcOpCount++;
-    }
-    LOGE("%d ABC:Enter - Add TRIGGER-RECEIVER to trace", opId);
-
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
-    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
-    arg2->obj = NULL;
-    arg2->id = 0;
-
-    op->opType = ABC_TRIGGER_RECEIVER;
-    op->tid = tid;
-    op->arg2 = arg2;
-    op->arg5 = new char[strlen(action) + 1];
-    strcpy(op->arg5, action);
-    op->tbd = false;
-    op->asyncId = -1;
-
-    abcTrace.insert(std::make_pair(opId, op));
-    std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << opId << " TRIGGER-RECEIVER tid:" << tid << " component:" << component
-        << " action:" << action <<"\n";
-    outfile.close(); 
-//    LOGE("ABC:Exit - Add TRIGGER-RECEIVER to trace");
-}
-*/
-
 
 void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
@@ -1327,6 +1226,11 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
     outfile << opId << " TRIGGER-SERVICE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 componentId, 
@@ -1361,6 +1265,11 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
         << " component:" << componentId << " intent:"<< intentId << " onRecLater:" << delayTriggerOpid
         << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
@@ -1391,7 +1300,11 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentI
     outfile << opId << " ENABLE-LIFECYCLE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
-//     LOGE("ABC:Exit - Add ENABLE-LIFECYCLE to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
@@ -1422,7 +1335,11 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 component
     outfile << opId << " TRIGGER-LIFECYCLE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add TRIGGER-LIFECYCLE to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
@@ -1453,6 +1370,11 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
     outfile << opId << " INSTANCE-INTENT tid:" << tid << " instance:" << instance
         << " intentId:" << intentId <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addEnableEventToTrace(int opId, int tid, u4 view, int event){
@@ -1483,7 +1405,11 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     outfile << opId << " ENABLE-EVENT tid:" << tid << " view:" << view 
         << " event:" << event <<"\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add ENABLE-EVENT to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
@@ -1514,7 +1440,11 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
     outfile << opId << " TRIGGER-EVENT tid:" << tid << " view:" << view
         << " event:" << event <<"\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add TRIGGER-EVENT to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
@@ -1545,6 +1475,11 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     outfile << opId << " ENABLE-WINDOW-FOCUS tid:" << tid 
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
@@ -1575,6 +1510,11 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     outfile << opId << " TRIGGER-WINDOW-FOCUS tid:" << tid 
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
@@ -1607,7 +1547,10 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
         << " dest:" << destTid << " delay:" << delay <<"\n";
     outfile.close(); 
 
-//    LOGE("ABC:Exit - Add POST to trace");
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 
     return opId;
 }
@@ -1632,7 +1575,11 @@ void addCallToTrace(int opId, int tid, u4 msg){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " CALL tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add CALL to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 
 }
 
@@ -1662,12 +1609,11 @@ void addRetToTrace(int opId, int tid, u4 msg){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " RET tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add RET to trace");
-    //special check added only to gwt whatsapp running
-/*    if(opId >= 2300){
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
         gDvm.isRunABC = false;
-        LOGE("Trace truncated as hit 2300 mark");
-    } */
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addRemoveToTrace(int opId, int tid, u4 msg){
@@ -1685,6 +1631,11 @@ void addRemoveToTrace(int opId, int tid, u4 msg){
     op->asyncId = -1;
 
     abcTrace.insert(std::make_pair(opId, op));
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addAttachQToTrace(int opId, int tid, u4 msgQ){
@@ -1713,7 +1664,11 @@ void addAttachQToTrace(int opId, int tid, u4 msgQ){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ATTACH-Q tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add ATTACHQ to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addLoopToTrace(int opId, int tid, u4 msgQ){
@@ -1742,7 +1697,11 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " LOOP tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close();
-//    LOGE("ABC:Exit - Add LOOP to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
@@ -1766,9 +1725,18 @@ void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " QUEUE_IDLE tid:" << tid << " idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
     LOGE("%d ABC:Entered - Add ADD_IDLE_HANDLER to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
@@ -1789,6 +1757,11 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ADD_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
@@ -1812,6 +1785,11 @@ void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, in
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " REMOVE_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addLockToTrace(int opId, int tid, Object* lockObj){
@@ -1840,7 +1818,11 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " LOCK" << " tid:" << tid << "\t lock-obj:" << lockObj << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add LOCK to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addUnlockToTrace(int opId, int tid, Object* lockObj){
@@ -1869,7 +1851,11 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " UNLOCK" << " tid:" << tid << "\t lock-obj:" << lockObj << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add UNLOCK to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addForkToTrace(int opId, int parentTid, int childTid){
@@ -1899,6 +1885,11 @@ void addForkToTrace(int opId, int parentTid, int childTid){
     outfile << opId << " FORK par-tid:" << parentTid << "\t child-tid:"
         << childTid << "\n";
     outfile.close(); 
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addThreadInitToTrace(int opId, int tid){
@@ -1917,7 +1908,11 @@ void addThreadInitToTrace(int opId, int tid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " THREADINIT tid:" << tid << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add THREADINIT to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addThreadExitToTrace(int opId, int tid){
@@ -1941,7 +1936,11 @@ void addThreadExitToTrace(int opId, int tid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " THREADEXIT tid:" << tid << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add THREADEXIT to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addNativeEntryToTrace(int opId, int tid){
@@ -1960,7 +1959,11 @@ void addNativeEntryToTrace(int opId, int tid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NATIVE-ENTRY tid:" << tid << "thread-name:" << dvmGetThreadName(dvmThreadSelf()).c_str() << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add NATIVE_ENTRY to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addNativeExitToTrace(int opId, int tid){
@@ -1984,14 +1987,17 @@ void addNativeExitToTrace(int opId, int tid){
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NATIVE-EXIT tid:" << tid << "thread-name:" << dvmGetThreadName(dvmThreadSelf()).c_str() << "\n";
     outfile.close(); 
-//    LOGE("ABC:Exit - Add NATIVE_EXIT to trace");
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
 }
 
 void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::string field, u4 fieldIdx, Object* obj, std::string dbPath, int tid){ 
     AbcRWAccess* access = (AbcRWAccess*)malloc(sizeof(AbcRWAccess));
     access->accessType = accessType;
     access->obj = obj;
-    //access->dbPath = std::string(dbPath);
     access->dbPath = new char[dbPath.size() + 1];
     std::copy(dbPath.begin(), dbPath.end(), access->dbPath);
     access->dbPath[dbPath.size()] = '\0';
@@ -2025,13 +2031,11 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
         std::map<std::pair<Object*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it 
             = abcObjectAccessMap.find(tmpPair);
         if(it != abcObjectAccessMap.end()){
-//            LOGE("ABC: another access to already existing object %p field %d", obj, fieldIdx);
             if(accessType == ABC_READ)
                 it->second.first.insert(rwId);
             else
                 it->second.second.insert(rwId);
         }else{
-//            LOGE("ABC: access to a new object %p field %d", obj, fieldIdx);
             std::set<int> readSet;
             std::set<int> writeSet;
             if(accessType == ABC_READ)
@@ -2044,13 +2048,11 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
         std::map<std::string, std::pair<std::set<int>, std::set<int> > >::iterator it  
             = abcDatabaseAccessMap.find(dbPath);
         if(it != abcDatabaseAccessMap.end()){
-//            LOGE("ABC: another access to already existing database %s", dbPath.c_str());
             if(accessType == ABC_READ)
                 it->second.first.insert(rwId);
             else
                 it->second.second.insert(rwId);
         }else{  
-//            LOGE("ABC: access to a new database %s", dbPath.c_str());
             std::set<int> readSet;
             std::set<int> writeSet;
             if(accessType == ABC_READ)
@@ -2060,18 +2062,15 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
             abcDatabaseAccessMap.insert(std::make_pair(std::string(access->dbPath),std::make_pair(readSet, writeSet)));
         }  
     }else{
-    //   LOGE("entered static access without NPE");
         std::pair<const char*, u4> tmpPair = std::make_pair(clazz, fieldIdx);
         std::map<std::pair<const char*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcStaticAccessMap.find(tmpPair);
         if(it != abcStaticAccessMap.end()){
-//            LOGE("ABC: another access to already existing static field %s",field.c_str());
             if(accessType == ABC_READ)
                 it->second.first.insert(rwId);
             else
                 it->second.second.insert(rwId);
         }else{
-//            LOGE("ABC:access to a new static field %s", field.c_str());
             std::set<int> readSet;
             std::set<int> writeSet;
             if(accessType == ABC_READ)
@@ -2393,7 +2392,6 @@ bool processNativeEntryOperation(int opId, AbcOp* op){
     }else if(threadIt->second->prevOpId == -1){
         threadIt->second->prevOpId = opId;
     }else{
-//        LOGE("ABC: prevOpId  %d", threadIt->second->prevOpId);
         LOGE("ABC: A native thread did not make a native exit. But another entry spotted "
            "for this thread. Aborting processing the trace.");
         shouldAbort = true;
@@ -2427,14 +2425,6 @@ void processLockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         if(!insert_result.second) {
             LOGE("ABC: lock %p not added to lockmap. result.first=%p", op->arg2->obj, insert_result.first->first);
         } 
-        
-      /*  std::map<Object*, AbcLock*>::iterator tempIt = abcLockMap.begin();
-        int i = 0;
-        while(tempIt != abcLockMap.end()) {
-            ++i;
-            LOGE("ABC: element %d : %p ", i, tempIt->first);
-            tempIt++;
-        }*/
         return;
     }
     
@@ -2487,15 +2477,6 @@ bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     bool shouldAbort = false;
     op->asyncId = threadBK->curAsyncId;
 
-//    LOGE("ABC: unlock. obj:%p abcLockMap.size()=%d", op->arg2->obj, abcLockMap.size());
-  /*  std::map<Object*, AbcLock*>::iterator tempIt = abcLockMap.begin();
-    int i = 0;
-    while(tempIt != abcLockMap.end()) {
-        ++i;
-        LOGE("ABC: element %d : %p ", i, tempIt->first);
-        ++tempIt;
-    }*/
-   
     std::map<Object*, AbcLock*>::iterator lockIt = abcLockMap.find(op->arg2->obj);
     if(lockIt == abcLockMap.end()){
        LOGE("ABC: even after a lock, lock object has not been added to abcLockMap."
@@ -2535,7 +2516,6 @@ bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
             AbcAsync* tmpAsync = getAsyncBlockFromId(tmpAsyncId);
             if(tmpAsyncId == -1 || tmpAsyncId == op->asyncId ||
                 isHbEdge(tmpAsync->retId, async->callId)){
-//                LOGE("ABC: found edge betwen two unlocks %d and %d", tmpUnlockLst->unlockOp, opId);
                 UnlockList* tbd = tmpUnlockLst;
                 if(tbd_prev != NULL) {
                     tbd_prev->prev = tmpUnlockLst->prev;
@@ -2649,17 +2629,6 @@ void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thr
 void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing enable lifecycle hit");
     op->asyncId = threadBK->curAsyncId;
-/*    std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
-    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
-    if(it == abcEnabledLifecycleMap.end()){
-        abcEnabledLifecycleMap.insert(std::make_pair(compLifecyclePair, std::make_pair(opId, -1)));
-    }else{
-        it->second.first = opId;
-    }
-    if(op->arg1 == ABC_APPBIND_DONE){
-        abcAppBind = opId;
-    } */
-//    checkAndAddToMapIfActivityResult(opId, op);
 
     addEnableLifecycleEventToMap(opId, op);
     if(op->arg1 == ABC_RESUME && op->arg2->id == 0){
@@ -2668,7 +2637,7 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
     }
 
     if(op->arg1 == ABC_APPBIND_DONE){
-        abcAppBind = opId;
+        abcAppBindPost = getAsyncBlockFromId(op->asyncId)->postId;
     }
 }
 
@@ -2699,18 +2668,11 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
     edgeAdded1 = connectEnableAndTriggerLifecycleEvents(opId, op);
     if(isEventActivityEvent(op->arg1)){
         edgeAdded2 = checkAndUpdateComponentState(opId, op);
-        shouldAbort = !edgeAdded2;
+        shouldAbort = !edgeAdded2 && !edgeAdded1;
     }else{
         shouldAbort = !edgeAdded1;
     }
 
-
- /*   std::pair<int, int> compLifecyclePair = std::make_pair(op->arg2->id, op->arg1);
-    std::map<std::pair<int, int>, std::pair<int,int> >::iterator it = abcEnabledLifecycleMap.find(compLifecyclePair);
-    if(it != abcEnabledLifecycleMap.end()){
-        edgeAdded = connectEnableAndTriggerLifecycleEvents(opId, op);                
-    } */
-   
     if(shouldAbort){
         LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
              "corresponding enable event or mismatch in activity state machine during processing."
@@ -2718,33 +2680,6 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         gDvm.isRunABC = false;
     }
 
-    /*
-    //needed for race nature stats collection
-    //18 is id for RUN_TIMER_TASK operation. these triggers
-    //are not done on threads with message queues...so dont perform any 
-    //asyncblock related operation for that.
-    if(op->arg1 != 18){
-        AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
-        async->recentTriggerOpId = opId;
-    }
-
-    if(it != abcEnabledLifecycleMap.end()){
-        it->second.second = opId;
-        //18 is id for RUN_TIMER_TASK operation
-        if(op->arg1 != 18){
-            int callId = getAsyncBlockFromId(op->asyncId)->callId;
-            //add edge from enable-event to call corresponding to trigger event 
-            addEdgeToHBGraph(it->second.first, callId);
-        }
-        addEdgeToHBGraph(it->second.first, opId);
-
-        abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
-    }else{
-        LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
-             "corresponding enable event during processing. Aborting processing.", op->arg2->id, op->arg1);
-        gDvm.isRunABC = false;
-        shouldAbort = true;
-    }*/
     return shouldAbort;
 }
 
@@ -2786,7 +2721,6 @@ bool processTriggerServiceLifecycleOperation(int opId, AbcOp* op, AbcThreadBookK
 void processRegisterBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     op->asyncId = threadBK->curAsyncId;
     std::string action(op->arg5);
-//    LOGE("ABC: broadcast action %s", action.c_str());
     std::map<std::string, std::pair<int,int> >::iterator it = abcRegisteredReceiversMap.find(action);
     if(it == abcRegisteredReceiversMap.end()){
         abcRegisteredReceiversMap.insert(std::make_pair(action, std::make_pair(opId,-1)));
@@ -2890,19 +2824,7 @@ bool isFirstPostAncestorOfSecond(int post1, int post2, AbcAsync* async2){
 }
 
 bool isDelayedAsyncFifo(int destPostAsyncId, AbcAsync* srcPostAsync, AbcAsync* destPostAsync){
-//    LOGE("ABC: check isDelayedAsyncFifo");
     bool shouldAddFifo = false;
-/*    std::map<int, int>::iterator it = abcAsyncEnableMap.find(destPostAsyncId);
-    if(it != abcAsyncEnableMap.end()){ //destination post corresponds to a trigger block
-        std::ofstream outfile;
-        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-        outfile << "ABC: abcAsyncEnableMap entry exists for asyncId " << destPostAsyncId << " enableId " 
-                << it->second << " src:" << srcPostAsync->retId << "\n";
-        outfile.close(); 
-        if(adjGraph[srcPostAsync->retId - 1][it->second - 1] == true){
-            shouldAddFifo = true;
-        } 
-    }else{ //destination post corresponds to a non-trigger block*/
         if(destPostAsync->parentAsyncId != -1){
             std::map<int, AbcAsync*>::iterator parentIter = abcAsyncMap.find(destPostAsync->parentAsyncId);
             if(parentIter != abcAsyncMap.end()){
@@ -2913,13 +2835,11 @@ bool isDelayedAsyncFifo(int destPostAsyncId, AbcAsync* srcPostAsync, AbcAsync* d
                 LOGE("ABC-MISSING: missing async block entry in asyncMap for id %d", destPostAsync->parentAsyncId);
             }
         }
-  //  } 
 
     return shouldAddFifo;
 }
 
 bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
-//    LOGE("ABC: checking async fifo");
     bool isFifo = false;
     
     //add fifo edge if both operations are POST and the destination of posts is the same thread
@@ -2939,19 +2859,15 @@ bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
             if(adjGraph[async1->retId - 1][async2->callId - 1] == false){    
                 if(op1->arg4 == 0){
                     addEdgeToHBGraph(async1->retId, async2->callId); 
-     //               LOGE("ABC: fifo edge added between  message %d and %d", o1, o2);
                 }else if(op2->arg4 != 0){ //both op1 and op2 are delayed messages
-     //               LOGE("3 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     if(op1->arg4 <= op2->arg4){
                         addEdgeToHBGraph(async1->retId, async2->callId);
                     }else if(isDelayedAsyncFifo(op2->arg2->id, async1, async2)){
                         addEdgeToHBGraph(async1->retId, async2->callId);
-    //                    LOGE("1 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     } 
                 }else{  //only op1 is delayed message
                     if(isDelayedAsyncFifo(op2->arg2->id, async1, async2)){
                         addEdgeToHBGraph(async1->retId, async2->callId);
-   //                     LOGE("2 ABC: fifo edge added between non delay and delayed message %d and %d", o1, o2);
                     } 
                 }
             }
@@ -2966,7 +2882,6 @@ bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
 }
 
 void checkAndAddSecondFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
-//    LOGE("ABC: check and add second fifo edge");
     //if both operations are POST and the destination of posts is the same thread
     if((op1->opType == ABC_CALL && op2->opType == ABC_CALL) &&
             (op1->tid == op2->tid)){
@@ -2986,7 +2901,6 @@ void checkAndAddSecondFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
 }
 
 void checkAndAddRetToTriggerIfRetToEnableExists(int o1, int o2, AbcOp* op1, AbcOp* op2){
-//    LOGE("ABC: check and add enable to call if trigger to call spotted");
     //if edge exists from ret to enable then edge exists from ret to call of trigger
     if((op1->opType == ABC_RET && (op2->opType == ABC_ENABLE_EVENT || 
             op2->opType == ABC_ENABLE_LIFECYCLE || op2->opType == ABC_REGISTER_RECEIVER))){
@@ -3127,7 +3041,6 @@ bool checkAndAddSendBroadcastEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
 }
 
 bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, AbcOp* op3){
-//    LOGE("ABC: check and add cond trans edge");
     bool isCondTrans = false;
     //check and add edge from op1 to op3
 //    LOGE("check cond trans between %d, %d, %d", o1, o2, o3);
@@ -3272,7 +3185,6 @@ void removeRWfromAccessSet(int rwId){
         if(absIt != abcRWAbstractionMap.end()){
             std::list<int> rwList = absIt->second.second;
             rwList.remove(rwId);
-//            LOGE("ABC: removed rwId %d from accessSet", rwId);
         }else{
             LOGE("ABC-MISSING: missing entry for accesssId %d in abcRWAbstractionMap", accessId);
         }
@@ -3296,7 +3208,6 @@ void removeRedundantReadWrites(){
     for(std::map<std::pair<Object*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcObjectAccessMap.begin(); it != abcObjectAccessMap.end(); ){
         if(it->second.second.size() == 0){
-           // LOGE("ABC: write set size 0 for object %p field %d", it->first.first, it->first.second);
 
             std::set<int>::iterator setIt = it->second.first.begin();
             //take some race detection stats before doing anything
@@ -3313,13 +3224,11 @@ void removeRedundantReadWrites(){
             for(; setIt != it->second.first.end(); ++setIt){
                 removeRWfromAccessSet(*setIt);
             }
-        //    LOGE("ABC: removed read set when write set is size 0");
             abcObjectAccessMap.erase(it++);
         }else{
             /*first iterate over write set and identify if accesses to this object come from
              *different async blocks or threads
              */
-         //   LOGE("ABC: write set is not size 0 for object %p field %d", it->first.first, it->first.second);
             std::set<int>::iterator setIt = it->second.second.begin();
             std::map<int, AbcRWAccess*>::iterator rwIter;
             rwIter = abcRWAccesses.find(*setIt);
@@ -3405,7 +3314,6 @@ void removeRedundantReadWrites(){
     for(std::map<std::string, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcDatabaseAccessMap.begin(); it != abcDatabaseAccessMap.end(); ){
         if(it->second.second.size() == 0){
-      //      LOGE("ABC: write set size 0 for database %s", it->first.c_str());
             //needed for race detection stats collection
             dbFieldSet.insert(it->first);
             
@@ -3413,13 +3321,11 @@ void removeRedundantReadWrites(){
                     setIt != it->second.first.end(); ++setIt){
                 removeRWfromAccessSet(*setIt);
             }
-        //    LOGE("ABC: write set removed when size 0 for database %s", it->first.c_str());
             abcDatabaseAccessMap.erase(it++);
         }else{
             /*first iterate over write set and identify if accesses to this object come from
              *different async blocks or threads
              */
-        //    LOGE("ABC: write set is not size 0 for database %s", it->first.c_str());
 
             //needed for race detection stats collection
             dbFieldSet.insert(it->first);
@@ -3503,7 +3409,6 @@ void removeRedundantReadWrites(){
     for(std::map<std::pair<const char*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcStaticAccessMap.begin(); it != abcStaticAccessMap.end(); ){
         if(it->second.second.size() == 0){
-     //       LOGE("ABC: write set size 0 for static access %s %d", it->first.first, it->first.second);
             std::set<int>::iterator setIt = it->second.first.begin();
             //take some race detection stats before doing anything
             std::map<int, AbcRWAccess*>::iterator accIter = abcRWAccesses.find(*setIt);
@@ -3518,10 +3423,8 @@ void removeRedundantReadWrites(){
             for(; setIt != it->second.first.end(); ++setIt){
                 removeRWfromAccessSet(*setIt);
             }
-        //    LOGE("ABC: write set removed when size 0 for static access %s %d", it->first.first, it->first.second);
             abcStaticAccessMap.erase(it++);
         }else{
-        //    LOGE("ABC: write set is not size 0 for static access %s %d", it->first.first, it->first.second);
             /*first iterate over write set and identify if accesses to this object come from
              *different async blocks or threads
              */
@@ -4069,55 +3972,16 @@ void detectRaceBetweenTwoSetOfOps(std::set<int> set1, std::set<int> set2, bool i
             int op2 = getOpIdOfReadWrite(*it2);
             if((op1 != -1 && op2 != -1) && op1 != op2 && 
                     !adjGraph[op1 - 1][op2 - 1] && !adjGraph[op2 - 1][op1 - 1]){
-                std::map<int, AbcRWAccess*>::iterator ii1 = abcRWAccesses.find(*it1);
-                std::map<int, AbcRWAccess*>::iterator ii2 = abcRWAccesses.find(*it2);                
-                if(ii1 != abcRWAccesses.end() && ii2 != abcRWAccesses.end()){
+                    std::map<int, AbcRWAccess*>::iterator ii1 = abcRWAccesses.find(*it1);
+                    std::map<int, AbcRWAccess*>::iterator ii2 = abcRWAccesses.find(*it2);                
+                    if(ii1 != abcRWAccesses.end() && ii2 != abcRWAccesses.end()){
 
-                AbcRWAccess* acc1 = ii1->second;
-                AbcRWAccess* acc2 = ii2->second;
-                         
-                if(acc1 != NULL && acc2 != NULL){
-                //needed only to categorize race based on some pre-defined natures
-                collectStatsOnTheRace(*it1, *it2, acc1, acc2, op1, op2);
-               
-                //back to race detection
-            /*    std::string accType1 = "";
-                std::string accType2 = "";
-        
-                if(acc1->accessType == ABC_READ)
-                    accType1 = "READ";
-                else
-                    accType1 = "WRITE";
-                  
-                if(acc2->accessType == ABC_READ)
-                    accType2 = "READ";
-                else
-                    accType2 = "WRITE";
-                
-                std::string clazz1, clazz2;
-                if(acc1->clazz == NULL){
-                    clazz1 = "";
-                }else{
-                    clazz1 = acc1->clazz;
-                }
-                if(acc2->clazz == NULL){
-                    clazz2 = "";
-                }else{
-                    clazz2 = acc2->clazz;
-                }
-
-                std::ofstream outfile;
-                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                outfile << "RACE rwId1:" << *it1 << " type - " << accType1 << "  obj - " 
-                    << acc1->obj << "  class - " << clazz1 << " field - " << acc1->field << "  fieldIdx - " 
-                    <<  acc1->fieldIdx << "  dbPath - " << acc1->dbPath << "  tid - " 
-                    << acc1->tid << "  accessId - " << acc1->accessId << "\n";
-                outfile << "     rwId2:" << *it2 << " type - " << accType2 << "  obj - " 
-                    << acc2->obj << "  class - " << clazz1 << " field - " << acc2->field  << "  fieldIdx - " 
-                    <<  acc2->fieldIdx << "  dbPath - " << acc2->dbPath << "  tid - " 
-                    << acc2->tid << "  accessId - " << acc2->accessId << "\n\n";
-                outfile.close(); */
-               
+                    AbcRWAccess* acc1 = ii1->second;
+                    AbcRWAccess* acc2 = ii2->second;
+                          
+                    if(acc1 != NULL && acc2 != NULL){
+                    //needed only to categorize race based on some pre-defined natures
+                    collectStatsOnTheRace(*it1, *it2, acc1, acc2, op1, op2);
                 }
             }else{
                 LOGE("ABC-MISSING: among rwids %d and %d one of the accesses is missing corresponding abcRWAccesses entry", *it1, *it2);
@@ -4144,10 +4008,8 @@ void detectRaceUsingHbGraph(){
     for(std::map<std::pair<Object*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcObjectAccessMap.begin(); it != abcObjectAccessMap.end(); ++it){
         //detect read-write race
-    //    LOGE("ABC: detect read-write race for object %p field %d", it->first.first, it->first.second);
         detectRaceBetweenTwoSetOfOps(it->second.first, it->second.second, false);
         //detect write-write race
-    //    LOGE("ABC: detect write-write race for object %p field %d", it->first.first, it->first.second);
         detectRaceBetweenTwoSetOfOps(it->second.second, it->second.second, true);
     }
 
@@ -4155,10 +4017,8 @@ void detectRaceUsingHbGraph(){
     for(std::map<std::string, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcDatabaseAccessMap.begin(); it != abcDatabaseAccessMap.end(); ++it){
         //detect read-write race
-    //    LOGE("ABC: detect read-write race for database %s", it->first.c_str());
         detectRaceBetweenTwoSetOfOps(it->second.first, it->second.second, false);
         //detect write-write race
-    //    LOGE("ABC: detect write-write race for database %s", it->first.c_str());
         detectRaceBetweenTwoSetOfOps(it->second.second, it->second.second, true);
     }
 
@@ -4166,10 +4026,8 @@ void detectRaceUsingHbGraph(){
     for(std::map<std::pair<const char*, u4>, std::pair<std::set<int>, std::set<int> > >::iterator it
             = abcStaticAccessMap.begin(); it != abcStaticAccessMap.end(); ++it){
         //detect read-write race
-    //    LOGE("ABC: detect read-write race for %s and %d", it->first.first, it->first.second);
         detectRaceBetweenTwoSetOfOps(it->second.first, it->second.second, false);
         //detect write-write race
-    //    LOGE("ABC: detect write-write race for %s and %d", it->first.first, it->first.second);
         detectRaceBetweenTwoSetOfOps(it->second.second, it->second.second, true);
     }
 }
