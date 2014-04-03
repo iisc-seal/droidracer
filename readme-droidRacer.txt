@@ -1,6 +1,11 @@
-Note: use a machine with atleast 16 threads and more than 16GB RAM for 
+Note: 
+*use a machine with atleast 16 threads and more than 16GB RAM for 
 faster builds (first build takes nearly 25 mins, and incremental builds between 
 2-6 minutes), otherwise may take hours based on resources provided.
+
+* DroidRacer has only been tested on Ubuntu 10.04 
+If Android source installation related requirements are satisfied, DroidRacer may
+work on later versions of Ubuntu too.
 
 reference paper to understand the race detection theory and technique: 
 "Race Detection for Android Applications", PLDI 2014.
@@ -112,7 +117,7 @@ DroidRacer related modifications and initializations
    server with which the emulator communicates after each testing run. The server performs 
    initializations for each run as specified in abc.sh
 
-   * Inside this project you will find a few script files. 
+   * Inside this project you will find a few script files and src/ABCServer.java . 
    In each of these files change the paths leading to android tools or DroidRacer 
    files, with the path on your machine. Pay care when doing this because not
    changing path for some may not lead to tool crash but may not do anything
@@ -151,20 +156,24 @@ How to run DroidRacer
    (3) emulator ID 
    E.g., org.tomdroid 9998 5554  #to test Tomdroid app running on emulator-5554
 
-2. Make sure configuration file abc.txt is copied to /mnt/sdcard/Download folder of emulator
+2. Before starting DroidRacer run through ModelCheckingServer add 
+   <app-process-name, app's main Activity> to intentAppMap HashMap in ABCServer.java inside
+   ModelCheckingServer/src . Samples for this can be found in ABCServer.java
+
+3. Make sure configuration file abc.txt is copied to /mnt/sdcard/Download folder of emulator
    and AbcClientApp app is installed. This app is needed to communicate with the 
    ModelCheckingServer.
 
-3. To inspect the trace file abc_log.txt in the middle of testing run issue a pull using adb tool
+4. To inspect the trace file abc_log.txt in the middle of testing run issue a pull using adb tool
    from the location /data/data/<process-name-of-app-under-test>/abc_log.txt
 
-4. If you want to only generate trace and not perform race detection then search and comment out 
+5. If you want to only generate trace and not perform race detection then search and comment out 
    Thread.currentThread().abcPrintRacesDetectedToFile();				
    Thread.currentThread().abcComputeMemoryUsedByRaceDetector();
    Thread.currentThread().abcPrintRacesDetectedToFile();
    lines from /frameworks/base/core/java/android/os/ModelCheckingDriver.java and re-build and run
 
-5. Some apps may need initializations like one time logins, accepting an agreement etc.
+6. Some apps may need initializations like one time logins, accepting an agreement etc.
    You may want to test the app after these initializations and may not want to repeat
    these non-interesting aspects in each run. If the app has the capability to remember
    these initializations even after the app is Force-Quit and restarted, DroidRacer can
@@ -177,17 +186,17 @@ How to run DroidRacer
    different screen in each run making DroidRacer runs go bad after a few runs 
    due to inconsistencies in initial paths across runs.
 
-6. During the run a few logs get printed on the screen and also stored to 
+7. During the run a few logs get printed on the screen and also stored to 
    abc_log.txt. But during race detection stage DroidRacer does not report any 
    progress till it is completed. The race detection time can vary anywhere
    between a couple of seconds to hours. Do not terminate the emulator in this stage.
 
-7. During a DroidRacer run (before Race Detection phase starts) if 
+8. During a DroidRacer run (before Race Detection phase starts) if 
    "Application Not Responding" dialog is shown click on the "WAIT" button
    so that app is not killed. ANR gets displayed as DroidRacer does file read-write
    from main thread in some places.
 
-8. Read readme.txt in https://bitbucket.org/hppulse/droidracer-related-files
+9. Read readme.txt in https://bitbucket.org/hppulse/droidracer-related-files
    to reproduce the runs corresponding to results reported in 
    "Race Detection for Android Applications", PLDI 2014 paper.
 
