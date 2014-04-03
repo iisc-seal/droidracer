@@ -116,15 +116,6 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
             startAbcModelChecker();
             gDvm.isRunABC = true;
 
-       //     std::map<int, AbcThread*>::iterator it = abcThreadMap.find(
-       //         dvmThreadSelf()->abcThreadId);
-       //     if(it != abcThreadMap.end()){
-       //         it->second->parentThread = NULL;
-       //     }else
-       //         LOGE("ABC: fatal error in model checking. Main thread not added to map!");
-
-            LOGE("ABC: main thread's name: %s", dvmGetThreadName(dvmThreadSelf()).c_str());
-            
         }
     }
 

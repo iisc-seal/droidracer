@@ -64,54 +64,6 @@ public class ModelCheckingDriver {
 	 * Toast widget is read only. So ignore them
 	 */
 	
-	//Note: the current logic does not collect details on various kind of events. Ignore
-	//corresponding fields.
-	
-	//events common to all Views
-	//Note that ImageView, ImageButton are subclasses of views and do not have any listeners other
-	// than that of a View
-	public static final int FOCUS_CHANGE = 1; //this need not be specially triggered
-	public static final int CLICK = 2;
-	public static final int LONG_CLICK = 3;
-	public static final int CREATE_CONTEXT_MENU = 4;
-	public static final int TOUCH = 5;
-	
-	//not tested unless needed, for e.g., list item has too many items and one needs to scroll, or we are in scrollview layout
-	public static final int SCROLL = 6; 
-	
-	//for text views and editTexts
-	//CheckedTextView is a Checkable TV and thus has to be tested with clicks.
-	public static final int TEXT_CHANGE = 7;
-	
-	//for lists, spinners, adapterViews, AutoCompleteTextViews (to handle drop down options)
-	public static final int ITEM_CLICK = 8;
-	public static final int ITEM_SELECT = 9;
-	
-	//for lists, adapterViews, spinners
-	public static final int ITEM_LONG_CLICK = 10;
-	
-	//CalendarView, DatePicker
-	public static final int DATE_CHANGE = 11;
-	
-	//CompoundButton (its a button with 2 states), radioGroup
-	public static final int CHECK_CHANGE = 12;
-	
-	//ExpandableListView
-	public static final int EXPANDABLE_LIST_GROUP_CLICK = 13;
-	public static final int EXPANDABLE_LIST_GROUP_EXPAND = 14;
-	public static final int EXPANDABLE_LIST_GROUP_COLLAPSE = 15;
-	public static final int EXPANDABLE_LIST_CHILD_CLICK = 16;
-	
-	//RatingBar
-	public static final int RATING_BAR_CHANGE = 17;
-	
-	//SearchView
-	public static final int SEARCH_CLICK = 18;
-	public static final int SEARCH_SUGGESTION_FOCUS_CLICK = 19;
-	public static final int QUERY_TEXT_CHANGE = 20;
-	public static final int SEARCH_CLOSE = 21;
-	public static final int QUERY_TEXT_FOCUS_CHANGE = 22;
-	
 	//write a logic to decrement this in case a popup window is created
 	//and destroyed withing the same event. maybe you will nedd a 
 	//map kind of structure to track this
@@ -1023,6 +975,10 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 	}
 	
+	/*For the benefit of testing we have created a dummy gmail account 
+	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
+	 * and do not misuse it.
+	 */
 	public void initializeTextDate(SQLiteDatabase db){
 		String data = ""; //yyyy-MM-dd
 		ContentValues values = new ContentValues();
@@ -1085,6 +1041,10 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 	}
 	
+	/*For the benefit of testing we have created a dummy gmail account 
+	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
+	 * and do not misuse it.
+	 */
 	public void initializeTextEmail(SQLiteDatabase db){
 		String data = "andbug.che@gmail.com"; 
 		ContentValues values = new ContentValues();
@@ -1252,7 +1212,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 3);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 //		
-//		data = "an*42bu.ch"; 		
+//		data = "password"; 		
 //		values = new ContentValues();
 //		values.put(McdDB.COLUMN_DATA, data);
 //		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);

@@ -56,14 +56,6 @@ public class AbcGlobal {
     public static final int ABC_REMOVE_STICKY_BROADCAST = 31;
     public static final int ABC_TRIGGER_ONRECIEVE_LATER = 32;
     
-//    public static boolean isPrevEventBackPress = false;
-//    public static boolean isPrevEventStartActivity = false;
-//    public static boolean isStartActivityForResult = false;
-//    public static boolean isBindService = false;
-//    public static boolean isStartService = false;
-    //to detect any being destroyed without going through back
-//    public static boolean isPauseFinishing = false;
-    
     public static String abcLogFile = null;
 
 	private static int abcUniqueMsgId = 5;
@@ -72,9 +64,7 @@ public class AbcGlobal {
 	private static long traceEndTime = -1;
 	private static long raceDetectionStartTime = -1;
 	private static long raceDetectionEndTime = -1;
-	
-//	public static HashSet<Integer> abcFinishingActivities = 
-//			new HashSet<Integer>();
+
 	
 	/* collections and fields to track and enable interleaving lifecycles of 
 	 * multiple components
@@ -83,8 +73,6 @@ public class AbcGlobal {
 	
 	private static int abcIntentId;
 	
-//	public static HashMap<Integer, Integer> abcIntentIdInstanceMap =
-//			new HashMap<Integer, Integer>();
 	
 	//<activity-intent-id-to-launch, actvity-instance-to-STOP>
 	public static HashMap<Integer, AbcHashNamePair> abcLaunchStopMap = 

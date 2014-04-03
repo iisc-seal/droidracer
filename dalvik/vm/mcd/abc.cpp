@@ -371,7 +371,6 @@ void abcAddLockOpToTrace(Thread* self, Object* obj){
 
 void abcAddUnlockOpToTrace(Thread* self, Object* obj){
     if(self->shouldABCTrack == true){
-    //    if(abcThreadCurAsyncMap.find(self->threadId)->second->shouldRemove == false){
             abcLockMutex(self, &gAbc->abcMainMutex);
             if(gDvm.isRunABC == true){
                 bool addToTrace = checkAndDecrementLockCount(obj, self->abcThreadId);
@@ -385,12 +384,6 @@ void abcAddUnlockOpToTrace(Thread* self, Object* obj){
                 }
             }
             abcUnlockMutex(&gAbc->abcMainMutex);
-    /*    }else{
-            LOGE("Trace has a UNLOCK for a async block forced to be deleted which is not addressed by "
-                " implementation. Cannot continue further");
-            gDvm.isRunABC = false;
-            return;
-        } */
 
     }else if(abcLibCallerObjectMap.find(self->threadId)
                     != abcLibCallerObjectMap.end()){
@@ -568,7 +561,6 @@ void abcStoreBaseMethodForThread(int threadId, const Method* method) {
 const Method* abcGetBaseMethodForThread(int threadId){
     std::map<int, AbcMethod*>::iterator it;
     if((it = abcThreadBaseMethodMap.find(threadId)) == abcThreadBaseMethodMap.end()){
-    //    LOGE("ABC: no base method!");
         return NULL;
     }else{
         return abcThreadBaseMethodMap.find(threadId)->second->method;
@@ -630,120 +622,22 @@ const Method* abcPopLastMethodInThreadStack(int threadId){
 void abcAddThreadToMap(Thread* self, const char* name){
     AbcThread* abcThread =  (AbcThread *)malloc(sizeof(AbcThread));
     abcThread->threadId = self->threadId;
-//    abcThread->abcThreadId = self->abcThreadId;
-//    abcThread->parentThread = NULL;
-//    abcThread->isStartedInApp = false;
-//    abcThread->name = name;
     abcThread->isOriginUntracked = false;
-//    abcThread->event = NULL;
 
     /*initialize the conditional variable associated by ABC with a thread
     pthread_cond_init(&self->abcCond, NULL);
     abcThread->abcCond = &self->abcCond; */
     
     abcThreadMap.insert(std::make_pair(self->abcThreadId, abcThread));
-//    abcAddLogicalIdToMap(self->threadId, self->abcThreadId);
-    
-//    LOGE("ABC: added thread %d with abcId %d to AbcThreadlist", self->threadId, self->abcThreadId);
 }
 
 void addThreadToCurAsyncMap(int threadId){
-//    LOGE("ABC: adding thread to thread-async map");
     AbcCurAsync* async = (AbcCurAsync*)malloc(sizeof(AbcCurAsync));
     async->asyncId = -1;
     async->shouldRemove = false;
     async->hasMQ = false;
     abcThreadCurAsyncMap.insert(std::make_pair(threadId, async));
 }
-
-/*
-void abcAddLockToList(int abcThreadId, Object *lockObj){
-    std::map<int, AbcThread*>::iterator it = abcThreadMap.find(abcThreadId);        
-    if(it != abcThreadMap.end()){
-        AbcLock* lockStruct = (AbcLock*)malloc(sizeof(AbcLock));
-        lockStruct->prevLock = it->second->lockList;
-        lockStruct->obj = lockObj;
-        it->second->lockList = lockStruct;
-    }else{
-        LOGE("ABC: We have hit a stray thread with no info maintained in ABC");
-    }
-}
-
-void abcRemoveLockFromList(int abcThreadId, Object *lockObj){
-    std::map<int, AbcThread*>::iterator it = abcThreadMap.find(abcThreadId);
-    if(it != abcThreadMap.end()){
-        if(it->second->lockList != NULL){
-            * synchronized locks are released in the order of acquire...this
-             * need not be the case with Lock objects. We assume Android library 
-             * code only takes sync locks and thus both kinds of locks must be 
-             * present in the list when unlock is called with shouldTrackAbc 
-             * being true 
-             *
-                        
-            AbcLock *tmpLock = it->second->lockList;
-            AbcLock *nextLock = NULL;
-            bool lockFound = false;
-            while(tmpLock != NULL){
-                if(tmpLock->obj == lockObj){
-                    if(nextLock != NULL){
-                        nextLock->prevLock = tmpLock->prevLock;
-                    }else if(it->second->lockList == tmpLock){
-                        it->second->lockList = tmpLock->prevLock;
-                    }else{
-                        LOGE("ABC: matching lock found but inconsistent surrounding locks in lock-list");
-                    }
-
-                    free(tmpLock);
-                    lockFound = true;
-                    break;
-                }
-                nextLock = tmpLock;
-                tmpLock = tmpLock->prevLock;
-            }
-            if(!lockFound){
-                LOGE("ABC: lock to be released not found in thread's locklist. Inconsistent model checking state.");
-            }
-        }else{
-            LOGE("ABC: Locklist associated with thread id %d is inconsistently empty during unlock", it->second->threadId);
-        } 
-    }else{
-        LOGE("ABC: We have hit a stray thread with no info maintained in ABC");
-    }
-}
-
-void abcSetThreadState(int abcThreadId, int threadState){
-    std::map<int, AbcThread*>::iterator it = abcThreadMap.find(abcThreadId);
-    if(it != abcThreadMap.end()){
-        it->second->threadState = threadState;
-    }else{
-        LOGE("ABC: We have hit a stray thread with no info maintained in ABC");
-    }
-}
-
-
-void abcSetIsStartedInAppForThread(int abcThreadId, bool isStartedInApp){
-    std::map<int, AbcThread*>::iterator it = abcThreadMap.find(abcThreadId);
-    if(it != abcThreadMap.end()){
-        it->second->isStartedInApp = isStartedInApp;
-    }else{
-        LOGE("ABC: We have hit a stray thread with no info maintained in ABC");
-    }
-}
-
-void abcSetParentThread(int abcThreadId, int parentAbcId){
-    std::map<int, AbcThread*>::iterator it_child = abcThreadMap.find(abcThreadId);
-    std::map<int, AbcThread*>::iterator it_par = abcThreadMap.find(parentAbcId);
-    if(it_child != abcThreadMap.end()){
-        if(it_par != abcThreadMap.end()){
-            it_child->second->parentThread = it_par->second;
-            LOGE("ABC: parent's logical id: %d name: %s", parentAbcId, it_par->second->name);
-        }else
-            it_child->second->parentThread = NULL;
-    }else{
-        LOGE("ABC: We have hit a stray thread with no info maintained in ABC");
-    }
-}
-*/
 
 void abcAddLogicalIdToMap(int threadId, int abcThreadId){
     std::map<int, AbcThreadIds*>::iterator it = abcLogicalThreadIdMap.find(threadId);  
@@ -865,68 +759,6 @@ void abcUnlockMutex(pthread_mutex_t* pMutex){
     dvmUnlockMutex(pMutex);
 }
 
-/*
-static void* abcInit1(void* arg){
-    LOGE("ABC: 1 :Woo hoo ! We got here!");
-    abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-
-    pthread_cond_wait(&gAbc->cond2, &gAbc->abcMainMutex);
-    LOGE("ABC: 1 : got out of wait");
-    abcUnlockMutex(&gAbc->abcMainMutex);
-
-    return NULL;
-}
-
-static void* abcInit2(void* arg){
-    LOGE("ABC: 2 :Woo hoo ! We got here!");
-    abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-
-    pthread_cond_broadcast(&gAbc->abcMainCond);
-
-    pthread_cond_wait(&gAbc->cond1, &gAbc->abcMainMutex);
-    LOGE("ABC: 2 : got out of wait");
-
-    abcUnlockMutex(&gAbc->abcMainMutex);
-
-    return NULL;
-}
-
-void abcCondWait(pthread_cond_t *cond, pthread_mutex_t *pMutex){
-    abcLockMutex(dvmThreadSelf(), pMutex);
-    abcThreadIdSet.insert(dvmThreadSelf()->abcThreadId);    
-    pthread_cond_broadcast(&gAbc->abcMainCond);
-    ThreadStatus oldStatus = dvmChangeStatus(dvmThreadSelf(), THREAD_WAIT);
-    pthread_cond_wait(cond, pMutex);
-    dvmChangeStatus(dvmThreadSelf(), oldStatus);
-    abcUnlockMutex(pMutex);
-}
-
-static void* abcInit(void* arg){
-    LOGE("ABC: Woo hoo ! We got here!");
-        
-    abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-    while(gDvm.stopAbc == false){
-        ThreadStatus oldStatus = dvmChangeStatus(dvmThreadSelf(), THREAD_WAIT);
-        pthread_cond_wait(&gAbc->abcMainCond, &gAbc->abcMainMutex);
-        dvmChangeStatus(dvmThreadSelf(), oldStatus);
-        
-        for(std::set<int>::iterator it = abcThreadIdSet.begin();
-                it != abcThreadIdSet.end(); it++){
-            std::map<int, AbcThread*>::iterator thread_it = 
-                    abcThreadMap.find(*it);
-            if(thread_it != abcThreadMap.end()){
-               pthread_cond_broadcast(thread_it->second->abcCond); 
-            }else{
-                LOGE("ABC: A thread id spposed to be present in AbcThreadMap is missing");
-            }
-        }
-        abcThreadIdSet.clear();
-    }
-    abcUnlockMutex(&gAbc->abcMainMutex);
-    
-    return NULL;
-}*/
-
 void addStartToTrace(int opId){
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_START;
@@ -1041,14 +873,6 @@ void startAbcModelChecker(){
     UiWidgetSet.insert("Landroid/widget/TabWidget;");
     UiWidgetSet.insert("Landroid/widget/Toast;");
     
-/*    bool isABCStarted = dvmCreateInternalThread(&(gAbc->abcMainThread), "ABC",
-            abcInit, NULL);
-    if(!isABCStarted){
-        LOGE("ABC: Android bug-checker could not be started");
-        gDvm.isRunABC = false; //do not model check this process
-    }
-*/
-
 }
 
 std::string getLifecycleForCode(int code, std::string lifecycle){
@@ -2753,35 +2577,6 @@ bool processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* thr
     return shouldAbort;
 }
 
-/*
-void processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
-    abcEventTriggerCount++;
-    op->asyncId = threadBK->curAsyncId;
-
-    //needed for race nature stats collection
-    AbcAsync* async = abcAsyncMap.find(op->asyncId)->second;
-    async->recentTriggerOpId = opId;
-
-    std::string action(op->arg5);
-    std::map<std::string, std::pair<int,int> >::iterator it = abcRegisteredReceiversMap.find(action);
-    int callId = getAsyncBlockFromId(op->asyncId)->callId;
-    if(it != abcRegisteredReceiversMap.end()){
-        it->second.second = opId;
-        addEdgeToHBGraph(it->second.first, opId);
-        //add edge from enable-event to call corresponding to trigger event 
-        addEdgeToHBGraph(it->second.first, callId);
-        abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
-    }else{
-        if(abcAppBind != -1){
-            addEdgeToHBGraph(abcAppBind, callId);
-            abcAsyncEnableMap.insert(std::make_pair(op->asyncId, abcAppBind));
-        }else{
-            addEdgeToHBGraph(abcStartOpId, callId);
-            abcAsyncEnableMap.insert(std::make_pair(op->asyncId, abcStartOpId));
-        }
-    }
-}
-*/
 
 //Graph closure and race detection related methods
 
@@ -2948,25 +2743,6 @@ void checkAndAddRetToTriggerIfRetToEnableExists(int o1, int o2, AbcOp* op1, AbcO
     }
 }
 
-/*
-bool isEnableEventOperation(AbcOp* op){
-    bool isEnableOp = false;
-    switch(isEnableOp->opType){
-        case ABC_ENABLE_EVENT: 
-        case ABC_ENABLE_LIFECYCLE: isEnableOp = true;
-             break;
-        case 
- 
-    }
-}
-
-bool checkAndAddRetToTriggerPost(int o1, int o2, AbcOp* op1, AbcOp* op2){
-    if(op1->opType == ABC_RET && isEnableEventOperation(op2)){
-
-    }
-}
-*/
-
 void checkAndAddAsyncNopreEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
     if(op2->opType == ABC_CALL && op1->tid == op2->tid &&
             op1->asyncId != -1){
@@ -3095,15 +2871,6 @@ void computeClosureOfHbGraph(){
         AbcOp* dest = opIt2->second;
         //ST-ASYNC-FIFO
         bool isFifo = checkAndAddAsyncFifoEdge(edge->src, edge->dest, src, dest);
-        
-        /* uncomment this only if new rules are not sufficient
-         * a rule not yet in our set...got added due to event and lifecycle linkages
-        if(!isFifo){
-            //if call1 < call2 then post1 < post2
-            checkAndAddSecondFifoEdge(edge->src, edge->dest, src, dest);
-            checkAndAddRetToTriggerIfRetToEnableExists(edge->src, edge->dest, src, dest);
-        }
-        */
         
         bool isBothRegisterReceiver = false;
         if(!isFifo){
@@ -3654,15 +3421,6 @@ void collectStatsOnTheRace(int rwId1, int rwId2, AbcRWAccess* acc1, AbcRWAccess*
                             //race is due to co-enabled triggers
                             
                             //check if both the co-enabled events are UI events and filter them
-                       /*     AbcOp* triggerOp1 = abcTrace.find(async1->recentTriggerOpId)->second;
-                            AbcOp* triggerOp2 = abcTrace.find(async2->recentTriggerOpId)->second;
-
-                            if(!(triggerOp1->opType == ABC_TRIGGER_EVENT && triggerOp2->opType == ABC_TRIGGER_EVENT) &&
-                                !(triggerOp1->opType == ABC_TRIGGER_EVENT && triggerOp2->opType == ABC_TRIGGER_LIFECYCLE
-                                      && (triggerOp2->arg1 == 1 || triggerOp2->arg1 == 2 || triggerOp2->arg1 == 3 ||
-                                           triggerOp2->arg1 == 5 || triggerOp2->arg1 == 6 || triggerOp2->arg1 == 8 ||
-                                           triggerOp2->arg1 == 9))){ */
-
                             //firstly, add this to the list of races
                             if(acc1->clazz != NULL){
                                 std::pair<const char*, u4> classField = std::make_pair(acc1->clazz, acc1->fieldIdx);
@@ -4127,26 +3885,6 @@ bool abcPerformRaceDetection(){
                  return false;
              }
              break;
-    /*    case ABC_ENABLE_LIFECYCLE:
-             eventPair = std::make_pair(op->arg2->id, op->arg1);
-             it = abcEnabledLifecycleMap.find(eventPair);
-             if(it == abcEnabledLifecycleMap.end()){
-                 abcEnabledLifecycleMap.insert(std::make_pair(eventPair, std::make_pair(itTmp->first, -1)));
-             }else{
-                 it->second.first = itTmp->first;
-             }
-             break;
-        case ABC_TRIGGER_LIFECYCLE:
-             eventPair = std::make_pair(op->arg2->id, op->arg1);
-             it = abcEnabledLifecycleMap.find(eventPair);
-             if(it != abcEnabledLifecycleMap.end()){
-                 requiredEventEnableOps.insert(it->second.first);
-             }else{
-                 LOGE("ABC: found a lifecycle trigger event without corresponding enable. component instance:%d event %d", op->arg2->id, op->arg1);
-                 gDvm.isRunABC = false;
-                 return false;
-             }
-             break;*/
         } 
         ++itTmp;
     }
@@ -4168,34 +3906,14 @@ bool abcPerformRaceDetection(){
                 shouldDelete = true;
             }
         }else if(op->opType == ABC_ACCESS){
-          //uncomment this after things are fine
-        //    abcRWAbstractionMap.find(op->arg2->id)->second.first = traceIndex;
               shouldDelete = false; //dummy statement
         }
-     /*   else if(op->opType == ABC_TRIGGER_RECEIVER){
-            //logic to remap opId of onReceive-LATER held by corresponding onReceive
-            if(op->arg1 == ABC_TRIGGER_ONRECIEVE_LATER){
-                oldToNewDelayedReceiverTriggerMap.insert(std::make_pair(itTmp->first, traceIndex));
-            }else if(op->arg1 == ABC_TRIGGER_ONRECIEVE && op->arg4 != -1){
-                std::map<int, int>::iterator onIt = oldToNewDelayedReceiverTriggerMap.find(op->arg4);
-                if(onIt != oldToNewDelayedReceiverTriggerMap.end()){
-                    op->arg4 = onIt->second;
-                    oldToNewDelayedReceiverTriggerMap.erase(onIt);
-                }else{
-                    op->arg4 = -1;
-                }
-            }
-        } */
 
         if(shouldDelete){
             abcTrace.erase(itTmp++);
             free(op);
         }else{
             if(traceIndex != itTmp->first){
-                //uncomment this after things are fine
-                
-             //   abcTrace.insert(std::make_pair(traceIndex, op));
-             //   abcTrace.erase(itTmp++);
                 itTmp++;
             }else{
                 ++itTmp;
@@ -4203,13 +3921,7 @@ bool abcPerformRaceDetection(){
             ++traceIndex;
         }
     }
-    //uncomment this after things are fine
- //   abcOpCount = traceIndex;
 
- /*   for(std::map<std::pair<int, int>, std::pair<int,int> >::iterator itr = abcEnabledLifecycleMap.begin();
-            itr != abcEnabledLifecycleMap.end(); ){
-        abcEnabledLifecycleMap.erase(itr++);
-    }*/
     for(std::map<std::pair<u4, int>, std::pair<int,int> >::iterator itr = abcEnabledEventMap.begin();
             itr != abcEnabledEventMap.end(); ){
         abcEnabledEventMap.erase(itr++);
@@ -4380,9 +4092,6 @@ bool abcPerformRaceDetection(){
         case ABC_TRIGGER_SERVICE:
              processTriggerServiceLifecycleOperation(opId, op, threadIt->second);
              break;
-     /*   case ABC_REGISTER_RECEIVER:
-             processRegisterBroadcastReceiver(opId, op, threadIt->second);
-             break;*/
         case ABC_TRIGGER_RECEIVER:
              shouldAbort = processTriggerBroadcastReceiver(opId, op, threadIt->second);
              break;
@@ -4475,45 +4184,37 @@ int abcGetEventTriggerCount(){
 
 //this is a sum of (class + field) + database
 int abcGetFieldCount(){
-//    int fieldCount = fieldSet.size() + dbFieldSet.size();
     int fieldCount = fieldSet.size();
     return fieldCount;
 }
 
 int abcGetMultiThreadedRaceCount(){
-//    int count = multiThreadRaces.size() + dbMultiThreadRaces.size();
     int count = multiThreadRacesObj.size() + multiThreadRacesClass.size();
     return count;
 }
 
 //this is some dummy thing..does not matter what you compute here 
 int abcGetAsyncRaceCount(){
-    //not a correct formula because if there is both async and multi race on a field that will be missed in async count
-    //have a separate counter for async races
     int count = raceyFieldSet.size() + dbRaceyFieldSet.size() ;
     return count;
 }
 
 int abcGetDelayPostRaceCount(){
-//    int count = delayPostRaces.size() + dbDelayPostRaces.size();
     int count = delayPostRacesObj.size() + delayPostRacesClass.size();
     return count;
 }
 
 int abcGetCrossPostRaceCount(){
-//    int count = crossPostRaces.size() + dbCrossPostRaces.size();
     int count = crossPostRacesObj.size() + crossPostRacesClass.size();
     return count;
 }
 
 int abcGetCoEnabledEventUiRaces(){
     int count = coEnabledEventUiRacesObj.size() + coEnabledEventUiRacesClass.size();
-//    return coEnabledEventUiRaces.size();
     return count;
 }
 
 int abcGetCoEnabledEventNonUiRaces(){
     int count = coEnabledEventNonUiRacesObj.size() + coEnabledEventNonUiRacesClass.size();
-//    int count = coEnabledEventNonUiRaces.size() + dbCoEnabledEventRaces.size();
     return count;
 }
