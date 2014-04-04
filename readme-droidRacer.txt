@@ -1,5 +1,5 @@
 Note: 
-*use a machine with atleast 16 threads and more than 16GB RAM for 
+*use a machine with atleast 16 threads and atleast 8GB RAM for 
 faster builds (first build takes nearly 25 mins, and incremental builds between 
 2-6 minutes), otherwise may take hours based on resources provided.
 
@@ -20,14 +20,20 @@ Downloading Android source
 
 Compiling Android source
 ------------------------
-1. For building source do the following from android-source-root
+1. Build Android only after performing all environment initializations as described in 
+   Android source site.
+
+   For building source do the following from android-source-root
    $. build/envsetup.sh
    $lunch full-eng
    $make -j<n>  #n depends on the number of hardware threads your machine has
    $emulator  #launches android emulator
 
-   -> To set proxy, increase data partition size and RAM size issue command similar to:
-   $emulator -http-proxy http://<username>:<password>@<domain>:<port> -partition-size 2048 -memory 2048
+   -> To set proxy, increase data partition size, RAM size and specify sdcard path 
+   issue command similar to:
+
+   $emulator -http-proxy http://<username>:<password>@<domain>:<port> 
+    -partition-size 2048 -memory 2048 -sdcard <path-to-sdcard>/sdcard.img
 
 2. Add the following line if XInitThreads undefined error is obtained during make: 
 
@@ -59,7 +65,15 @@ DroidRacer related modifications and initializations
    Developer tool bundle from http://developer.android.com/sdk/index.html
 
 4. Create sdcard for the emulator using mksdcard tool provided with android SDK. E.g.,
+   $/mksdcard 1024M <path-to-android-source-root>/sdcard.img
+   To use this sdcard pass it as an argument when running emulator from android-source-root:
+   $emulator -sdcard sdcard.img
+
+   If you want to avoid passing argument each time create sdcard in following location:
    $/mksdcard 1024M <path-to-android-source-root>/out/target/product/generic/sdcard.img
+   
+   But with the second option the problem is that sdcard.img is erased in case of 
+   "make clean" unlike the first option.
 
 5. Restart emulator
 
@@ -100,8 +114,21 @@ DroidRacer related modifications and initializations
    coordination has to be brought between multiple threads to stop trace generation.
    specified number of events will still be triggered before the test run exits.
 
+   E.g:
+   com.android.music
+   Lcom/android/music/
+   com.android.music.MusicBrowserActivity
+   4
+   0
+   9997
+   3000
+
 ** sample abc.txt can be found on https://bitbucket.org/hppulse/droidracer-related-files
-   for each of the app tested by us.
+   for each of the app tested by us. Check folder "pldi-2014-tested-apps" in the
+   droidracer-related-files repository source root.
+
+** Make sure not to leave any trailing blank space or blank lines in abc.txt. Check
+   examples provided in droidracer-related-files repository.
 
 
 8. Install google services apk (com.google.android.gms.apk) and google play
@@ -204,7 +231,10 @@ How to run DroidRacer
 Understanding DroidRacer implementation
 ---------------------------------------
 1. DroidRacer code is distributed inside /dalvik, /frameworks/base folder and 
-   Thread.java, Timer.java and VMThread.java files.  
+   Thread.java, Timer.java and VMThread.java files in /libcore/luni/src/main/java
+   directory. We use Thread.java and VMThread.java as interfaces to pass control
+   to the native code from Java code.
+
    frameworks/base/core/java/android/os/ModelCheckingDriver.java is the main 
    java file. In C++ /dalvik/mcd/abc.cpp is the main file for DroidRacer.
 
