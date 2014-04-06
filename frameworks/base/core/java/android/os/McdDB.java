@@ -1,3 +1,9 @@
+/* Class defining database elements used to store UI events 
+ * related information used by DroidRacer.
+ * 
+ * Author: Pallavi Maiya
+ */
+
 package android.os;
 
 import android.content.Context;

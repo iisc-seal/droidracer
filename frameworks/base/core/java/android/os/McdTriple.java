@@ -1,3 +1,8 @@
+/* A Custom class used by ModelCheckingDriver.
+ * 
+ * Author: Pallavi Maiya
+ */
+
 package android.os;
 
 public class McdTriple {

@@ -1,3 +1,8 @@
+/* Custom exception used by ModelCheckingDriver
+ * 
+ * Author: Pallavi Maiya
+ */
+
 package android.os;
 
 import android.util.Log;
