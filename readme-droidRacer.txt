@@ -288,5 +288,6 @@ switch to branch pldi-2014 and follow instructions given on this page.
 
 ---------------------------------------------------------------------------------
 
-For any further queries drop an e-mail to pallavi.maiya@csa.iisc.ernet.in
+For any further queries drop an e-mail to 
+pallavi <dot> maiya <at> csa <dot> iisc <dot> ernet <dot> in
     
