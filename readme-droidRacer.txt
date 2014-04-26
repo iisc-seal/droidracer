@@ -300,6 +300,8 @@ Understanding DroidRacer implementation
 
 ---------------------------------------------------------------------------------
 
-For any further queries drop an e-mail to 
+* Visit http://www.iisc-seal.net/droidracer to know more about DroidRacer.
+
+* For any further queries drop an e-mail to 
 pallavi <dot> maiya <at> csa <dot> iisc <dot> ernet <dot> in
     
