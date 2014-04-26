@@ -1,3 +1,7 @@
+/*
+ * Author: Pallavi Maiya
+ */
+
 Note: 
 *use a machine with atleast 16 threads and atleast 8GB RAM for 
 faster builds (first build takes nearly 25 mins, and incremental builds between 
