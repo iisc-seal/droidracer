@@ -46,6 +46,19 @@ Compiling Android source
    LOCAL_LDLIBS += -lX11 
  
 
+
+About droidRacer repository
+----------------------------
+droidRacer repository has several branches. To know which branch has
+the latest code view the information displayed in 
+https://bitbucket.org/hppulse/droidracer/branches . 
+To reproduce results corresponding to our paper at PLDI 2014 clone the
+droidracer repository from https://hppulse@bitbucket.org/hppulse/droidracer.git
+
+Switch to branch pldi-2014 and follow instructions given on this page.
+
+
+
 DroidRacer related modifications and initializations
 ----------------------------------------------------
 1. Make sure your android source builds and runs fine. 
@@ -179,6 +192,7 @@ DroidRacer related modifications and initializations
     ABCServer.java in ModelCheckingServer project.
 
 
+
 How to run DroidRacer
 ---------------------
 1. Install the app to be tested and force-stop it before starting ModelCheckingServer outside emulator. 
@@ -232,6 +246,7 @@ How to run DroidRacer
    "Race Detection for Android Applications", PLDI 2014 paper.
 
 
+
 Understanding DroidRacer implementation
 ---------------------------------------
 1. DroidRacer code is distributed inside /dalvik, /frameworks/base folder and 
@@ -282,13 +297,6 @@ Understanding DroidRacer implementation
    is supplied before navigating from one screen to another.
 
 
-About droidRacer repository
-----------------------------
-droidRacer repository has several branches. To know which branch has
-the latest code view the information displayed in 
-https://bitbucket.org/hppulse/droidracer/branches . 
-To reproduce results corresponding to our paper at PLDI 2014 please
-switch to branch pldi-2014 and follow instructions given on this page.
 
 ---------------------------------------------------------------------------------
 
