@@ -16,7 +16,8 @@
 
 /* This is a native library to model check Android apps to detect
  * concurrency bugs.
- * Author: Pallavi Maiya
+ *
+ * @author Pallavi Maiya
  */
 
 /*todo:

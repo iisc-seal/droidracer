@@ -18,7 +18,7 @@
  * concurrency bugs. This file has functions to model Android app 
  * components
  *
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 

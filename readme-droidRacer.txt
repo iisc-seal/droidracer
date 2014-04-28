@@ -1,5 +1,5 @@
 /*
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 Note: 

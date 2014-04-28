@@ -17,7 +17,7 @@
 /* This is a native library to model check Android apps to detect
  * concurrency bugs. This is a header for modelling functions 
  *
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 #ifndef ABCMODEL_H_

@@ -16,7 +16,7 @@
 
 /* Contains common functions used by other cpp files in mcd directory
  *
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 #include "common.h"

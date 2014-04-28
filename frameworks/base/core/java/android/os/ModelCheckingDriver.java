@@ -16,7 +16,7 @@
 
 /* This is the main class driving UI exploration of Android apps
  * 
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 package android.os;

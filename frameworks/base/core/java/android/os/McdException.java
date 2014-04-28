@@ -16,7 +16,7 @@
 
 /* Custom exception used by ModelCheckingDriver
  * 
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 package android.os;

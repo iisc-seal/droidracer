@@ -17,7 +17,7 @@
 /* Class defining database elements used to store UI events 
  * related information used by DroidRacer.
  * 
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 package android.os;

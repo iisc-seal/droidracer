@@ -16,7 +16,7 @@
 
 /* This is a common header file for Android bug-checker native code
  *
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 /*todo:

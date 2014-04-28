@@ -17,7 +17,7 @@
 /* Class maintaining global objects/variables for JAVA component of 
  * DroidRacer apart from ModelCheckingDriver. 
  * 
- * Author: Pallavi Maiya
+ * @author Pallavi Maiya
  */
 
 package android.os;
