@@ -37,7 +37,7 @@ Compiling Android source
    issue command similar to:
 
    $emulator -http-proxy http://<username>:<password>@<domain>:<port> 
-    -partition-size 2048 -memory 2048 -sdcard <path-to-sdcard>/sdcard.img
+    -partition-size 2047 -memory 2048 -sdcard <path-to-sdcard>/sdcard.img
 
 2. Add the following line if XInitThreads undefined error is obtained during make: 
 
@@ -94,7 +94,7 @@ DroidRacer related modifications and initializations
 
 5. Restart emulator
 
-6. Install AbcClientApp from droidRacer-related-files repo 
+6. Install AbcClientApp on the emulator from droidRacer-related-files repo 
    (https://bitbucket.org/hppulse/droidracer-related-files)
 
 7. Create or push a file (using adb tool) called abc.txt to /mnt/sdcard/Download 
