@@ -67,12 +67,14 @@ DroidRacer related modifications and initializations
    When there is no corresponding file/folder in the original source, add it 
    from repository.
 
-2. Run the following commands from android source root
+2. Goto dalvik/vm/mterp and run $./rebuild.sh
+
+3. Run the following commands from android source root
    $make update-api   #needed as the replaced files modify some Java APIs
    $make -j<n>
    $emulator
 
-3. When the emulator is running issue command:
+4. When the emulator is running issue command:
    $adb shell "echo dalvik.vm.execution-mode = int:portable >> /data/local.prop"
 
    #this shifts emulator's interpreter from assembly (fast) to C mode..some of
@@ -81,7 +83,7 @@ DroidRacer related modifications and initializations
    #adb tool is distributed as part of Android SDK. Download the entire Android
    Developer tool bundle from http://developer.android.com/sdk/index.html
 
-4. Create sdcard for the emulator using mksdcard tool provided with android SDK. E.g.,
+5. Create sdcard for the emulator using mksdcard tool provided with android SDK. E.g.,
    $/mksdcard 1024M <path-to-android-source-root>/sdcard.img
    To use this sdcard pass it as an argument when running emulator from android-source-root:
    $emulator -sdcard sdcard.img
@@ -92,12 +94,12 @@ DroidRacer related modifications and initializations
    But with the second option the problem is that sdcard.img is erased in case of 
    "make clean" unlike the first option.
 
-5. Restart emulator
+6. Restart emulator
 
-6. Install AbcClientApp on the emulator from droidRacer-related-files repo 
+7. Install AbcClientApp on the emulator from droidRacer-related-files repo 
    (https://bitbucket.org/hppulse/droidracer-related-files)
 
-7. Create or push a file (using adb tool) called abc.txt to /mnt/sdcard/Download 
+8. Create or push a file (using adb tool) called abc.txt to /mnt/sdcard/Download 
    on the running emulator. File abc.txt should have the following format:
 
    line 1:process name of app. This is given in manifest file, can be seen when process 
@@ -148,14 +150,14 @@ DroidRacer related modifications and initializations
    examples provided in droidracer-related-files repository.
 
 
-8. Install google services apk (com.google.android.gms.apk) and google play
+9. Install google services apk (com.google.android.gms.apk) and google play
    apk (com.android.vending.apk) only if you want to test apps those need google 
    services and google play to be installed. These apps may be downloaded from 
    https://play.google.com/ using a suitable plugin to download apk or through
    some sites which make apks available. Uninstall them when testing other apps 
    to avoid unnecessary logs.
 
-9. Download ModelCheckingServer project from https://bitbucket.org/hppulse/droidracer-related-files
+10. Download ModelCheckingServer project from https://bitbucket.org/hppulse/droidracer-related-files
    and import it on your eclipse.
    Use ModelCheckingServer to start testing apps using DroidRacer. ModelCheckingServer acts as a 
    server with which the emulator communicates after each testing run. The server performs 
@@ -188,7 +190,7 @@ DroidRacer related modifications and initializations
    * Summary of each run (races detected, trace length, time taken etc.) are 
    appended to pldi-race.log file in the root of ModelCheckingServer folder.
 
-10. The number of testing runs to be performed needs to be specified in field: traceLimit of 
+11. The number of testing runs to be performed needs to be specified in field: traceLimit of 
     ABCServer.java in ModelCheckingServer project.
 
 
