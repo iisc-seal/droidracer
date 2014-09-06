@@ -22,8 +22,10 @@ Downloading Android source
    on Debian 6 too. Follow link http://www.techsomnia.net/2012/07/building-android-on-debian-6/
 
 
-Compiling Android source
+Compiling Android source 
 ------------------------
+** if you encounter error when building android from source check if the solution is listed below in error section **
+
 1. Build Android only after performing all environment initializations as described in 
    Android source site.
 
@@ -39,7 +41,27 @@ Compiling Android source
    $emulator -http-proxy http://<username>:<password>@<domain>:<port> 
     -partition-size 2047 -memory 2048 -sdcard <path-to-sdcard>/sdcard.img
 
-2. Add the following line if XInitThreads undefined error is obtained during make: 
+
+
+Some errors you may see on building android
+-------------------------------------------
+1. If build fails, firstly check if you have installed gcc-4.4, g++4.4, g++-4.4-multilib on your system
+   Some errors can be resolved by installing these packages alongside your existing gcc or g++ versions.
+   E.g., $sudo apt-get install gcc-4.4     #if you are on ubuntu
+  
+   Then make your environment point to this version of gcc and g++ by giving following commands in the 
+   terminal where you are building android. If you want this environment to be reflected always add these
+   commands to your ~/.bashrc file instead of setting in terminal.
+   $export CC=gcc-4.4
+   $export CXX=g++4.4
+
+2. If you see the following error:
+   "dalvik/vm/native/dalvik_system_Zygote.cpp:193: error: aggregate ‘rlimit rlim’ has incomplete type and cannot be defined"
+
+   then, open dalvik/vm/native/dalvik_system_Zygote.cpp and add the following INCLUDE sirective to this cpp file
+   #include <sys/resource.h>   
+
+3. Add the following line if XInitThreads undefined error is obtained during make: 
 
    add-line-to-file: /development/tools/emulator/opengl/host/renderer/Android.mk 
    in android source root: 
