@@ -45,7 +45,7 @@ Compiling Android source
 
 Some errors you may see on building android
 -------------------------------------------
-1. If build fails, firstly check if you have installed gcc-4.4, g++4.4, g++-4.4-multilib on your system
+1. If build fails, firstly check if you have installed gcc-4.4, g++-4.4, g++-4.4-multilib on your system
    Some errors can be resolved by installing these packages alongside your existing gcc or g++ versions.
    E.g., $sudo apt-get install gcc-4.4     #if you are on ubuntu
   
@@ -53,7 +53,7 @@ Some errors you may see on building android
    terminal where you are building android. If you want this environment to be reflected always add these
    commands to your ~/.bashrc file instead of setting in terminal.
    $export CC=gcc-4.4
-   $export CXX=g++4.4
+   $export CXX=g++-4.4
 
 2. If you see the following error:
    "dalvik/vm/native/dalvik_system_Zygote.cpp:193: error: aggregate ‘rlimit rlim’ has incomplete type and cannot be defined"
