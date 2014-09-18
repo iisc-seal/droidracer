@@ -93,7 +93,7 @@ DroidRacer related modifications and initializations
 
 3. Run the following commands from android source root
    $make update-api   #needed as the replaced files modify some Java APIs
-   $make -j<n>
+   $make -j<n>  #sometimes you might have to issue this twice for make to complete
    $emulator
 
 4. When the emulator is running issue command:
@@ -268,6 +268,11 @@ How to run DroidRacer
 9. Read readme.txt in https://bitbucket.org/hppulse/droidracer-related-files
    to reproduce the runs corresponding to results reported in 
    "Race Detection for Android Applications", PLDI 2014 paper.
+
+10. When DroidRacer is running, sometimes UI thread may get blocked for long resulting 
+    in ANR (Application Not Responding) dialog to appear on the screen. In such cases
+    press on WAIT button in the dialog. This will not affect app exploration or race
+    detection. But dialog being on the screen blocks app's UI halting UI exploration.
 
 
 
