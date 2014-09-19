@@ -105,6 +105,14 @@ DroidRacer related modifications and initializations
    #adb tool is distributed as part of Android SDK. Download the entire Android
    Developer tool bundle from http://developer.android.com/sdk/index.html
 
+   # ***NOTE****
+   If using the above command does not change the mode to interpreter mode after restarting
+   the emulator, then do the following:
+
+   $adb shell stop
+   $adb shell setprop dalvik.vm.execution-mode int:portable 
+   $adb shell start
+
 5. Create sdcard for the emulator using mksdcard tool provided with android SDK. E.g.,
    $/mksdcard 1024M <path-to-android-source-root>/sdcard.img
    To use this sdcard pass it as an argument when running emulator from android-source-root:
