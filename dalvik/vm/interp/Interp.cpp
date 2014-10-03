@@ -799,31 +799,14 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             abcPushMethodForThread(self->threadId, method);
 
             AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
-          /*  if(curAsync->shouldRemove){
-                LOGE("Trace has reached an app method inside an async block forced to be deleted, which is not addressed by "
-                    " implementation. Cannot continue further");
-                gDvm.isRunABC = false;
-                return;
-            }else */
             if(curAsync->asyncId != -1){
                 //set the app entry check for async block to true
                 abcAsyncStateMap.find(curAsync->asyncId)->second.second = true;
             }
-            std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-            outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
-                << method->name << "\t class:" << method->clazz->descriptor << "\n";
-            outfile.close();   
         }else{
             if(abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
                abcPushMethodForThread(self->threadId, method); 
                self->shouldABCTrack = false;
-
-               std::ofstream outfile;
-               outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-               outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
-                   << method->name << "\t class:" << method->clazz->descriptor << "\n";
-               outfile.close(); 
             }else 
                self->shouldABCTrack = false;
         }
@@ -942,12 +925,6 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
             if(abcGetLastMethodInThreadStack(self->threadId) == method){
                 abcPopLastMethodInThreadStack(self->threadId);
-             
-                std::ofstream outfile;
-                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                outfile << "METHOD EXIT tid:" << self->abcThreadId << "\t meth:"
-                    << method->name << "\t class:" << method->clazz->descriptor << "\n";
-                outfile.close(); 
             }
         
             bool isAppMethod = false;
@@ -969,10 +946,8 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                         abcLockMutex(self, &gAbc->abcMainMutex);
                        if(gDvm.isRunABC == true){
                             addNativeExitToTrace(abcOpCount++, self->abcThreadId);
-                            //abcRemoveThreadFromLogicalIdMap(self->threadId);
                        }
                        abcUnlockMutex(&gAbc->abcMainMutex);
-                       //self->abcThreadId = -1;
                     }
                 
                     /* ABC todo: this is a scheduling point where you can schedule
