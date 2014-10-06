@@ -213,6 +213,13 @@ std::string traceFile;
 std::string hbFile;
 std::ofstream traceIO;
 std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
+int porUiTid;
+std::set<int> porIgnoreAsyncSet; /* set of async blocks those should not be logged
+* These basically correspond to async blocks and their descendents posted from 
+* a thread with queue but not from a task.
+*/
+std::set<u4> eventTriggeringTasks;
+
     
 
 void cleanupBeforeExit(){
@@ -850,6 +857,12 @@ void startAbcModelChecker(){
     strcpy(component, "");
     component[1] = '\0';
     addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, 0, ABC_BIND);
+
+    //add a dummy UI events posting thread. This is needed by our POR processing technique
+    //as it cannot handle posts outside tasks from threads processing tasks
+    addForkToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, abcThreadCount++);
+    porUiTid = abcThreadCount - 1; //abc Thread ID of this newly created thread
+    addThreadInitToTrace(abcOpCount++, porUiTid); 
 
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");
@@ -1987,6 +2000,9 @@ bool checkAndAbortIfAssumtionsFailed(int opId, AbcOp* op, AbcThreadBookKeep* thr
 bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing POST opid:%d msg:%d", opId, op->arg2->id);
     bool shouldAbort = false;
+    bool shouldAddToPORTrace = true;
+    bool isTriggerEventPost = false;
+
     op->asyncId = threadBK->curAsyncId; //-1 if posted from non-queue thread
 
     AbcAsync* async = (AbcAsync*)malloc(sizeof(AbcAsync));
@@ -2037,24 +2053,48 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 
     //msgId becomes the async block id
     abcAsyncMap.insert(std::make_pair(op->arg2->id, async));
-   
+
+    //POR trace related   
+    if(eventTriggeringTasks.find(op->arg2->id) != eventTriggeringTasks.end()){
+        isTriggerEventPost = true;
+    }
+
     //a post generated outside async block after the looper starts looping
     if(threadBK->attachqId != -1 && op->asyncId == -1){
         addEdgeToHBGraph(threadBK->attachqId, opId);
+
+        //POR trace related processing
+        /* add this msg ID to ignore list if this msg is posted from outside a task
+         * but from a thread processing tasks.
+         */
+        if(!isTriggerEventPost){
+            porIgnoreAsyncSet.insert(op->arg2->id);
+            shouldAddToPORTrace = false;
+        }
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " POST src:" << op->arg1 << " msg:" << op->arg2->id
-        << " dest:" << op->arg3;
 
-    if(op->arg4 > 0){
-        traceIO << " delay:" << op->arg4 <<"\n";
-    }else{
-        traceIO <<"\n";
+    if(!isTriggerEventPost && porIgnoreAsyncSet.find(op->asyncId) != porIgnoreAsyncSet.end()){
+        porIgnoreAsyncSet.insert(op->arg2->id);
+        shouldAddToPORTrace = false;
     }
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
-    
+
+    if(shouldAddToPORTrace){
+        int srcTid = isTriggerEventPost? porUiTid : op->arg1;
+        //if this post leads to a trigger event task then this post should come from UI posting thread
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " POST src:" << srcTid << " msg:" 
+            << op->arg2->id << " dest:" << op->arg3;
+
+        if(op->arg4 > 0){
+            traceIO << " delay:" << op->arg4 <<"\n";
+        }else{
+            traceIO <<"\n";
+        }
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
+
     return shouldAbort;
 }
 
@@ -2082,10 +2122,12 @@ bool processCallOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         addEdgeToHBGraph(threadBK->loopId, opId);
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " CALL tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " CALL tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 
     return shouldAbort;
 }
@@ -2102,10 +2144,12 @@ void processRetOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     }
     threadBK->curAsyncId = -1;
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " RET tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " RET tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 void processRemoveOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2129,8 +2173,9 @@ void processAttachqOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     threadBK->attachqId = opId;
     abcMQCount++;
 
+
     traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " LOOP tid:" << op->arg1 << " queue:" << op->arg2->id <<"\n";
+    traceIO << ++traceFileOpIdCounter << " ATTACH-Q tid:" << op->arg1 << " queue:" << op->arg2->id <<"\n";
     traceIO.close(); 
     traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
@@ -2141,7 +2186,7 @@ void processLoopOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     addEdgeToHBGraph(threadBK->attachqId, threadBK->loopId);
 
     traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " THREADINIT tid:" << op->arg1 << "\n";
+    traceIO << ++traceFileOpIdCounter << " LOOP tid:" << op->arg1 << "\n";
     traceIO.close(); 
     traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
@@ -2211,11 +2256,13 @@ bool processForkOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         return shouldAbort;
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " FORK par-tid:" << op->arg1 << " child-tid:"
-        << op->arg2->id << "\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " FORK par-tid:" << op->arg1 << " child-tid:"
+            << op->arg2->id << "\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 
     return shouldAbort;
 }
@@ -2232,11 +2279,13 @@ bool processNotifyOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         shouldAbort = true;
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " NOTIFY tid:" << op->tid << " notifiedTid:" 
-        << op->arg1 << "\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " NOTIFY tid:" << op->tid << " notifiedTid:" 
+            << op->arg1 << "\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 
     return shouldAbort;
 }
@@ -2255,10 +2304,12 @@ void processWaitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         notifyWaitMap.erase(it);
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " WAIT tid:" << op->arg1 <<"\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " WAIT tid:" << op->arg1 <<"\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 void processThreadinitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2379,11 +2430,13 @@ void processLockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         }
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " LOCK" << " tid:" << op->arg1
-        << " lock-obj:" << op->arg2->obj << "\n";
-    traceIO.close();
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " LOCK" << " tid:" << op->arg1
+            << " lock-obj:" << op->arg2->obj << "\n";
+        traceIO.close();
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2457,11 +2510,13 @@ bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 
     lock->lastUnlockTid = op->tid;
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " UNLOCK" << " tid:" << op->arg1
-        << " lock-obj:" << op->arg2->obj << "\n";
-    traceIO.close();
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " UNLOCK" << " tid:" << op->arg1
+            << " lock-obj:" << op->arg2->obj << "\n";
+        traceIO.close();
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 
     return shouldAbort;
 }
@@ -2476,11 +2531,13 @@ void processEnableEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadB
         it->second.first = opId;
     }
 
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " ENABLE-EVENT tid:" << op->tid << " view:" << op->arg2->id
-        << " event:" << op->arg1 <<"\n";
-    traceIO.close();
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " ENABLE-EVENT tid:" << op->tid << " view:" << op->arg2->id
+            << " event:" << op->arg1 <<"\n";
+        traceIO.close();
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2516,11 +2573,13 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
             storeHBInfoExplicitly(srcTraceId, destTraceId);
         }
 
-        traceIO.open(traceFile.c_str(), std::ios_base::app);
-        traceIO << ++traceFileOpIdCounter << " TRIGGER-EVENT tid:" << op->tid << " view:" << op->arg2->id
-            << " event:" << op->arg1 <<"\n";
-        traceIO.close();
-        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+        if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+            traceIO.open(traceFile.c_str(), std::ios_base::app);
+            traceIO << ++traceFileOpIdCounter << " TRIGGER-EVENT tid:" << op->tid << " view:" << op->arg2->id
+                << " event:" << op->arg1 <<"\n";
+            traceIO.close();
+            traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+        }
     }else{
         LOGE("ABC: Trigger event seen without a corresponding enable event during processing."
              " Aborting processing.");
@@ -2591,24 +2650,28 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
         abcAppBindPost = getAsyncBlockFromId(op->asyncId)->postId;
     }
 
-    std::string lifecycle("");
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " ENABLE-LIFECYCLE tid:" << op->tid << " component:dummy" 
-        << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        std::string lifecycle("");
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " ENABLE-LIFECYCLE tid:" << op->tid << " component:dummy" 
+            << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     bool shouldAbort = false;
     op->asyncId = threadBK->curAsyncId;
 
-    std::string lifecycle("");
-    traceIO.open(traceFile.c_str(), std::ios_base::app);
-    traceIO << ++traceFileOpIdCounter << " TRIGGER-LIFECYCLE tid:" << op->tid << " component:dummy" 
-        << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
-    traceIO.close(); 
-    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        std::string lifecycle("");
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " TRIGGER-LIFECYCLE tid:" << op->tid << " component:dummy" 
+            << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 
     //stats needed when reporting races
     abcEventTriggerCount++;
@@ -4006,6 +4069,9 @@ bool abcPerformRaceDetection(){
     //perform cleanup to reduce trace size 
     std::set<int> requiredEventEnableOps;
     std::map<int, AbcOp*>::iterator itTmp = abcTrace.begin();
+    
+    u4 lastSeenUiMsgId = -1;
+
     while(itTmp != abcTrace.end()){
         std::pair<u4, int> eventPair;
         std::map<std::pair<u4, int>, std::pair<int,int> >::iterator it;
@@ -4031,7 +4097,16 @@ bool abcPerformRaceDetection(){
                  dvmThreadSelf()->status = oldStatus;
                  return false;
              }
+         
+             //store msg ID corresponding to last seen CALL on UI thread which same as task ID of this TRIGGER-EVENT
+             if(op->tid == 1){ //make sure the trigger event was seen on UI thread. Our heuristic woeks only for main thread
+                 eventTriggeringTasks.insert(lastSeenUiMsgId);
+             }
              break;
+        case ABC_CALL: 
+             if(op->tid == 1){ //check if main thread
+                 lastSeenUiMsgId = op->arg2->id;
+             }
         } 
         ++itTmp;
     }
