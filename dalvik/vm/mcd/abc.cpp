@@ -207,6 +207,13 @@ int abcForkCount = 1;
 int abcMQCount = 0; //since attach-q of main thread happens after ABC starts it gets logged
 int abcEventTriggerCount = 0;
 
+//to compute opId as will be shown in trace file used by POR project
+int traceFileOpIdCounter = 0;
+std::string traceFile; 
+std::string hbFile;
+std::ofstream traceIO;
+std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
+    
 
 void cleanupBeforeExit(){
     //free abcThreadMap
@@ -2035,6 +2042,18 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     if(threadBK->attachqId != -1 && op->asyncId == -1){
         addEdgeToHBGraph(threadBK->attachqId, opId);
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " POST src:" << op->arg1 << " msg:" << op->arg2->id
+        << " dest:" << op->arg3;
+
+    if(op->arg4 > 0){
+        traceIO << " delay:" << op->arg4 <<"\n";
+    }else{
+        traceIO <<"\n";
+    }
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
     
     return shouldAbort;
 }
@@ -2062,6 +2081,12 @@ bool processCallOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     }else{
         addEdgeToHBGraph(threadBK->loopId, opId);
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " CALL tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+
     return shouldAbort;
 }
 
@@ -2076,6 +2101,11 @@ void processRetOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         LOGE("ABC-MISSING: entry for asyncId %d missing when hit RET", op->asyncId);
     }
     threadBK->curAsyncId = -1;
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " RET tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 void processRemoveOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2098,12 +2128,22 @@ void processAttachqOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing ATTACH-Q opid:%d", opId);
     threadBK->attachqId = opId;
     abcMQCount++;
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " LOOP tid:" << op->arg1 << " queue:" << op->arg2->id <<"\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 void processLoopOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing LOOP opid:%d", opId);
     threadBK->loopId = opId;
     addEdgeToHBGraph(threadBK->attachqId, threadBK->loopId);
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " THREADINIT tid:" << op->arg1 << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 void processAddIdleHandlerOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2171,6 +2211,12 @@ bool processForkOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         return shouldAbort;
     }
 
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " FORK par-tid:" << op->arg1 << " child-tid:"
+        << op->arg2->id << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+
     return shouldAbort;
 }
 
@@ -2185,6 +2231,12 @@ bool processNotifyOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
              " Aborting due to unknown pattern", op->arg1 );
         shouldAbort = true;
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " NOTIFY tid:" << op->tid << " notifiedTid:" 
+        << op->arg1 << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 
     return shouldAbort;
 }
@@ -2202,6 +2254,11 @@ void processWaitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         addEdgeToHBGraph(it->second, opId);   
         notifyWaitMap.erase(it);
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " WAIT tid:" << op->arg1 <<"\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 void processThreadinitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2211,11 +2268,21 @@ void processThreadinitOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK
     addEdgeToHBGraph(abcStartOpId, opId);
 
     abcForkCount++; //we count the fork only after the thread gets initialized i.e it does dome action
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " THREADINIT tid:" << op->arg1 << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 void processThreadexitOperation(int opId, AbcOp* op){
 //    LOGE("ABC: processing THREADEXIT opid:%d", opId);
     abcThreadBookKeepMap.erase(op->arg1);
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " THREADEXIT tid:" << op->arg1 << "\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 bool processNativeEntryOperation(int opId, AbcOp* op){
@@ -2311,6 +2378,12 @@ void processLockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
             }
         }
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " LOCK" << " tid:" << op->arg1
+        << " lock-obj:" << op->arg2->obj << "\n";
+    traceIO.close();
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2383,6 +2456,13 @@ bool processUnlockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     }
 
     lock->lastUnlockTid = op->tid;
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " UNLOCK" << " tid:" << op->arg1
+        << " lock-obj:" << op->arg2->obj << "\n";
+    traceIO.close();
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+
     return shouldAbort;
 }
 
@@ -2395,6 +2475,12 @@ void processEnableEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadB
     }else{
         it->second.first = opId;
     }
+
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " ENABLE-EVENT tid:" << op->tid << " view:" << op->arg2->id
+        << " event:" << op->arg1 <<"\n";
+    traceIO.close();
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2422,6 +2508,19 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
         //add edge from enable-event to post corresponding to trigger event 
         addEdgeToHBGraph(it->second.first, postId);
         abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
+
+        //HB edge from enable-event to post of task containing trigger-event
+        int srcTraceId = getTraceIdForPORFromOpId(it->second.first);
+        int destTraceId = getTraceIdForPORFromOpId(postId);
+        if(srcTraceId != -1 && destTraceId != -1){
+            storeHBInfoExplicitly(srcTraceId, destTraceId);
+        }
+
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " TRIGGER-EVENT tid:" << op->tid << " view:" << op->arg2->id
+            << " event:" << op->arg1 <<"\n";
+        traceIO.close();
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
     }else{
         LOGE("ABC: Trigger event seen without a corresponding enable event during processing."
              " Aborting processing.");
@@ -2464,6 +2563,17 @@ void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thr
         //add edge from enable-event to post corresponding to trigger event 
         addEdgeToHBGraph(it->second.first, postId);
         abcAsyncEnableMap.insert(std::make_pair(op->asyncId, it->second.first));
+
+        
+        //explicitly store HB info as POR trace does not have some operations
+        std::map<int, AbcOp*>::iterator itTmp = abcTrace.find(it->second.first);
+        AbcAsync* asyncTmp = getAsyncBlockFromId(itTmp->second->asyncId);
+        //HB edge from post of task enabling window focus to post of onWindowFocus task
+        int srcTraceId = getTraceIdForPORFromOpId(asyncTmp->postId);
+        int destTraceId = getTraceIdForPORFromOpId(postId);
+        if(srcTraceId != -1 && destTraceId != -1){
+            storeHBInfoExplicitly(srcTraceId, destTraceId);
+        }
     }
 }
 
@@ -2480,11 +2590,25 @@ void processEnableLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* thr
     if(op->arg1 == ABC_APPBIND_DONE){
         abcAppBindPost = getAsyncBlockFromId(op->asyncId)->postId;
     }
+
+    std::string lifecycle("");
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " ENABLE-LIFECYCLE tid:" << op->tid << " component:dummy" 
+        << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 }
 
 bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     bool shouldAbort = false;
     op->asyncId = threadBK->curAsyncId;
+
+    std::string lifecycle("");
+    traceIO.open(traceFile.c_str(), std::ios_base::app);
+    traceIO << ++traceFileOpIdCounter << " TRIGGER-LIFECYCLE tid:" << op->tid << " component:dummy" 
+        << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+    traceIO.close(); 
+    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
 
     //stats needed when reporting races
     abcEventTriggerCount++;
@@ -3809,6 +3933,12 @@ void detectRaceUsingHbGraph(){
 
 
 bool abcPerformRaceDetection(){
+    traceFile = std::string("/data/data/") + gDvm.app_for_ABC
+           + "/abc-trace.txt";
+    hbFile = std::string("/data/data/") + gDvm.app_for_ABC
+           + "/hb.txt";
+
+
     ThreadStatus oldStatus = dvmThreadSelf()->status;
     dvmThreadSelf()->status = THREAD_VMWAIT;
     //cleanup temporary maps
@@ -3980,6 +4110,11 @@ bool abcPerformRaceDetection(){
         Source* src1 = NULL;
         adjMap.insert(std::make_pair(opIt->first, std::make_pair(dest1,src1)));
 
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " START" << "\n";
+        traceIO.close(); 
+        traceToTraceOpIdMap.insert(std::make_pair(opIt->first, traceFileOpIdCounter));
+
         ++opIt; 
         //2nd operation must be a threadinit for main thread
         if(opIt->second->opType == ABC_THREADINIT){
@@ -3996,6 +4131,11 @@ bool abcPerformRaceDetection(){
 
             abcThreadBookKeepMap.insert(std::make_pair(opIt->second->arg1, newThread));
             addEdgeToHBGraph(abcStartOpId, opIt->first);
+
+            traceIO.open(traceFile.c_str(), std::ios_base::app);
+            traceIO << ++traceFileOpIdCounter << " THREADINIT tid:" << opIt->second->arg1 << "\n";
+            traceIO.close(); 
+            traceToTraceOpIdMap.insert(std::make_pair(opIt->first, traceFileOpIdCounter));
  
             ++opIt;
         }else{
@@ -4055,13 +4195,13 @@ bool abcPerformRaceDetection(){
         case ABC_LOOP :
              processLoopOperation(opId, op, threadIt->second);
              break;
-        case ABC_ADD_IDLE_HANDLER:
+        case ABC_ADD_IDLE_HANDLER: //wont handle idle handler related ops as difficult to reason its schedule on static trace`
              processAddIdleHandlerOperation(opId, op, threadIt->second);
              break;
-        case ABC_QUEUE_IDLE:
+        case ABC_QUEUE_IDLE: //wont handle idle handler related ops as difficult to reason its schedule on static trace
              processQueueIdleOperation(opId, op, threadIt->second);
              break;
-        case ABC_REMOVE_IDLE_HANDLER:
+        case ABC_REMOVE_IDLE_HANDLER: //wont handle idle handler related ops as difficult to reason its schedule on static trace
              processRemoveIdleHandlerOperation(opId, op, threadIt->second);
              break;
         case ABC_POST :

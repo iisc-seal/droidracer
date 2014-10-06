@@ -66,6 +66,14 @@ void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid,
     if(prevOp->asyncId != curOp->asyncId &&
         prevOp->tid == curOp->tid){
         addEdgeToHBGraph(prevOpAsync->retId, curOpAsync->callId);
+
+        //HB edge from enable-lifecycle to trigger-lifecycle's post 
+        int srcTraceId = getTraceIdForPORFromOpId(prevOpAsync->postId);
+        int destTraceId = getTraceIdForPORFromOpId(curOpAsync->postId);
+        if(srcTraceId != -1 && destTraceId != -1){
+            storeHBInfoExplicitly(srcTraceId, destTraceId);
+        }
+
         addEdgeToHBGraph(prevOpAsync->postId, curOpAsync->postId);
     }
 }
@@ -1010,6 +1018,8 @@ bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp){
     
   
     bool edgeAdded = false;
+    int srcTraceId, destTraceId;
+
     if(it != AbcEnableTriggerLcMap.end()){
         AbcEnableTriggerList* etList = it->second;
         //connect trigger to all previous continous enable which dont have corresponding trigger
@@ -1022,12 +1032,38 @@ bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp){
                 etList->trigger->opPtr = triggerOp;
             }
             edgeAdded = true;
+
+            //HB edge from enable-lifecycle to trigger-lifecycle (run timer task needs this as it has no POST)
+            srcTraceId = getTraceIdForPORFromOpId(etList->enable->opId);
+            destTraceId = getTraceIdForPORFromOpId(triggerOpid);
+            if(srcTraceId != -1 && destTraceId != -1){
+                storeHBInfoExplicitly(srcTraceId, destTraceId);
+            }
+
             addEdgeToHBGraph(etList->enable->opId, triggerOpid);
             //add edge from enableOpid to trigger's asyncblock's postId
             //In case of Timer task this wont be there..hence the check
             if(triggerOp->asyncId != -1){
                 AbcAsync* triggerAsync = getAsyncBlockFromId(triggerOp->asyncId);
                 if(triggerAsync != NULL){
+                    std::map<int, AbcOp*>::iterator itOpTmp = abcTrace.find(etList->enable->opId);
+                    AbcAsync* enableAsync = getAsyncBlockFromId(itOpTmp->second->asyncId);
+                    
+                    if(enableAsync != NULL){
+                        //if enable is emitted from async task add HB from its post to trigger's post
+                        srcTraceId = getTraceIdForPORFromOpId(enableAsync->postId);
+                        destTraceId = getTraceIdForPORFromOpId(triggerAsync->postId);
+                        if(srcTraceId != -1 && destTraceId != -1){
+                            storeHBInfoExplicitly(srcTraceId, destTraceId);
+                        }
+                    }else{
+                        //HB edge from enable-lifecycle to trigger-lifecycle's post
+                        destTraceId = getTraceIdForPORFromOpId(triggerAsync->postId);
+                        if(srcTraceId != -1 && destTraceId != -1){
+                            storeHBInfoExplicitly(srcTraceId, destTraceId);
+                        }
+                    }
+
                     addEdgeToHBGraph(etList->enable->opId, triggerAsync->postId);
                 }
             }
@@ -1043,6 +1079,13 @@ bool connectEnableAndTriggerLifecycleEvents(int triggerOpid, AbcOp* triggerOp){
             addEdgeToHBGraph(blankEnableResumeOp->opId, triggerOpid);
             AbcAsync* async = getAsyncBlockFromId(triggerOp->asyncId);
             if(async != NULL){
+                //HB edge from enable-lifecycle to trigger-lifecycle's post 
+                srcTraceId = getTraceIdForPORFromOpId(blankEnableResumeOp->opId);
+                destTraceId = getTraceIdForPORFromOpId(async->postId);
+                if(srcTraceId != -1 && destTraceId != -1){
+                    storeHBInfoExplicitly(srcTraceId, destTraceId);
+                }
+
                 addEdgeToHBGraph(blankEnableResumeOp->opId, async->postId);
             }
             edgeAdded = true;

@@ -113,10 +113,19 @@ extern WorklistElem* worklist;
 extern std::map<int, std::pair<Destination*, Source*> > adjMap;
 extern std::map<int, AbcAsync*> abcAsyncMap;
 
+//to compute opId as will be shown in trace file used by POR project
+extern int traceFileOpIdCounter;
+extern std::string traceFile; 
+extern std::string hbFile;
+extern std::ofstream traceIO;
+extern std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
+
 
 bool isHbEdge(int src, int dest);
 void addEdgeToHBGraph(int op1, int op2);
 AbcAsync* getAsyncBlockFromId(int asyncId);
 int getAsyncIdOfOperation(int opId);
+void storeHBInfoExplicitly(int srcOpId, int destOpId);
+int getTraceIdForPORFromOpId(int opId);
 
 #endif  //common.h

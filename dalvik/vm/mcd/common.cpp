@@ -83,3 +83,19 @@ int getAsyncIdOfOperation(int opId){
     }
     return asyncId;
 }
+
+void storeHBInfoExplicitly(int srcOpId, int destOpId){
+    std::ofstream outfile;
+    outfile.open(hbFile.c_str(), std::ios_base::app);
+    outfile << "src:" << srcOpId << " dest:" << destOpId << "\n";
+    outfile.close();
+}
+
+int getTraceIdForPORFromOpId(int opId){
+    std::map<int, int>::iterator it = traceToTraceOpIdMap.find(opId);
+    if(it != traceToTraceOpIdMap.end()){
+        return it->second;
+    }else{
+        return -1;
+    }
+}
