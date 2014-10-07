@@ -219,6 +219,8 @@ std::set<int> porIgnoreAsyncSet; /* set of async blocks those should not be logg
 * a thread with queue but not from a task.
 */
 std::set<u4> eventTriggeringTasks;
+std::set<int> nativeThreadSet;
+std::list<int> nativeThreadIdListForPOR;
 
     
 
@@ -863,6 +865,9 @@ void startAbcModelChecker(){
     addForkToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, abcThreadCount++);
     porUiTid = abcThreadCount - 1; //abc Thread ID of this newly created thread
     addThreadInitToTrace(abcOpCount++, porUiTid); 
+
+    //add a dummy natiive binder thread. Whenever you see a native-entry, native-exit 
+    //add the operation (only post) to this thread.
 
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");
@@ -2080,19 +2085,37 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     }
 
     if(shouldAddToPORTrace){
-        int srcTid = isTriggerEventPost? porUiTid : op->arg1;
-        //if this post leads to a trigger event task then this post should come from UI posting thread
-        traceIO.open(traceFile.c_str(), std::ios_base::app);
-        traceIO << ++traceFileOpIdCounter << " POST src:" << srcTid << " msg:" 
-            << op->arg2->id << " dest:" << op->arg3;
-
-        if(op->arg4 > 0){
-            traceIO << " delay:" << op->arg4 <<"\n";
+        //for posts from native binder threads POR scheduler should see it as though
+        //it was posted by a normal thread which has a trackable fork etc. We have
+        //emiitted thread forks, threadinits for this purpose. Use one of these threads
+        //for each such native post
+        if(nativeThreadSet.find(op->tid) != nativeThreadSet.end()){
+            if(nativeThreadIdListForPOR.begin() != nativeThreadIdListForPOR.end()){
+                traceIO.open(traceFile.c_str(), std::ios_base::app);
+                traceIO << ++traceFileOpIdCounter << " NATIVE-POST src:" << nativeThreadIdListForPOR.front() 
+                    << " msg:" << op->arg2->id << " dest:" << op->arg3 << "\n";
+                traceIO.close(); 
+                nativeThreadIdListForPOR.pop_front();
+                traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+            }else{
+                LOGE("ABC-ERROR: mismatch in native-post count as counted in pre-processing stage and in trace parsing stage");
+                porIgnoreAsyncSet.insert(op->arg2->id);
+            }
         }else{
-            traceIO <<"\n";
+            int srcTid = isTriggerEventPost? porUiTid : op->arg1;
+            //if this post leads to a trigger event task then this post should come from UI posting thread
+            traceIO.open(traceFile.c_str(), std::ios_base::app);
+            traceIO << ++traceFileOpIdCounter << " POST src:" << srcTid << " msg:" 
+                << op->arg2->id << " dest:" << op->arg3;
+
+            if(op->arg4 > 0){
+                traceIO << " delay:" << op->arg4 <<"\n";
+            }else{
+                traceIO <<"\n";
+            }
+            traceIO.close(); 
+            traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
         }
-        traceIO.close(); 
-        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
     }
 
     return shouldAbort;
@@ -2356,12 +2379,19 @@ bool processNativeEntryOperation(int opId, AbcOp* op){
         shouldAbort = true;
         return shouldAbort;
     }
-
+ 
     addEdgeToHBGraph(abcStartOpId, opId);
+
+    //needed for POR trace generation
+    nativeThreadSet.insert(op->tid);
+
     return shouldAbort;
 }
 
 void processNativeExitOperation(int opId, AbcOp* op){
+    //needed for POR trace generation
+    nativeThreadSet.erase(op->tid);
+
     return;
 }
 
@@ -2632,6 +2662,14 @@ void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thr
         int destTraceId = getTraceIdForPORFromOpId(postId);
         if(srcTraceId != -1 && destTraceId != -1){
             storeHBInfoExplicitly(srcTraceId, destTraceId);
+        }
+
+        if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+            traceIO.open(traceFile.c_str(), std::ios_base::app);
+            traceIO << ++traceFileOpIdCounter << " TRIGGER-WINDOW-FOCUS tid:" << op->tid
+                << " windowHash:" << op->arg2->id <<"\n";
+            traceIO.close();
+            traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
         }
     }
 }
@@ -4071,6 +4109,7 @@ bool abcPerformRaceDetection(){
     std::map<int, AbcOp*>::iterator itTmp = abcTrace.begin();
     
     u4 lastSeenUiMsgId = -1;
+    std::map<u4, AbcOp*> msgCallOpMap;
 
     while(itTmp != abcTrace.end()){
         std::pair<u4, int> eventPair;
@@ -4107,9 +4146,33 @@ bool abcPerformRaceDetection(){
              if(op->tid == 1){ //check if main thread
                  lastSeenUiMsgId = op->arg2->id;
              }
+             msgCallOpMap.insert(std::make_pair(op->arg2->id, op));
+             break;
+        case ABC_RET:
+             msgCallOpMap.erase(op->arg2->id);
+             break;
+        case ABC_POST:
+             if(nativeThreadSet.find(op->tid) != nativeThreadSet.end()){
+                 nativeThreadIdListForPOR.push_back(abcThreadCount++);
+             }
+             break;
+        case ABC_NATIVE_ENTRY:
+             nativeThreadSet.insert(op->tid);
+             break;
+        case ABC_NATIVE_EXIT:
+             nativeThreadSet.erase(op->tid);
+             break;
         } 
         ++itTmp;
     }
+
+    nativeThreadSet.clear();
+
+    std::map<u4, AbcOp*>::iterator msgOpIt = msgCallOpMap.begin();
+    for(; msgOpIt != msgCallOpMap.end(); msgOpIt++){
+        addRetToTrace(abcOpCount++, msgOpIt->second->tid, msgOpIt->first); 
+    }
+    msgCallOpMap.clear();
 
     //delete unused operations on trace and copy reduced trace to another map
     itTmp = abcTrace.begin();
@@ -4221,6 +4284,17 @@ bool abcPerformRaceDetection(){
         //cannot proceed further as trace is malformed
         LOGE("ABC: START missing in trace. Processing aborted.");
     } 
+
+    //each native post is shown as to come from a different thread forked from main thread.
+    //This is needed by the scheduler for POR
+    std::list<int>::iterator nativeIt = nativeThreadIdListForPOR.begin();
+    for(; nativeIt != nativeThreadIdListForPOR.end(); nativeIt++){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++traceFileOpIdCounter << " FORK par-tid:" << 1 << " child-tid:"
+            << *nativeIt << "\n";
+        traceIO << ++traceFileOpIdCounter << " THREADINIT tid:" << *nativeIt << "\n";
+        traceIO.close();
+    }
     
     bool shouldAbort = false;
     for( ; opIt != abcTrace.end(); ++opIt){
