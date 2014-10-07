@@ -2415,10 +2415,10 @@ void processAccessOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 
         std::list<int> rwList = absIt->second.second;
         std::list<int>::iterator listIt = rwList.begin();
+        std::string accType = "";
         for(; listIt != rwList.end(); listIt++){
             std::map<int, AbcRWAccess*>::iterator rwIt = abcRWAccesses.find(*listIt);
             if(rwIt != abcRWAccesses.end()){
-                std::string accType = "";
                 if(rwIt->second->obj != NULL){
                     if(rwIt->second->accessType == ABC_READ)
                         accType = "READ";
@@ -2426,7 +2426,7 @@ void processAccessOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                         accType = "WRITE";
 
                     traceIO.open(traceFile.c_str(), std::ios_base::app);
-                    traceIO << "rwId:" << rwIt->first << " " << accType << " tid:" << rwIt->second->tid
+                    traceIO << ++traceFileOpIdCounter << " " << accType << " tid:" << rwIt->second->tid
                             << " obj:" << rwIt->second->obj << " class:" << rwIt->second->clazz
                             << " field:" << rwIt->second->fieldIdx << "\n";
                     traceIO.close();
@@ -2437,7 +2437,7 @@ void processAccessOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                         accType = "WRITE-STATIC";
 
                     traceIO.open(traceFile.c_str(), std::ios_base::app);
-                    traceIO << "rwId:" << rwIt->first << " " << accType << " tid:" << rwIt->second->tid
+                    traceIO << ++traceFileOpIdCounter << " " << accType << " tid:" << rwIt->second->tid
                             << " class:" << rwIt->second->clazz
                             << " field:" << rwIt->second->fieldIdx << "\n";
                     traceIO.close();
