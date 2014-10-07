@@ -72,7 +72,8 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                return;
             }
 
-        }else if(abcThreadBaseMethodMap.find(self->threadId) 
+        }
+      /*  else if(abcThreadBaseMethodMap.find(self->threadId) 
             != abcThreadBaseMethodMap.end() && strcmp("<clinit>", 
                 abcGetLastMethodInThreadStack(self->threadId)->name) != 0 &&
                 strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0){
@@ -118,7 +119,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                LOGE("ABC-DONT-LOG: found a read/write to object in deleted async block. not logging it.");
                return;
             }
-        }
+        }*/
     }
     }
 }
@@ -186,7 +187,8 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                 LOGE("ABC-DONT-LOG: found a read/write to static field in deleted async block. not logging it.");
                 return; 
             }
-        }else if(abcThreadBaseMethodMap.find(self->threadId)
+        }
+   /*     else if(abcThreadBaseMethodMap.find(self->threadId)
             != abcThreadBaseMethodMap.end()){
             AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(self->abcThreadId)->second;
             if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
@@ -216,7 +218,7 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                 LOGE("ABC-DONT-LOG: found a read/write to static field in deleted async block. not logging it.");
                 return;    
             }
-        }
+        }*/
     }
 }
 

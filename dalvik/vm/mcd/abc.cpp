@@ -2407,6 +2407,45 @@ void processNativeExitOperation(int opId, AbcOp* op){
 void processAccessOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 //    LOGE("ABC: processing ACCESS opid:%d", opId);
     op->asyncId = threadBK->curAsyncId;
+
+    //emit read - writes inside this accesss set. needed for POR trace
+    std::map<int, std::pair<int, std::list<int> > >::iterator absIt = 
+        abcRWAbstractionMap.find(op->arg2->id);
+    if(absIt != abcRWAbstractionMap.end()){
+
+        std::list<int> rwList = absIt->second.second;
+        std::list<int>::iterator listIt = rwList.begin();
+        for(; listIt != rwList.end(); listIt++){
+            std::map<int, AbcRWAccess*>::iterator rwIt = abcRWAccesses.find(*listIt);
+            if(rwIt != abcRWAccesses.end()){
+                std::string accType = "";
+                if(rwIt->second->obj != NULL){
+                    if(rwIt->second->accessType == ABC_READ)
+                        accType = "READ";
+                    else
+                        accType = "WRITE";
+
+                    traceIO.open(traceFile.c_str(), std::ios_base::app);
+                    traceIO << "rwId:" << rwIt->first << " " << accType << " tid:" << rwIt->second->tid
+                            << " obj:" << rwIt->second->obj << " class:" << rwIt->second->clazz
+                            << " field:" << rwIt->second->fieldIdx << "\n";
+                    traceIO.close();
+                }else if(rwIt->second->clazz != NULL){
+                    if(rwIt->second->accessType == ABC_READ)
+                        accType = "READ-STATIC";
+                    else
+                        accType = "WRITE-STATIC";
+
+                    traceIO.open(traceFile.c_str(), std::ios_base::app);
+                    traceIO << "rwId:" << rwIt->first << " " << accType << " tid:" << rwIt->second->tid
+                            << " class:" << rwIt->second->clazz
+                            << " field:" << rwIt->second->fieldIdx << "\n";
+                    traceIO.close();
+                }
+            }
+        }
+    }
+    
 }
 
 void processLockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
