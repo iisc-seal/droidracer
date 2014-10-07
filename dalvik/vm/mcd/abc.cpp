@@ -2039,9 +2039,22 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     if(op->tid != async->tid){
         async->recentCrossPostAsync = op->arg2->id; //itself
     }
+
+    //POR trace related   
+    if(eventTriggeringTasks.find(op->arg2->id) != eventTriggeringTasks.end()){
+        isTriggerEventPost = true;
+    }
+
     //check if this is a delayed post
     if(async->delay > 0){
         async->recentDelayAsync = op->arg2->id; //itself
+
+        //not handling delayed post and its children in POR scheduler
+        if(!isTriggerEventPost){
+            porIgnoreAsyncSet.insert(op->arg2->id);
+            shouldAddToPORTrace = false;
+        }
+
     }
 
     //a heuristic used currently to discard traces with front-of-Q msgs
@@ -2059,10 +2072,6 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     //msgId becomes the async block id
     abcAsyncMap.insert(std::make_pair(op->arg2->id, async));
 
-    //POR trace related   
-    if(eventTriggeringTasks.find(op->arg2->id) != eventTriggeringTasks.end()){
-        isTriggerEventPost = true;
-    }
 
     //a post generated outside async block after the looper starts looping
     if(threadBK->attachqId != -1 && op->asyncId == -1){
