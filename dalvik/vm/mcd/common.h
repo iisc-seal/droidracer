@@ -103,6 +103,14 @@ struct SourceStruct{
 };
 typedef struct SourceStruct Source;
 
+struct opInfoStruct{
+    int opType; // 1 - AbcOp  2 - AbcRWAccess
+    int id; //-1 if operation is given in op
+    AbcOp* op; //NULL if operation should be taken from AbcTrace or abcRWAccesses maps
+};
+typedef struct opInfoStruct OpInfo;
+
+
 
 extern int abcOpCount;
 /*program trace stored as hashmap with key being the index 
@@ -119,6 +127,7 @@ extern std::string traceFile;
 extern std::string hbFile;
 extern std::ofstream traceIO;
 extern std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
+extern std::list<std::pair<int, int> > porHBList;
 
 
 bool isHbEdge(int src, int dest);

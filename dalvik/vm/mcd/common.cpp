@@ -85,10 +85,7 @@ int getAsyncIdOfOperation(int opId){
 }
 
 void storeHBInfoExplicitly(int srcOpId, int destOpId){
-    std::ofstream outfile;
-    outfile.open(hbFile.c_str(), std::ios_base::app);
-    outfile << "src:" << srcOpId << " dest:" << destOpId << "\n";
-    outfile.close();
+    porHBList.push_back(std::make_pair(srcOpId, destOpId));
 }
 
 int getTraceIdForPORFromOpId(int opId){
