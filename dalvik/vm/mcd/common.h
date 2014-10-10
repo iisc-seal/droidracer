@@ -103,13 +103,6 @@ struct SourceStruct{
 };
 typedef struct SourceStruct Source;
 
-struct opInfoStruct{
-    int opType; // 1 - AbcOp  2 - AbcRWAccess
-    int id; //-1 if operation is given in op
-    AbcOp* op; //NULL if operation should be taken from AbcTrace or abcRWAccesses maps
-};
-typedef struct opInfoStruct OpInfo;
-
 
 
 extern int abcOpCount;

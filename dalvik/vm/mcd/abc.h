@@ -97,6 +97,13 @@ enum abcEventType{
     ABC_INTENT_EVENT = 2
 };
 
+struct opInfoStruct{
+    int opType; // 1 - AbcOp  2 - AbcRWAccess
+    int id; //opId as in abcTrace or abcRwAccesses
+    AbcOp* op; //NULL if operation should be taken from AbcTrace or abcRWAccesses maps
+};
+typedef struct opInfoStruct OpInfo;
+
 struct AbcGlobals{
 //    pthread_t abcMainThread;
     pthread_cond_t abcMainCond;

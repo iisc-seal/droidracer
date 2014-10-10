@@ -2106,7 +2106,7 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 //for POR
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
 		opInfo->opType = 1; //non read-write operation
-		opInfo->id = -1;
+		opInfo->id = opId;
 		opInfo->op = (AbcOp*)malloc(sizeof(AbcOp));
 
                 opInfo->op->opType = ABC_NATIVE_POST;
@@ -2119,8 +2119,21 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 
 		porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
  
-                nativeThreadIdListForPOR.pop_front();
                 traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+
+                //add dummy threadexit operation for this native thread as it is allowed to post only one native POST
+                OpInfo* opIn1 = (OpInfo*)malloc(sizeof(OpInfo));
+		opIn1->opType = 1; //non read-write operation
+		opIn1->id = -1;
+		opIn1->op = (AbcOp*)malloc(sizeof(AbcOp));
+
+		opIn1->op->opType = ABC_THREADEXIT;
+		opIn1->op->arg1 =  nativeThreadIdListForPOR.front();
+		opIn1->op->tid =  nativeThreadIdListForPOR.front();
+
+                porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opIn1));
+
+                nativeThreadIdListForPOR.pop_front();
             }else{
                 LOGE("ABC-ERROR: mismatch in native-post count as counted in pre-processing stage and in trace parsing stage");
                 porIgnoreAsyncSet.insert(op->arg2->id);
@@ -2131,7 +2144,7 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 //for POR
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
                 opInfo->opType = 1; //non read-write operation
-                opInfo->id = -1;
+                opInfo->id = opId;
                 opInfo->op = (AbcOp*)malloc(sizeof(AbcOp));
 
                 opInfo->op->opType = ABC_UI_POST;
@@ -4126,6 +4139,19 @@ void generatePORTrace(){
     int porOpId = 0;
     std::map<int, int> porOldToNewOpIdMap;
 
+    //variables to handle delayed posts
+    std::map<int, u4> threadAsyncMap;
+    //stores threads spawned by a task (thread / async block) to post delayed messages
+    //originally posted from this block. Each of such threads may post
+    //totally ordered set of sibling delayed messages 
+    //if a sibling delayed post from a block cant be placed into any of
+    //ordered thread, a new thread gets created to post this delayed message
+    std::map<std::pair<int, u4>, std::map<int, std::list<int> > > taskThreadListMap;
+    std::map<std::pair<int, u4>, std::map<int, std::list<int> > >::iterator taskIt;
+    std::map<int, u4>::iterator asyncIt;
+    std::map<int, std::list<int> >::iterator newThreadsMapIt;
+
+
     std::map<int, OpInfo*>::iterator it = porTmpTrace.begin();
     std::string lifecycle("");
     std::map<int, AbcRWAccess*>::iterator rwIt;
@@ -4146,121 +4172,204 @@ void generatePORTrace(){
 
         traceIO.open(traceFile.c_str(), std::ios_base::app);
 
-        switch(op->opType){
-        case ABC_START :
+        
+        if(op->opType == ABC_START){
              traceIO << ++porOpId << " START" << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_THREADINIT :
+        }
+        else if(op->opType == ABC_THREADINIT){
              traceIO << ++porOpId << " THREADINIT tid:" << op->arg1 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_THREADEXIT :
+
+             std::map<int, std::list<int> > mapTmp;
+             taskThreadListMap.insert(std::make_pair(std::make_pair(op->arg1, 0), mapTmp));
+        }
+        else if(op->opType == ABC_THREADEXIT){
              traceIO << ++porOpId << " THREADEXIT tid:" << op->arg1 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_FORK :
+
+             taskThreadListMap.erase(std::make_pair(op->arg1, 0));
+             threadAsyncMap.erase(op->arg1);
+        }
+        else if(op->opType == ABC_FORK){
              traceIO << ++porOpId << " FORK par-tid:" << op->arg1 << " child-tid:"
                 << op->arg2->id << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_WAIT:
+        }
+        else if(op->opType == ABC_WAIT){
              traceIO << ++porOpId << " WAIT tid:" << op->arg1 <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_NOTIFY:
+        }
+        else if(op->opType == ABC_NOTIFY){
              traceIO << ++porOpId << " NOTIFY tid:" << op->tid << " notifiedTid:" 
                  << op->arg1 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_JOIN : //taken care by notify-wait semantics
-             break;
-        case ABC_ATTACH_Q :
+        }
+    /*    else if(op->opType == ABC_JOIN){ 
+             //taken care by notify-wait semantics
+        }*/
+        else if(op->opType == ABC_ATTACH_Q){
              traceIO << ++porOpId << " ATTACH-Q tid:" << op->arg1 << " queue:" << op->arg2->id <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_LOOP :
+        }
+        else if(op->opType == ABC_LOOP){
              traceIO << ++porOpId << " LOOP tid:" << op->arg1 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_ADD_IDLE_HANDLER: //wont handle idle handler related ops as difficult to reason its schedule on static trace`
-             break;
-        case ABC_QUEUE_IDLE: //wont handle idle handler related ops as difficult to reason its schedule on static trace
-             break;
-        case ABC_REMOVE_IDLE_HANDLER: //wont handle idle handler related ops as difficult to reason its schedule on static trace
-             break;
-        case ABC_POST :
-             traceIO << ++porOpId << " POST src:" << op->arg1 << " msg:" 
-                 << op->arg2->id << " dest:" << op->arg3;
+        }
+    /*    else if(op->opType == ABC_ADD_IDLE_HANDLER){ //wont handle idle handler related ops as difficult to reason its schedule on static trace`
 
-             if(op->arg4 > 0){
-                 traceIO << " delay:" << op->arg4 <<"\n";
+        }
+        else if(op->opType == ABC_QUEUE_IDLE){ //wont handle idle handler related ops as difficult to reason its schedule on static trace
+        
+        }
+        else if(op->opType == ABC_REMOVE_IDLE_HANDLER){ //wont handle idle handler related ops as difficult to reason its schedule on static trace
+        
+        }*/
+        else if(op->opType == ABC_POST){
+             //POR scheduler coarsely handles delayed messages. Instead of a post with a delay,
+             //whenever we see a delay post we fork that thread and make it emit a normal post from the
+             //newly forked thread.
+             if(op->arg4 > 0){ //delay post
+                 asyncIt = threadAsyncMap.find(op->tid);
+                 std::pair<int, u4> task;
+                 if(asyncIt != threadAsyncMap.end()){
+                     task = std::make_pair(op->tid, op->arg2->id);
+                 }else{
+                     task = std::make_pair(op->tid, 0);
+                 }
+
+                 taskIt = taskThreadListMap.find(task);
+                 if(taskIt != taskThreadListMap.end()){
+                     std::map<int, std::list<int> > tmpMapElem = taskIt->second;
+                     newThreadsMapIt = tmpMapElem.begin();
+                 
+                     bool taskPosted = false;
+
+                     //newThreadsMapIt is an iterator whose key is a threadId and value is a list of opIds of delayed posts
+                     for(; newThreadsMapIt != tmpMapElem.end(); newThreadsMapIt++){
+                         std::list<int> postOpIdLst = newThreadsMapIt->second;
+                         if(postOpIdLst.size() > 0){
+                             int mostRecentPost = postOpIdLst.back();
+                             if(adjGraph[mostRecentPost - 1][it->second->id - 1] == true){
+                                 //thid delayed post will be a normal post from the identified thread
+                                 traceIO << ++porOpId << " DELAY-POST src:" << newThreadsMapIt->first << " msg:"
+                                     << op->arg2->id << " dest:" << op->arg3 << "\n";
+                                 porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+                                 taskPosted = true;
+                                 break;
+                             }
+                         }
+                     }
+
+                     if(!taskPosted){
+                         //fork a new thread to make this post
+                         std::map<int, std::list<int> > mapElementTmp;
+                         std::list<int> delayPostListTmp;
+                         delayPostListTmp.push_back(it->second->id); //this is the opId of first delayed msg to be posted by a newly created thread
+                         tmpMapElem.insert(std::make_pair(abcThreadCount++, delayPostListTmp));
+
+                         //emit fork and threadinit for this new thread to post delayed msg
+                         traceIO << ++porOpId << " FORK par-tid:" << op->tid << " child-tid:"
+                             << abcThreadCount - 1 << "\n";
+                         traceIO << ++porOpId << " THREADINIT tid:" << abcThreadCount - 1 << "\n";
+                         traceIO << ++porOpId << " DELAY-POST src:" << abcThreadCount - 1 << " msg:"
+                             << op->arg2->id << " dest:" << op->arg3 << "\n";
+                         //map only the post to its previous id
+                         porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+                     }
+
+                 }else{
+                     //no delayed post seen from this thread / async task till now
+                     std::map<int, std::list<int> > mapElement;
+                     std::list<int> delayPostList;
+                     delayPostList.push_back(it->second->id); //this is the opId of first delayed msg to be posted by a newly created thread
+                     mapElement.insert(std::make_pair(abcThreadCount++, delayPostList));
+                     taskThreadListMap.insert(std::make_pair(task, mapElement));
+
+                     //emit fork and threadinit for this new thread to post delayed msg
+                     traceIO << ++porOpId << " FORK par-tid:" << op->tid << " child-tid:"
+                         << abcThreadCount - 1 << "\n";
+                     traceIO << ++porOpId << " THREADINIT tid:" << abcThreadCount - 1 << "\n";
+                     traceIO << ++porOpId << " DELAY-POST src:" << abcThreadCount - 1 << " msg:" 
+                         << op->arg2->id << " dest:" << op->arg3 << "\n";
+                     //map only the post to its previous id
+                     porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+                 }                  
              }else{
-                 traceIO <<"\n";
+                 traceIO << ++porOpId << " POST src:" << op->arg1 << " msg:" 
+                     << op->arg2->id << " dest:" << op->arg3 << "\n";
+                 porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
              }
-
-             porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_CALL :
+        }
+        else if(op->opType == ABC_CALL){
              traceIO << ++porOpId << " CALL tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_RET :
+
+             threadAsyncMap.insert(std::make_pair(op->tid, op->arg2->id));
+        }
+        else if(op->opType == ABC_RET){
              traceIO << ++porOpId << " RET tid:" << op->arg1 << " msg:" << op->arg2->id  << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_NATIVE_POST :
+
+             threadAsyncMap.erase(op->tid);
+             taskThreadListMap.erase(std::make_pair(op->tid, op->arg2->id));
+        }
+        else if(op->opType == ABC_NATIVE_POST){
              traceIO << ++porOpId << " NATIVE-POST src:" << op->arg1 
                  << " msg:" << op->arg2->id << " dest:" << op->arg3 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_UI_POST :
+        }
+        else if(op->opType == ABC_UI_POST){
              traceIO << ++porOpId << " UI-POST src:" << op->arg1 
                  << " msg:" << op->arg2->id << " dest:" << op->arg3 << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_LOCK :
+        }
+        else if(op->opType == ABC_LOCK){
              traceIO << ++porOpId << " LOCK" << " tid:" << op->arg1
                 << " lock-obj:" << op->arg2->obj << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_UNLOCK :
+        }
+        else if(op->opType == ABC_UNLOCK){
              traceIO << ++porOpId << " UNLOCK" << " tid:" << op->arg1
                 << " lock-obj:" << op->arg2->obj << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_ENABLE_EVENT :
+        }
+        else if(op->opType == ABC_ENABLE_EVENT){
              traceIO << ++porOpId << " ENABLE-EVENT tid:" << op->tid << " view:" << op->arg2->id
                 << " event:" << op->arg1 <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_TRIGGER_EVENT :
+        }
+        else if(op->opType == ABC_TRIGGER_EVENT){
              traceIO << ++porOpId << " TRIGGER-EVENT tid:" << op->tid << " view:" << op->arg2->id
                 << " event:" << op->arg1 <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ENABLE_WINDOW_FOCUS ://not needed. not emiited in POR trace
-             break;
-        case TRIGGER_WINDOW_FOCUS :
+        }
+      /*  else if(op->opType == ENABLE_WINDOW_FOCUS){//not needed. not emiited in POR trace
+          
+        }*/
+        else if(op->opType == TRIGGER_WINDOW_FOCUS){
              traceIO << ++porOpId << " TRIGGER-WINDOW-FOCUS tid:" << op->tid
                  << " windowHash:" << op->arg2->id <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_ENABLE_LIFECYCLE:
+        }
+        else if(op->opType == ABC_ENABLE_LIFECYCLE){
              traceIO << ++porOpId << " ENABLE-LIFECYCLE tid:" << op->tid << " component:dummy" 
                 << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_TRIGGER_LIFECYCLE:
+        }
+        else if(op->opType == ABC_TRIGGER_LIFECYCLE){
              traceIO << ++porOpId << " TRIGGER-LIFECYCLE tid:" << op->tid << " component:dummy" 
                 << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
-             break;
-        case ABC_TRIGGER_SERVICE:
-             break;
-        case ABC_TRIGGER_RECEIVER:
-             break;
-        default: LOGE("ABC: found an unknown opType when processing porTmpTrace. Aborting.");
+        }
+      /*  else if(op->opType == ABC_TRIGGER_SERVICE){
+        
+        }
+        else if(op->opType == ABC_TRIGGER_RECEIVER){
+           
+        }*/
+        else{
+            LOGE("ABC: found an unknown opType when processing porTmpTrace. Aborting.");
         }
 
         traceIO.close(); 
@@ -4750,11 +4859,12 @@ bool abcPerformRaceDetection(){
     computeClosureOfHbGraph();
     LOGE("HB graph creation completed");
 
+    //POR final trace generation
+    generatePORTrace();
+
     //race detection
     removeRedundantReadWrites();
 
-    //POR final trace generation
-    generatePORTrace();
 
     detectRaceUsingHbGraph();
     LOGE("ABC: Race detection completed");
