@@ -68,6 +68,8 @@ void addTriggerToTriggerBaseEdges(AbcOp* curOp, AbcOp* prevOp, int curOpid,
         addEdgeToHBGraph(prevOpAsync->retId, curOpAsync->callId);
 
         //HB edge from enable-lifecycle to trigger-lifecycle's post 
+        //or from trigger service to another trigger service's post
+        //or from trigger broadcast to another trigger broadcast's post
         int srcTraceId = getTraceIdForPORFromOpId(prevOpAsync->postId);
         int destTraceId = getTraceIdForPORFromOpId(curOpAsync->postId);
         if(srcTraceId != -1 && destTraceId != -1){
@@ -235,6 +237,9 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
         
         updated = true;
     }else if(state == ABC_TRIGGER_ONRECIEVE){
+        //for POR
+        int srcTraceId, destTraceId;
+
         AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
         if(opAsync == NULL){
             LOGE("ABC-ABORT: missing async block for onReceive of broadcast action: %s", action.c_str());
@@ -247,13 +252,27 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             //TIME_TICK is a periodic broadcast and hence inherently happens-before
             //exists between adjacent TIME_TICKs and thus between posts of corresponding onReceive
             if(timeTickBroadcastPrevPostOpId != -1){
+                //for POR
+                srcTraceId = getTraceIdForPORFromOpId(timeTickBroadcastPrevPostOpId);
+		destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+	            storeHBInfoExplicitly(srcTraceId, destTraceId);
+		}
+
                 addEdgeToHBGraph(timeTickBroadcastPrevPostOpId, opAsync->postId);
             }
             timeTickBroadcastPrevPostOpId = opAsync->postId;
         }
 
         //post for broadcast receiver could happen only after BIND_APPLICATION's post
+        //for POR
+        srcTraceId = getTraceIdForPORFromOpId(abcAppBindPost);
+	destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+	if(srcTraceId != -1 && destTraceId != -1){
+	    storeHBInfoExplicitly(srcTraceId, destTraceId);
+	}
         addEdgeToHBGraph(abcAppBindPost, opAsync->postId);
+
 
         std::pair<u4, std::string> compActionPair = std::make_pair(component, action);
 
@@ -262,6 +281,14 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
         if(preIter != PreReceiverTriggerToRegisterMap.end()){
             if(preIter->second->sendIntentOpid != -1){
                 addEdgeToHBGraph(preIter->second->sendIntentOpid, opId);
+             
+                //for POR
+                srcTraceId = getTraceIdForPORFromOpId(preIter->second->sendIntentOpid);
+		destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+		    storeHBInfoExplicitly(srcTraceId, destTraceId);
+		}
+
                 addEdgeToHBGraph(preIter->second->sendIntentOpid, opAsync->postId);
 
                 /*add entry to AbcSendBroadcastOnReceiveMap. This map is used to
@@ -291,6 +318,14 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
 
             if(preIter->second->registerReceiverOpid != -1){
                 addEdgeToHBGraph(preIter->second->registerReceiverOpid, opId);
+
+                //for POR
+                int srcTraceId = getTraceIdForPORFromOpId(preIter->second->registerReceiverOpid);
+		int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+		    storeHBInfoExplicitly(srcTraceId, destTraceId);
+		}
+
                 addEdgeToHBGraph(preIter->second->registerReceiverOpid, opAsync->postId);
 
                 AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));            
@@ -308,6 +343,14 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             if(siIt != SentIntentMap.end()){
                 //add edge from sendIntent to onReceive
                 addEdgeToHBGraph(siIt->second->op->opId, opId);
+              
+                //for POR
+                int srcTraceId = getTraceIdForPORFromOpId(siIt->second->op->opId);
+		int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+		    storeHBInfoExplicitly(srcTraceId, destTraceId);
+                }
+
                 addEdgeToHBGraph(siIt->second->op->opId, opAsync->postId);
 
                 //check if edge should be added from sticky register or otherwise
@@ -370,6 +413,14 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
             //add edges for registerReceiver operation
             if(regOpid != -1){
                 addEdgeToHBGraph(regOpid, opId);
+
+                //for POR
+                int srcTraceId = getTraceIdForPORFromOpId(regOpid);
+		int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+		    storeHBInfoExplicitly(srcTraceId, destTraceId);
+		}
+
                 addEdgeToHBGraph(regOpid, opAsync->postId);
 
                 AbcSticky* ast = (AbcSticky*)malloc(sizeof(AbcSticky));
@@ -500,6 +551,13 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 addEdgeToHBGraph(service->firstCreateServiceRequest, opId);
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync != NULL){
+                     //for POR
+                     int srcTraceId = getTraceIdForPORFromOpId(service->firstCreateServiceRequest);
+		     int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		     if(srcTraceId != -1 && destTraceId != -1){
+		         storeHBInfoExplicitly(srcTraceId, destTraceId);
+		     }
+
                     addEdgeToHBGraph(service->firstCreateServiceRequest, opAsync->postId);
                 }else{
                     LOGE("ABC-ABORT: missing async block for CREATE-SERVICE of service: %s", serviceName.c_str());
@@ -536,6 +594,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 addEdgeToHBGraph(service->firstBindServiceRequest, opId);
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync != NULL){
+                    //for POR
+                     int srcTraceId = getTraceIdForPORFromOpId(service->firstBindServiceRequest);
+                     int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+                     if(srcTraceId != -1 && destTraceId != -1){
+                         storeHBInfoExplicitly(srcTraceId, destTraceId);
+                     }
                     addEdgeToHBGraph(service->firstBindServiceRequest, opAsync->postId);
                 }else{
                     LOGE("ABC-ABORT: missing async block for BIND-SERVICE of service: %s", serviceName.c_str());
@@ -591,6 +655,14 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 if(service->validRequestUnbindSet.size() > 0){
                     for( ; setIt != service->validRequestUnbindSet.end(); ++setIt){
                         addEdgeToHBGraph(*setIt, opId);
+
+                        //for POR
+                        int srcTraceId = getTraceIdForPORFromOpId(*setIt);
+                        int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+                        if(srcTraceId != -1 && destTraceId != -1){
+                            storeHBInfoExplicitly(srcTraceId, destTraceId);
+                        }
+
                         addEdgeToHBGraph(*setIt, opAsync->postId);
                     }
                 }else{
@@ -711,6 +783,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     if(prevStartedOp->opPtr->arg1 != ABC_CREATE_SERVICE){
                         if(service->firstStopServiceRequest != -1){
                             addEdgeToHBGraph(service->firstStopServiceRequest, opId);
+                            //for POR
+                            int srcTraceId = getTraceIdForPORFromOpId(service->firstStopServiceRequest);
+                            int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+                            if(srcTraceId != -1 && destTraceId != -1){
+                                storeHBInfoExplicitly(srcTraceId, destTraceId);
+                            }
                             addEdgeToHBGraph(service->firstStopServiceRequest, opAsync->postId);
                         }else{
                             LOGE("ABC-ABORT: STOP-SERVICE seen on started service %s without"
@@ -755,6 +833,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 std::map<u4, AbcOpWithId*>::iterator startIter = AbcRequestStartServiceMap.find(identifier);
                 if(startIter != AbcRequestStartServiceMap.end()){
                     addEdgeToHBGraph(startIter->second->opId, opId);
+                    //for POR
+                    int srcTraceId = getTraceIdForPORFromOpId(startIter->second->opId);
+		    int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		    if(srcTraceId != -1 && destTraceId != -1){
+			    storeHBInfoExplicitly(srcTraceId, destTraceId);
+		    }
                     addEdgeToHBGraph(startIter->second->opId, opAsync->postId);
 
                     //clear entry from AbcRequestStartServiceMap as wont be used again
@@ -808,6 +892,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 //add edge from bindService to onServiceConnected
                 //from code it is clear that onServiceConnected is executed only after BIND-SERVICE
                 addEdgeToHBGraph(service->bindServiceOp, opId);
+                //for POR
+                int srcTraceId = getTraceIdForPORFromOpId(service->bindServiceOp);
+		int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+		if(srcTraceId != -1 && destTraceId != -1){
+			storeHBInfoExplicitly(srcTraceId, destTraceId);
+		}
                 addEdgeToHBGraph(service->bindServiceOp, opAsync->postId);
 
                 //add edge from request-bind to onServiceConnected
@@ -818,6 +908,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                         if(serviceName == tmpArb->serviceClassname){
                             if(tmpArb->requestBindOp->opId < opAsync->postId){
                                 addEdgeToHBGraph(tmpArb->requestBindOp->opId, opId);
+                                //for POR
+                                int srcTraceId = getTraceIdForPORFromOpId(tmpArb->requestBindOp->opId);
+				int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+				if(srcTraceId != -1 && destTraceId != -1){
+					storeHBInfoExplicitly(srcTraceId, destTraceId);
+				}
                                 addEdgeToHBGraph(tmpArb->requestBindOp->opId, opAsync->postId);
                             }//else onServiceConnected seen is corresponding to a request which has been unbound
                              //our modelling cannot capture all possible states for service accurately but 
@@ -847,6 +943,12 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                         if(serviceName == tmpArb->serviceClassname){
                             if(tmpArb->requestBindOp->opId < opAsync->postId){
                                 addEdgeToHBGraph(tmpArb->requestBindOp->opId, opId);
+                                //for POR
+                                int srcTraceId = getTraceIdForPORFromOpId(tmpArb->requestBindOp->opId);
+                                int destTraceId = getTraceIdForPORFromOpId(opAsync->postId);
+                                if(srcTraceId != -1 && destTraceId != -1){
+                                        storeHBInfoExplicitly(srcTraceId, destTraceId);
+                                }
                                 addEdgeToHBGraph(tmpArb->requestBindOp->opId, opAsync->postId);
                             }//else onServiceConnected seen is corresponding to a request which has been unbound
                              //our modelling cannot capture all possible states for service accurately but 

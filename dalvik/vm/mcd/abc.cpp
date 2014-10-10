@@ -2881,6 +2881,16 @@ bool processTriggerServiceLifecycleOperation(int opId, AbcOp* op, AbcThreadBookK
         async->recentCrossPostAsync = -1;
     }
 
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        //for POR
+        OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
+        opInfo->opType = 1; //non read-write operation
+        opInfo->id = opId;
+        opInfo->op = NULL;
+        porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
+
     bool serviceUpdated = checkAndUpdateServiceState(opId, op);
     bool shouldAbort = !serviceUpdated;
    
@@ -2914,6 +2924,16 @@ bool processTriggerBroadcastReceiver(int opId, AbcOp* op, AbcThreadBookKeep* thr
          *co-enabled race or unknown category race)
          */
         async->recentCrossPostAsync = -1;
+    }
+
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        //for POR
+        OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
+        opInfo->opType = 1; //non read-write operation
+        opInfo->id = opId;
+        opInfo->op = NULL;
+        porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+        traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
     }
 
     bool success = checkAndUpdateBroadcastState(opId, op);
@@ -4362,12 +4382,17 @@ void generatePORTrace(){
                 << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
         }
-      /*  else if(op->opType == ABC_TRIGGER_SERVICE){
-        
+        else if(op->opType == ABC_TRIGGER_SERVICE){
+             traceIO << ++porOpId << " TRIGGER-SERVICE tid:" << op->tid << " component:" << op->arg5
+                 << " id:" << op->arg2->id << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+             porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
         }
         else if(op->opType == ABC_TRIGGER_RECEIVER){
-           
-        }*/
+             traceIO << ++porOpId << " TRIGGER-BROADCAST tid:" << op->tid << " action:" << op->arg5
+                 << " component:" << op->arg2->id << " intent:"<< op->arg3 << " onRecLater:" << op->arg4
+                 << " state:" << getLifecycleForCode(op->arg1, lifecycle) <<"\n";
+             porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+        }
         else{
             LOGE("ABC: found an unknown opType when processing porTmpTrace. Aborting.");
         }
