@@ -2505,6 +2505,16 @@ void processLockOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         if(!insert_result.second) {
             LOGE("ABC: lock %p not added to lockmap. result.first=%p", op->arg2->obj, insert_result.first->first);
         } 
+
+        if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+            //for POR
+            OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
+	    opInfo->opType = 1; //non read-write operation
+	    opInfo->id = opId;
+	    opInfo->op = NULL;
+	    porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+	    traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+        }
         return;
     }
     
@@ -4190,6 +4200,7 @@ void generatePORTrace(){
             break;
         }
 
+        LOGE("processing POR ID %d", it->first);
         traceIO.open(traceFile.c_str(), std::ios_base::app);
 
         
