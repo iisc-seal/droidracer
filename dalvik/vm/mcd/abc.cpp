@@ -224,6 +224,8 @@ std::list<int> nativeThreadIdListForPOR;
 std::map<int, OpInfo*> porTmpTrace;
 std::map<int, OpInfo*> porTrace;
 std::list<std::pair<int, int> > porHBList;
+std::map<u4, AbcOp*> msgCallOpMap;
+std::map<Object*, AbcOp*> porLockUnlockMap;
 
     
 
@@ -2708,6 +2710,18 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
         int destTraceId = getTraceIdForPORFromOpId(postId);
         if(srcTraceId != -1 && destTraceId != -1){
             storeHBInfoExplicitly(srcTraceId, destTraceId);
+            //if enable-ui-event is issued from UI thread then also add edge from 
+            //RET of the event enabling task to POST of UI event
+            AbcOp* enableOp = abcTrace.find(it->second.first)->second;
+            if(enableOp->tid == 1){ //check if it is issued from main thread
+                AbcAsync* enableAsync = getAsyncBlockFromId(enableOp->asyncId);
+                if(enableAsync != NULL){
+                    srcTraceId = getTraceIdForPORFromOpId(enableAsync->retId);
+                    if(srcTraceId != -1){
+                        storeHBInfoExplicitly(srcTraceId, destTraceId);
+                    }
+                }
+            }            
         }
 
         if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
@@ -4180,7 +4194,42 @@ void generatePORTrace(){
     std::map<std::pair<int, u4>, std::map<int, std::list<int> > >::iterator taskIt;
     std::map<int, u4>::iterator asyncIt;
     std::map<int, std::list<int> >::iterator newThreadsMapIt;
+    std::set<int> threadsWithoutThreadExit;
 
+
+    //manually add operations like msg RET, THREADEXIT, UNLOCK to be consistent with 
+    //model-checker's expected trace format
+    std::map<Object*, AbcOp*>::iterator lockOpIt = porLockUnlockMap.begin();
+    for(; lockOpIt != porLockUnlockMap.end(); lockOpIt++){
+        OpInfo* opIn = (OpInfo*)malloc(sizeof(OpInfo));
+        opIn->opType = 1; //non read-write operation
+        opIn->id = -1;
+        opIn->op = (AbcOp*)malloc(sizeof(AbcOp));
+
+        opIn->op->opType = ABC_UNLOCK;
+        opIn->op->arg1 = lockOpIt->second->tid;
+        opIn->op->arg2 = lockOpIt->second->arg2;
+        opIn->op->tid = lockOpIt->second->tid;
+
+        porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opIn));
+    }
+    porLockUnlockMap.clear();
+
+    std::map<u4, AbcOp*>::iterator msgOpIt = msgCallOpMap.begin();
+    for(; msgOpIt != msgCallOpMap.end(); msgOpIt++){
+        OpInfo* opIn = (OpInfo*)malloc(sizeof(OpInfo));
+        opIn->opType = 1; //non read-write operation
+        opIn->id = -1;
+        opIn->op = (AbcOp*)malloc(sizeof(AbcOp));
+
+        opIn->op->opType = ABC_RET;
+        opIn->op->arg1 = msgOpIt->second->tid;
+        opIn->op->arg2 = msgOpIt->second->arg2;
+        opIn->op->tid = msgOpIt->second->tid;
+
+        porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opIn));        
+    }
+    msgCallOpMap.clear();
 
     std::map<int, OpInfo*>::iterator it = porTmpTrace.begin();
     std::string lifecycle("");
@@ -4200,7 +4249,7 @@ void generatePORTrace(){
             break;
         }
 
-        LOGE("processing POR ID %d", it->first);
+     //   LOGE("processing POR ID %d", it->first);
         traceIO.open(traceFile.c_str(), std::ios_base::app);
 
         
@@ -4214,6 +4263,8 @@ void generatePORTrace(){
 
              std::map<int, std::list<int> > mapTmp;
              taskThreadListMap.insert(std::make_pair(std::make_pair(op->arg1, 0), mapTmp));
+
+             threadsWithoutThreadExit.insert(op->arg1);
         }
         else if(op->opType == ABC_THREADEXIT){
              traceIO << ++porOpId << " THREADEXIT tid:" << op->arg1 << "\n";
@@ -4221,6 +4272,8 @@ void generatePORTrace(){
 
              taskThreadListMap.erase(std::make_pair(op->arg1, 0));
              threadAsyncMap.erase(op->arg1);
+
+             threadsWithoutThreadExit.erase(op->arg1);
         }
         else if(op->opType == ABC_FORK){
              traceIO << ++porOpId << " FORK par-tid:" << op->arg1 << " child-tid:"
@@ -4307,6 +4360,8 @@ void generatePORTrace(){
                              << op->arg2->id << " dest:" << op->arg3 << "\n";
                          //map only the post to its previous id
                          porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+                         
+                         threadsWithoutThreadExit.insert(abcThreadCount - 1);
                      }
 
                  }else{
@@ -4325,6 +4380,8 @@ void generatePORTrace(){
                          << op->arg2->id << " dest:" << op->arg3 << "\n";
                      //map only the post to its previous id
                      porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+
+                     threadsWithoutThreadExit.insert(abcThreadCount - 1);
                  }                  
              }else{
                  traceIO << ++porOpId << " POST src:" << op->arg1 << " msg:" 
@@ -4443,6 +4500,13 @@ void generatePORTrace(){
       }
     }
 
+    std::set<int>::iterator threadexitIt = threadsWithoutThreadExit.begin();
+    for(; threadexitIt != threadsWithoutThreadExit.end(); threadexitIt++){
+        traceIO.open(traceFile.c_str(), std::ios_base::app);
+        traceIO << ++porOpId << " THREADEXIT tid:" << *threadexitIt << "\n";
+        traceIO.close();
+    }
+
     //explicitly store some HB information
     std::list<std::pair<int, int> >::iterator hbIt = porHBList.begin();
     std::map<int, int>::iterator srcIt;
@@ -4540,7 +4604,6 @@ bool abcPerformRaceDetection(){
     std::map<int, AbcOp*>::iterator itTmp = abcTrace.begin();
     
     u4 lastSeenUiMsgId = -1;
-    std::map<u4, AbcOp*> msgCallOpMap;
 
     while(itTmp != abcTrace.end()){
         std::pair<u4, int> eventPair;
@@ -4587,6 +4650,12 @@ bool abcPerformRaceDetection(){
                  nativeThreadIdListForPOR.push_back(abcThreadCount++);
              }
              break;
+        case ABC_LOCK:
+             porLockUnlockMap.insert(std::make_pair(op->arg2->obj, op));
+             break;
+        case ABC_UNLOCK:
+             porLockUnlockMap.erase(op->arg2->obj);
+             break;
         case ABC_NATIVE_ENTRY:
              nativeThreadSet.insert(op->tid);
              break;
@@ -4599,11 +4668,11 @@ bool abcPerformRaceDetection(){
 
     nativeThreadSet.clear();
 
-    std::map<u4, AbcOp*>::iterator msgOpIt = msgCallOpMap.begin();
-    for(; msgOpIt != msgCallOpMap.end(); msgOpIt++){
-        addRetToTrace(abcOpCount++, msgOpIt->second->tid, msgOpIt->first); 
-    }
-    msgCallOpMap.clear();
+//    std::map<u4, AbcOp*>::iterator msgOpIt = msgCallOpMap.begin();
+//    for(; msgOpIt != msgCallOpMap.end(); msgOpIt++){
+//        addRetToTrace(abcOpCount++, msgOpIt->second->tid, msgOpIt->first); 
+//    }
+//    msgCallOpMap.clear();
 
     //delete unused operations on trace and copy reduced trace to another map
     itTmp = abcTrace.begin();
