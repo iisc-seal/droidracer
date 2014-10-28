@@ -3167,6 +3167,13 @@ bool checkAndAddStickyBroadcastRegisterEdge(int o1, int o2, AbcOp* op1, AbcOp* o
                  AbcAsync* async1 = getAsyncBlockFromId(it1->second->op->opPtr->asyncId);
                  AbcAsync* async2 = getAsyncBlockFromId(it2->second->op->opPtr->asyncId);
                  addEdgeToHBGraph(async1->postId, async2->postId);
+
+                 //for POR
+                 int srcTraceId = getTraceIdForPORFromOpId(async1->postId);
+                 int destTraceId = getTraceIdForPORFromOpId(async2->postId);
+                 if(srcTraceId != -1 && destTraceId != -1){
+                     storeHBInfoExplicitly(srcTraceId, destTraceId);
+                 }
              }
         }
         
@@ -3195,6 +3202,13 @@ bool checkAndAddSendBroadcastEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
                     AbcAsync* async2 = getAsyncBlockFromId((*i2)->opPtr->asyncId);
                     addEdgeToHBGraph((*i1)->opId, (*i2)->opId);
                     addEdgeToHBGraph(async1->postId, async2->postId);
+
+                    //for POR
+                    int srcTraceId = getTraceIdForPORFromOpId(async1->postId);
+                    int destTraceId = getTraceIdForPORFromOpId(async2->postId);
+                    if(srcTraceId != -1 && destTraceId != -1){
+                        storeHBInfoExplicitly(srcTraceId, destTraceId);
+                    }
                 }
             }
         }
