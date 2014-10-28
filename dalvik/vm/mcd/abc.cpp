@@ -2751,6 +2751,16 @@ void processEnableWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thre
     }else{
         it->second.first = opId;
     }
+
+    if(porIgnoreAsyncSet.find(op->asyncId) == porIgnoreAsyncSet.end()){
+        //for POR
+        OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
+        opInfo->opType = 1; //non read-write operation
+	opInfo->id = opId;
+	opInfo->op = NULL;
+	porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+	traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+    }
 }
 
 void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -2780,10 +2790,14 @@ void processTriggerWindowFocusChange(int opId, AbcOp* op, AbcThreadBookKeep* thr
         //explicitly store HB info as POR trace does not have some operations
         std::map<int, AbcOp*>::iterator itTmp = abcTrace.find(it->second.first);
         AbcAsync* asyncTmp = getAsyncBlockFromId(itTmp->second->asyncId);
-        //HB edge from post of task enabling window focus to post of onWindowFocus task
-        int srcTraceId = getTraceIdForPORFromOpId(asyncTmp->postId);
+        //HB edge from enable window focus to post of onWindowFocus task
+        int srcTraceId = getTraceIdForPORFromOpId(it->second.first);
         int destTraceId = getTraceIdForPORFromOpId(postId);
         if(srcTraceId != -1 && destTraceId != -1){
+            storeHBInfoExplicitly(srcTraceId, destTraceId);
+
+            //HB edge from post of task enabling window focus to post of onWindowFocus task
+            srcTraceId = getTraceIdForPORFromOpId(asyncTmp->postId);
             storeHBInfoExplicitly(srcTraceId, destTraceId);
         }
 
@@ -4446,9 +4460,11 @@ void generatePORTrace(){
                 << " event:" << op->arg1 <<"\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
         }
-      /*  else if(op->opType == ENABLE_WINDOW_FOCUS){//not needed. not emiited in POR trace
-          
-        }*/
+        else if(op->opType == ENABLE_WINDOW_FOCUS){
+              traceIO << ++porOpId << " ENABLE-WINDOW-FOCUS tid:" << op->tid
+                 << " windowHash:" << op->arg2->id <<"\n";
+             porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+        }
         else if(op->opType == TRIGGER_WINDOW_FOCUS){
              traceIO << ++porOpId << " TRIGGER-WINDOW-FOCUS tid:" << op->tid
                  << " windowHash:" << op->arg2->id <<"\n";
