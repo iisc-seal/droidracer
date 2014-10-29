@@ -226,6 +226,7 @@ std::map<int, OpInfo*> porTrace;
 std::list<std::pair<int, int> > porHBList;
 std::map<u4, AbcOp*> msgCallOpMap;
 std::map<Object*, AbcOp*> porLockUnlockMap;
+std::set<u4> messagesPostedByNativeOrUiThreads;
 
     
 
@@ -2122,6 +2123,8 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 		porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
  
                 traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+                //store the msg-id of this native post
+                messagesPostedByNativeOrUiThreads.insert(op->arg2->id);
 
                 //add dummy threadexit operation for this native thread as it is allowed to post only one native POST
                 OpInfo* opIn1 = (OpInfo*)malloc(sizeof(OpInfo));
@@ -2158,6 +2161,8 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 opInfo->op->asyncId = op->asyncId;
 
                 porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+                //store the msg-id of this UI post
+                messagesPostedByNativeOrUiThreads.insert(op->arg2->id);
             }else{
                 //for POR
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
@@ -3267,6 +3272,21 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
     if(isCondTrans){
         if(adjGraph[o1 - 1][o3 - 1] == false){
             addEdgeToHBGraph(o1, o3);
+
+            //for POR trace
+            if(op1->opType == ABC_POST && op3->opType == ABC_POST &&
+                   op1->tid != op3->tid){
+                if(messagesPostedByNativeOrUiThreads.find(op1->arg2->id) != messagesPostedByNativeOrUiThreads.end() &&
+                    messagesPostedByNativeOrUiThreads.find(op3->arg2->id) != messagesPostedByNativeOrUiThreads.end()){
+                    //store native-post to native-post or native-post to UI-post 
+                    //or UI-post to native-post edges as external dependency
+                    int srcTraceId = getTraceIdForPORFromOpId(o1);
+                    int destTraceId = getTraceIdForPORFromOpId(o3);
+                    if(srcTraceId != -1 && destTraceId != -1){
+                        storeHBInfoExplicitly(srcTraceId, destTraceId);
+                    }
+                }
+            }
         }else{
             isCondTrans = false;
         }
