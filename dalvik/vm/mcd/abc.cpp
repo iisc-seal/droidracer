@@ -4248,6 +4248,7 @@ void detectRaceUsingHbGraph(){
 void generatePORTrace(){
     int porOpId = 0;
     std::map<int, int> porOldToNewOpIdMap;
+    bool toCleanupTrace = true;
 
     //variables to handle delayed posts
     std::map<int, u4> threadAsyncMap;
@@ -4261,6 +4262,7 @@ void generatePORTrace(){
     std::map<int, u4>::iterator asyncIt;
     std::map<int, std::list<int> >::iterator newThreadsMapIt;
     std::set<int> threadsWithoutThreadExit;
+
 
 
     //manually add operations like msg RET, THREADEXIT, UNLOCK to be consistent with 
@@ -4297,13 +4299,82 @@ void generatePORTrace(){
     }
     msgCallOpMap.clear();
 
+    AbcOp* op;
+    std::map<int, AbcRWAccess*>::iterator rwIt;
+    //datastructures to cleanup trace of empty tasks transitively. We need one backward
+    //processing of trace
+    std::set<u4> notTobeDeletedMessagesSet;//a message gets into this set if its task is empty or only has NOPs
+    std::map<int, std::pair<u4, int> > threadToMsgRetMap; // <tid, <msg, retTraceOpid> >
+    std::set<int> traceOpsToBeDeleted;
+
+    //cleanup trace of empty tasks
+    if(toCleanupTrace){
+    std::map<int, OpInfo*>::iterator tmpTraceIt = porTmpTrace.find(traceFileOpIdCounter);
+
+    if(tmpTraceIt != porTmpTrace.end()){
+
+    for(; tmpTraceIt != porTmpTrace.begin(); tmpTraceIt--){
+      if(tmpTraceIt->second->opType == 1){ //non-read write operation
+        if(tmpTraceIt->second->op == NULL && tmpTraceIt->second->id != -1){
+            op = abcTrace.find(tmpTraceIt->second->id)->second;
+        }else if(tmpTraceIt->second->op != NULL){
+            op = tmpTraceIt->second->op;
+        }else{
+            LOGE("ABC-ERROR: POR trace map has inconsistent operation information");
+            break;
+        }
+
+        if(op->opType == ABC_RET){
+            threadToMsgRetMap.insert(std::make_pair(op->arg1, std::make_pair(op->arg2->id, tmpTraceIt->first))); 
+        }
+	else if(op->opType == ABC_CALL){
+		if(notTobeDeletedMessagesSet.find(op->arg2->id) == notTobeDeletedMessagesSet.end()){
+			traceOpsToBeDeleted.insert(tmpTraceIt->first); 
+
+			std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(op->arg1);
+			if(tmpItr != threadToMsgRetMap.end()){
+				traceOpsToBeDeleted.insert(tmpItr->second.second);//add corresponding ret to to-be-deleted set
+				threadToMsgRetMap.erase(tmpItr);
+			}
+		}else{
+			threadToMsgRetMap.erase(op->tid);
+                }
+	}
+	else if(op->opType == ABC_POST || op->opType == ABC_NATIVE_POST){
+		if(notTobeDeletedMessagesSet.find(op->arg2->id) == notTobeDeletedMessagesSet.end()){
+			traceOpsToBeDeleted.insert(tmpTraceIt->first);
+		}else{
+			std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(op->arg1);
+			if(tmpItr != threadToMsgRetMap.end()){
+				notTobeDeletedMessagesSet.insert(tmpItr->second.first);
+			}
+		}
+	}else if(op->opType != ABC_NOP){
+		std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(op->tid);
+		if(tmpItr != threadToMsgRetMap.end()){
+			notTobeDeletedMessagesSet.insert(tmpItr->second.first);
+                }
+        }      
+      }else if(tmpTraceIt->second->opType == 2){ //read-write operation
+          rwIt = abcRWAccesses.find(tmpTraceIt->second->id);
+          std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(rwIt->second->tid);
+          if(tmpItr != threadToMsgRetMap.end()){
+              notTobeDeletedMessagesSet.insert(tmpItr->second.first);
+          }
+      }
+    }
+
+    }
+
+    }//end cleanup trace
+
+
     std::map<int, OpInfo*>::iterator it = porTmpTrace.begin();
     std::string lifecycle("");
-    std::map<int, AbcRWAccess*>::iterator rwIt;
-    AbcOp* op;
     std::string accType("");
 
     for(; it != porTmpTrace.end(); it++){
+      if(traceOpsToBeDeleted.find(it->first) == traceOpsToBeDeleted.end()){
       if(it->second->opType == 1){
         // non read-write operation
         if(it->second->op == NULL && it->second->id != -1){
@@ -4568,6 +4639,7 @@ void generatePORTrace(){
           }
       }else{
           LOGE("ABC-ERROR: Found an invalid operation when processing POR trace map");
+      }
       }
     }
 
