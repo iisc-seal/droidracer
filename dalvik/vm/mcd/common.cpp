@@ -85,6 +85,10 @@ int getAsyncIdOfOperation(int opId){
 }
 
 void storeHBInfoExplicitly(int srcOpId, int destOpId){
+    std::map<int, int>::iterator it = nativeOrUiPostToNopMap.find(destOpId);
+    if(it != nativeOrUiPostToNopMap.end()){
+        destOpId = it->second;
+    }
     porHBList.push_back(std::make_pair(srcOpId, destOpId));
 }
 

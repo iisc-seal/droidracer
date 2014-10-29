@@ -75,6 +75,7 @@
 
 #define ABC_NATIVE_POST 40
 #define ABC_UI_POST 41
+#define ABC_NOP 42
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	

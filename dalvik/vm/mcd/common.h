@@ -121,6 +121,7 @@ extern std::string hbFile;
 extern std::ofstream traceIO;
 extern std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
 extern std::list<std::pair<int, int> > porHBList;
+extern std::map<int, int> nativeOrUiPostToNopMap;
 
 
 bool isHbEdge(int src, int dest);

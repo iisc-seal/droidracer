@@ -227,6 +227,7 @@ std::list<std::pair<int, int> > porHBList;
 std::map<u4, AbcOp*> msgCallOpMap;
 std::map<Object*, AbcOp*> porLockUnlockMap;
 std::set<u4> messagesPostedByNativeOrUiThreads;
+std::map<int, int> nativeOrUiPostToNopMap;
 
     
 
@@ -2107,6 +2108,20 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         if(nativeThreadSet.find(op->tid) != nativeThreadSet.end()){
             if(nativeThreadIdListForPOR.begin() != nativeThreadIdListForPOR.end()){
                 //for POR
+
+                //dummy placeholder NOP for NATIVE-POST. 
+                OpInfo* opInfo1 = (OpInfo*)malloc(sizeof(OpInfo));
+                opInfo1->opType = 1; //non read-write operation
+                opInfo1->id = -1;
+                opInfo1->op = (AbcOp*)malloc(sizeof(AbcOp));
+
+                opInfo1->op->opType = ABC_NOP;
+                opInfo1->op->arg1 = nativeThreadIdListForPOR.front();
+                opInfo1->op->tid = nativeThreadIdListForPOR.front();
+
+                porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo1));
+
+                //NATIVE-POST
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
 		opInfo->opType = 1; //non read-write operation
 		opInfo->id = opId;
@@ -2123,8 +2138,9 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 		porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
  
                 traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
-                //store the msg-id of this native post
-                messagesPostedByNativeOrUiThreads.insert(op->arg2->id);
+
+                //add trace opid of this native post and corresponding placeholder NOP to map for later use
+                nativeOrUiPostToNopMap.insert(std::make_pair(traceFileOpIdCounter, traceFileOpIdCounter - 1));
 
                 //add dummy threadexit operation for this native thread as it is allowed to post only one native POST
                 OpInfo* opIn1 = (OpInfo*)malloc(sizeof(OpInfo));
@@ -2147,6 +2163,20 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
             //if this post leads to a trigger event task then this post should come from UI posting thread
             if(isTriggerEventPost){
                 //for POR
+
+                //dummy placeholder NOP for UI-POST. 
+                OpInfo* opInfo1 = (OpInfo*)malloc(sizeof(OpInfo));
+                opInfo1->opType = 1; //non read-write operation
+                opInfo1->id = -1;
+                opInfo1->op = (AbcOp*)malloc(sizeof(AbcOp));
+
+                opInfo1->op->opType = ABC_NOP;
+                opInfo1->op->arg1 = porUiTid;
+                opInfo1->op->tid = porUiTid;
+
+                porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo1));
+
+                //UI-POST
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
                 opInfo->opType = 1; //non read-write operation
                 opInfo->id = opId;
@@ -2161,8 +2191,10 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 opInfo->op->asyncId = op->asyncId;
 
                 porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
-                //store the msg-id of this UI post
-                messagesPostedByNativeOrUiThreads.insert(op->arg2->id);
+                traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
+
+                //add trace opid of this native post and corresponding placeholder NOP to map for later use
+                nativeOrUiPostToNopMap.insert(std::make_pair(traceFileOpIdCounter, traceFileOpIdCounter - 1));
             }else{
                 //for POR
                 OpInfo* opInfo = (OpInfo*)malloc(sizeof(OpInfo));
@@ -2170,8 +2202,8 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
                 opInfo->id = opId;
                 opInfo->op = NULL;
                 porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
+                traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
             }
-            traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
         }
     }
 
@@ -3273,20 +3305,6 @@ bool checkAndAddCondTransEdge(int o1, int o2, int o3, AbcOp* op1, AbcOp* op2, Ab
         if(adjGraph[o1 - 1][o3 - 1] == false){
             addEdgeToHBGraph(o1, o3);
 
-            //for POR trace
-            if(op1->opType == ABC_POST && op3->opType == ABC_POST &&
-                   op1->tid != op3->tid){
-                if(messagesPostedByNativeOrUiThreads.find(op1->arg2->id) != messagesPostedByNativeOrUiThreads.end() &&
-                    messagesPostedByNativeOrUiThreads.find(op3->arg2->id) != messagesPostedByNativeOrUiThreads.end()){
-                    //store native-post to native-post or native-post to UI-post 
-                    //or UI-post to native-post edges as external dependency
-                    int srcTraceId = getTraceIdForPORFromOpId(o1);
-                    int destTraceId = getTraceIdForPORFromOpId(o3);
-                    if(srcTraceId != -1 && destTraceId != -1){
-                        storeHBInfoExplicitly(srcTraceId, destTraceId);
-                    }
-                }
-            }
         }else{
             isCondTrans = false;
         }
@@ -4303,6 +4321,9 @@ void generatePORTrace(){
         
         if(op->opType == ABC_START){
              traceIO << ++porOpId << " START" << "\n";
+             porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
+        }else if(op->opType == ABC_NOP){
+             traceIO << ++porOpId << " NOP tid:" << op->tid << "\n";
              porOldToNewOpIdMap.insert(std::make_pair(it->first, porOpId));
         }
         else if(op->opType == ABC_THREADINIT){
