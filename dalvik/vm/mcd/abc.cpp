@@ -2081,8 +2081,8 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
 
 
     //a post generated outside async block after the looper starts looping
-    if(threadBK->attachqId != -1 && op->asyncId == -1){
-        addEdgeToHBGraph(threadBK->attachqId, opId);
+    if(threadBK->loopId != -1 && op->asyncId == -1){
+        addEdgeToHBGraph(threadBK->loopId, opId);
 
         //POR trace related processing
         /* add this msg ID to ignore list if this msg is posted from outside a task
@@ -4248,7 +4248,7 @@ void detectRaceUsingHbGraph(){
 void generatePORTrace(){
     int porOpId = 0;
     std::map<int, int> porOldToNewOpIdMap;
-    bool toCleanupTrace = true;
+    bool toCleanupTrace = false;
 
     //variables to handle delayed posts
     std::map<int, u4> threadAsyncMap;

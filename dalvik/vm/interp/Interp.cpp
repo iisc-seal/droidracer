@@ -804,7 +804,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 abcAsyncStateMap.find(curAsync->asyncId)->second.second = true;
             }
 
-          /*  std::ofstream outfile;
+           /* std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << " meth:"
                    << method->name << " class:" << method->clazz->descriptor << "\n";
@@ -814,7 +814,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                abcPushMethodForThread(self->threadId, method); 
                self->shouldABCTrack = false;
              
-              /* std::ofstream outfile;
+             /*  std::ofstream outfile;
                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << " meth:"
                    << method->name << " class:" << method->clazz->descriptor << "\n";
@@ -938,10 +938,10 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             if(abcGetLastMethodInThreadStack(self->threadId) == method){
                 abcPopLastMethodInThreadStack(self->threadId);
 
-              /*  std::ofstream outfile;
+               /* std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-                outfile << "METHOD EXIT tid:" << self->abcThreadId << "\t meth:"
-                    << method->name << "\t class:" << method->clazz->descriptor << "\n";
+                outfile << "METHOD EXIT tid:" << self->abcThreadId << " meth:"
+                    << method->name << " class:" << method->clazz->descriptor << "\n";
                 outfile.close(); */
             }
         

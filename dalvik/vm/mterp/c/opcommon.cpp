@@ -456,9 +456,9 @@ GOTO_TARGET_DECL(exceptionThrown);
                 arrayObj->length, GET_REGISTER(vsrc2));                     \
             GOTO_exceptionThrown();                                         \
         }                                                                   \
-        /*Android bug-checker                                             \
+        /*Android bug-checker*/                                             \
         abcAddObjectAccessToTrace(arrayObj, GET_REGISTER(vsrc2), self, 2);  \
-        Android bug-checker*/                                             \
+        /*Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             ((_type*)(void*)arrayObj->contents)[GET_REGISTER(vsrc2)]);      \
         ILOGV("+ AGET[%d]=%#x", GET_REGISTER(vsrc2), GET_REGISTER(vdst));   \
@@ -484,9 +484,9 @@ GOTO_TARGET_DECL(exceptionThrown);
                 arrayObj->length, GET_REGISTER(vsrc2));                     \
             GOTO_exceptionThrown();                                         \
         }                                                                   \
-        /*Android bug-checker                                             \
+        /*Android bug-checker*/                                             \
         abcAddObjectAccessToTrace(arrayObj, GET_REGISTER(vsrc2), self, 1);  \
-        Android bug-checker*/                                             \
+        /*Android bug-checker*/                                             \
         ILOGV("+ APUT[%d]=0x%08x", GET_REGISTER(vsrc2), GET_REGISTER(vdst));\
         ((_type*)(void*)arrayObj->contents)[GET_REGISTER(vsrc2)] =          \
             GET_REGISTER##_regsize(vdst);                                   \

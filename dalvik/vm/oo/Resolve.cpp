@@ -40,7 +40,8 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
         if(strcmp(obj->clazz->descriptor,
                 "Ljava/lang/ClassLoader;") != 0 && strcmp(obj->clazz->descriptor,
                     "Ldalvik/system/PathClassLoader;") != 0 && strcmp(
-                     obj->clazz->descriptor,"Ljava/lang/BootClassLoader") != 0){
+                     obj->clazz->descriptor,"Ljava/lang/BootClassLoader;") != 0 &&
+                     strcmp(obj->clazz->descriptor,"Landroid/os/Message;") != 0){
         std::string access;
         if(accessType == ABC_WRITE)
             access = "WRITE";
