@@ -2032,8 +2032,8 @@ bool processPostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
     abcAsyncMap.insert(std::make_pair(op->arg2->id, async));
    
     //a post generated outside async block after the looper starts looping
-    if(threadBK->attachqId != -1 && op->asyncId == -1){
-        addEdgeToHBGraph(threadBK->attachqId, opId);
+    if(threadBK->loopId != -1 && op->asyncId == -1){
+        addEdgeToHBGraph(threadBK->loopId, opId);
     }
     
     return shouldAbort;
