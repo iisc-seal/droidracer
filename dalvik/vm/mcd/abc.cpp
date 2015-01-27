@@ -2668,7 +2668,7 @@ bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
             AbcAsync* async1 = iter1->second;
             AbcAsync* async2 = iter2->second;
             //op1 is not a delayed message
-            if(adjGraph[async1->retId - 1][async2->callId - 1] == false){    
+            if(async1->retId != -1 && adjGraph[async1->retId - 1][async2->callId - 1] == false){    
                 if(op1->arg4 == 0){
                     addEdgeToHBGraph(async1->retId, async2->callId); 
                 }else if(op2->arg4 != 0){ //both op1 and op2 are delayed messages
