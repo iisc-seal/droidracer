@@ -803,6 +803,8 @@ static void notifyMonitor(Thread* self, Monitor* mon)
                     addThreadToCurAsyncMap(self->abcThreadId);
                 }
 
+            //    LOGE("native-notify: notifiedTid:%d from tid:%d",thread->abcThreadId, self->abcThreadId);
+
                 std::map<int, AbcThread*>::iterator it = abcThreadMap.find(thread->abcThreadId);
                 //notify is logged only on tracked threads
                 if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
@@ -879,6 +881,7 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
             /*Android bug-checker*/
             if(gDvm.isRunABC == true){
                 std::map<int, AbcThread*>::iterator it = abcThreadMap.find(thread->abcThreadId);
+           //     LOGE("native-notify: notifiedTid:%d from tid:%d",thread->abcThreadId, self->abcThreadId);
                 //notify is logged only on tracked threads
                 if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
                     selfIter = abcThreadMap.find(self->abcThreadId);

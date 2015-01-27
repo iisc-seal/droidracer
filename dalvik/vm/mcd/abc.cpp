@@ -3091,7 +3091,7 @@ bool checkAndAddAsyncFifoEdge(int o1, int o2, AbcOp* op1, AbcOp* op2){
             AbcAsync* async1 = iter1->second;
             AbcAsync* async2 = iter2->second;
             //op1 is not a delayed message
-            if(adjGraph[async1->retId - 1][async2->callId - 1] == false){    
+            if(async1->retId != -1 && adjGraph[async1->retId - 1][async2->callId - 1] == false){    
                 if(op1->arg4 == 0){
                     addEdgeToHBGraph(async1->retId, async2->callId); 
                 }else if(op2->arg4 != 0){ //both op1 and op2 are delayed messages
@@ -4248,7 +4248,7 @@ void detectRaceUsingHbGraph(){
 void generatePORTrace(){
     int porOpId = 0;
     std::map<int, int> porOldToNewOpIdMap;
-    bool toCleanupTrace = false;
+    bool toCleanupTrace = true;
 
     //variables to handle delayed posts
     std::map<int, u4> threadAsyncMap;
@@ -4354,7 +4354,14 @@ void generatePORTrace(){
 		if(tmpItr != threadToMsgRetMap.end()){
 			notTobeDeletedMessagesSet.insert(tmpItr->second.first);
                 }
-        }      
+        }else if(op->opType == ABC_NOP){
+                std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(op->tid);
+                if(tmpItr != threadToMsgRetMap.end()){
+                    if(notTobeDeletedMessagesSet.find(tmpItr->second.first) == notTobeDeletedMessagesSet.end()){
+                        traceOpsToBeDeleted.insert(tmpTraceIt->first);
+                    }
+                }
+        }
       }else if(tmpTraceIt->second->opType == 2){ //read-write operation
           rwIt = abcRWAccesses.find(tmpTraceIt->second->id);
           std::map<int, std::pair<u4, int> >::iterator tmpItr = threadToMsgRetMap.find(rwIt->second->tid);
