@@ -154,8 +154,7 @@ DroidRacer related modifications and initializations
    is loaded. This happens when control reaches DroidRacer's UI event trigger code
    too soon. BACK press gets triggered as none of the other events are active yet.
 
-   line 6: emulator ID (its a number displayed on top of the emulator to identify it in
-   case multiple emulators are running simultaneously)
+   line 6: port to communicate with emulator (you can specify any unused port number here)
 
    line 7: specify a positive integer as limit if the trace generation has to be 
    truncated on hitting the limit. In that case race detection is performed on 
@@ -230,8 +229,10 @@ How to run DroidRacer
 1. Install the app to be tested and force-stop it before starting ModelCheckingServer outside emulator. 
    ABCServer.java (main class in ModelCheckingServer project) takes three arguments:
    (1) app-process-name to be tested as input,  (2) port to communicate with emulator
-   (3) emulator ID 
+   (3) emulator ID (its a number displayed on top of the emulator to identify it in
+   case multiple emulators are running simultaneously) 
    E.g., org.tomdroid 9998 5554  #to test Tomdroid app running on emulator-5554
+   Also, specify the same port number as specified in abc.txt
 
 2. Before starting DroidRacer run through ModelCheckingServer add 
    <app-process-name, app's main Activity> to intentAppMap HashMap in ABCServer.java inside
