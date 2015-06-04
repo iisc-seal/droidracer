@@ -112,7 +112,9 @@ static void Dalvik_java_lang_VMThread_abcPrintRacesDetectedToFile(const u4* args
 
 static void Dalvik_java_lang_VMThread_abcPerformRaceDetection(const u4* args,
     JValue* pResult){
+    abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
     gDvm.isRunABC = false;
+    abcUnlockMutex(&gAbc->abcMainMutex);
     bool success = abcPerformRaceDetection();
     if(success){
         RETURN_INT(1);
