@@ -366,10 +366,48 @@ AbcClassField* abcAddAndGetClassToClassFieldsMap(const char* clazz, int firstFie
 }
 
 void abcStoreFieldNameForClass(AbcClassField* clazz, const char* fieldName, int fieldOffset){
-    std::map<int, const char*>::iterator it = clazz->fieldOffsetToNameMap.find(fieldOffset); 
+    std::map<int, std::string>::iterator it = clazz->fieldOffsetToNameMap.find(fieldOffset); 
     if(it == clazz->fieldOffsetToNameMap.end()){
-        clazz->fieldOffsetToNameMap.insert(std::make_pair(fieldOffset,fieldName));
+        std::string fieldStr(fieldName);
+        clazz->fieldOffsetToNameMap.insert(std::make_pair(fieldOffset,fieldStr));
     }
+}
+
+std::string abcGetFieldNameOfClassFieldId(Object* obj, int fieldId){
+    std::string fieldName("");
+    const char* tmpClassName = obj->clazz->descriptor;
+    ClassObject* tmpClassObj = obj->clazz;
+    bool foundField = false;
+    
+    while(!foundField){
+      std::map<const char*, AbcClassField*>::iterator it = abcClassToFieldsMap.find(tmpClassName);
+      if(it != abcClassToFieldsMap.end()){
+          AbcClassField* abcClazz = it->second;
+          if(abcClazz->firstFieldOffset <= fieldId){
+              std::map<int, std::string>::iterator it2 = abcClazz->fieldOffsetToNameMap.find(fieldId);
+              if(it2 != abcClazz->fieldOffsetToNameMap.end()){
+                  fieldName.assign(it2->second); 
+                  foundField = true;
+              }else{
+                  LOGE("ABC-MISSING: Could not locate field id %d in class %s", fieldId, tmpClassName);
+                  foundField = true;
+              }
+          }else{
+              if(tmpClassObj->super != NULL){
+                  tmpClassName = tmpClassObj->super->descriptor;
+                  tmpClassObj = tmpClassObj->super;
+              }else{
+                  LOGE("ABC-MISSING: Could not locate class super class of %s in our internal ClassFieldMap", tmpClassName);
+                  foundField = true;
+              }
+          }
+      }else{
+          LOGE("ABC-MISSING: Could not locate class %s in our internal ClassFieldMap", tmpClassName);
+          foundField = true;
+      } 
+    }
+
+    return fieldName;
 }
 
 void abcAddLockOpToTrace(Thread* self, Object* obj){
@@ -1897,7 +1935,7 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
           }else{
             abcClazz = abcAddAndGetClassToClassFieldsMap(tmpClassName, -1);
             if(abcClazz != NULL){
-              LOGE("ABC: Class to store %s", tmpClassName);
+              //LOGE("ABC: Class to store %s", tmpClassName);
               int minOffset = INT_MAX;
               for (int i = 0; i < tmpClassObj->ifieldCount; i++) {
                   InstField* pField = &tmpClassObj->ifields[i]; 
@@ -1905,7 +1943,7 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
                       minOffset = pField->byteOffset;
                   } 
                   abcStoreFieldNameForClass(abcClazz, pField->name, pField->byteOffset);
-                  LOGE("ABC: storing fieldname: %s for byteOffset:%d", pField->name, pField->byteOffset);
+                  //LOGE("ABC: storing fieldname: %s for byteOffset:%d", pField->name, pField->byteOffset);
               }
               abcClazz->firstFieldOffset = minOffset;
               u4 tmpVar = abcClazz->firstFieldOffset;
@@ -1941,9 +1979,17 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
     std::copy(dbPath.begin(), dbPath.end(), access->dbPath);
     access->dbPath[dbPath.size()] = '\0';
     access->clazz = clazz;
-    access->field = new char[field.size() + 1];
-    std::copy(field.begin(), field.end(), access->field);
-    access->field[field.size()] = '\0';
+    if(obj == NULL){
+        access->field = new char[field.size() + 1];
+        std::copy(field.begin(), field.end(), access->field);
+        access->field[field.size()] = '\0';
+    }else{
+        std::string fieldName;
+        fieldName.assign(abcGetFieldNameOfClassFieldId(obj, fieldIdx));
+        access->field = new char[fieldName.size() + 1];
+        std::copy(fieldName.begin(), fieldName.end(), access->field);
+        access->field[fieldName.size()] = '\0';
+    }
     access->fieldIdx = fieldIdx;
     access->tid = tid;
  

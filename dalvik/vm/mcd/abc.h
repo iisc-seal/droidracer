@@ -103,7 +103,7 @@ struct AbcGlobals{
 };
 
 struct classFieldInfoStruct{
-    std::map<int, const char*> fieldOffsetToNameMap;
+    std::map<int, std::string> fieldOffsetToNameMap;
     int firstFieldOffset; //if a field of this class has offset lesser than this then it belongs to super class
 };
 typedef struct classFieldInfoStruct AbcClassField;
@@ -115,7 +115,7 @@ struct sharedVarAccessStruct{
     const char* clazz;
     char* field;
     u4 fieldIdx;
-    char * dbPath;
+    char* dbPath;
     int tid; //thread accessing the shared variable
     int accessId; //accessID to which this read/write belongs
 };
