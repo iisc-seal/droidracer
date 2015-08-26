@@ -102,6 +102,13 @@ struct AbcGlobals{
 //    pthread_cond_t cond2;
 };
 
+struct classFieldInfoStruct{
+    std::map<int, const char*> fieldOffsetToNameMap;
+    int firstFieldOffset; //if a field of this class has offset lesser than this then it belongs to super class
+};
+typedef struct classFieldInfoStruct AbcClassField;
+
+
 struct sharedVarAccessStruct{
     int accessType;
     Object* obj;
@@ -351,6 +358,14 @@ extern int abcEventCount;
 extern int abcTraceLengthLimit;
 
 /*Android bug-checker library methods*/
+bool abcIsClassInClassToFieldsMap(const char* clazz);
+
+AbcClassField* abcGetClassIfInClassFieldsMap(const char* clazz);
+
+AbcClassField* abcAddAndGetClassToClassFieldsMap(const char* clazz, int firstFieldOffset);
+
+void abcStoreFieldNameForClass(AbcClassField* clazz, const char* fieldName, int fieldOffset);
+
 void abcAddLockOpToTrace(Thread* self, Object* obj);
 
 void abcAddUnlockOpToTrace(Thread* self, Object* obj);

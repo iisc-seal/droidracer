@@ -809,21 +809,21 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 //set the app entry check for async block to true
                 abcAsyncStateMap.find(curAsync->asyncId)->second.second = true;
             }
-            std::ofstream outfile;
+            /*std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
                 << method->name << "\t class:" << method->clazz->descriptor << "\n";
-            outfile.close();   
+            outfile.close();*/   
         }else{
             if(abcThreadBaseMethodMap.find(self->threadId) != abcThreadBaseMethodMap.end()){
                abcPushMethodForThread(self->threadId, method); 
                self->shouldABCTrack = false;
 
-               std::ofstream outfile;
+               /*std::ofstream outfile;
                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << "\t meth:"
                    << method->name << "\t class:" << method->clazz->descriptor << "\n";
-               outfile.close(); 
+               outfile.close(); */
             }else 
                self->shouldABCTrack = false;
         }
@@ -943,11 +943,11 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             if(abcGetLastMethodInThreadStack(self->threadId) == method){
                 abcPopLastMethodInThreadStack(self->threadId);
              
-                std::ofstream outfile;
+                /*std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                 outfile << "METHOD EXIT tid:" << self->abcThreadId << "\t meth:"
                     << method->name << "\t class:" << method->clazz->descriptor << "\n";
-                outfile.close(); 
+                outfile.close(); */
             }
         
             bool isAppMethod = false;

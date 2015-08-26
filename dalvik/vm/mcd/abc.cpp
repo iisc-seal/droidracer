@@ -28,6 +28,7 @@
 
 struct AbcGlobals* gAbc;
 
+std::map<const char*, AbcClassField*> abcClassToFieldsMap;
 
 // This maps the threadid to its corresponding stackentries.
 // Lifetime: During Trace generation. Should be completely freed by 
@@ -335,6 +336,40 @@ void cleanupBeforeExit(){
     dbRaceyFieldSet.clear();
     dbUncategorizedRaces.clear();
  
+}
+
+bool abcIsClassInClassToFieldsMap(const char* clazz){
+    std::map<const char*, AbcClassField*>::iterator it = abcClassToFieldsMap.find(clazz);
+    if(it == abcClassToFieldsMap.end()){
+        return false;
+    }else{
+        return true;
+    }
+}
+
+AbcClassField* abcGetClassIfInClassFieldsMap(const char* clazz){
+    std::map<const char*, AbcClassField*>::iterator it = abcClassToFieldsMap.find(clazz);
+    if(it != abcClassToFieldsMap.end()){
+        return it->second;
+    }else{
+        return NULL;
+    }
+}
+
+AbcClassField* abcAddAndGetClassToClassFieldsMap(const char* clazz, int firstFieldOffset){
+    AbcClassField* abcClazz = new AbcClassField;
+    abcClazz->firstFieldOffset = firstFieldOffset;
+    if(abcClazz != NULL){
+        abcClassToFieldsMap.insert(std::make_pair(clazz,abcClazz));
+    }
+    return abcClazz;
+}
+
+void abcStoreFieldNameForClass(AbcClassField* clazz, const char* fieldName, int fieldOffset){
+    std::map<int, const char*>::iterator it = clazz->fieldOffsetToNameMap.find(fieldOffset); 
+    if(it == clazz->fieldOffsetToNameMap.end()){
+        clazz->fieldOffsetToNameMap.insert(std::make_pair(fieldOffset,fieldName));
+    }
 }
 
 void abcAddLockOpToTrace(Thread* self, Object* obj){
@@ -1836,6 +1871,69 @@ void addNativeExitToTrace(int opId, int tid){
 }
 
 void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::string field, u4 fieldIdx, Object* obj, std::string dbPath, int tid){ 
+    /* store fieldnames belonging to this class if not already stored. Will be useful for debugging*/
+    if(obj != NULL){
+        bool foundField = false;
+
+        const char* tmpClassName = clazz;
+        ClassObject* tmpClassObj = obj->clazz; 
+
+        while(!foundField){
+          AbcClassField* abcClazz = abcGetClassIfInClassFieldsMap(tmpClassName); 
+
+          if(abcClazz != NULL){
+            u4 tmpMinOffset = abcClazz->firstFieldOffset;
+            if(tmpMinOffset <= fieldIdx){
+                foundField = true; //fieldIdx present in abcClazz whose fields are already stored
+            }else{
+                if(tmpClassObj->super != NULL){
+                    tmpClassName = tmpClassObj->super->descriptor;
+                    tmpClassObj = tmpClassObj->super;
+                }else{
+                    LOGE("ABC: We hit an access to field %d belonging to super class (may be java/lang/Object) of class %s.",fieldIdx,clazz);
+                    foundField = true;
+                }
+            }
+          }else{
+            abcClazz = abcAddAndGetClassToClassFieldsMap(tmpClassName, -1);
+            if(abcClazz != NULL){
+              LOGE("ABC: Class to store %s", tmpClassName);
+              int minOffset = INT_MAX;
+              for (int i = 0; i < tmpClassObj->ifieldCount; i++) {
+                  InstField* pField = &tmpClassObj->ifields[i]; 
+                  if(pField->byteOffset < minOffset){
+                      minOffset = pField->byteOffset;
+                  } 
+                  abcStoreFieldNameForClass(abcClazz, pField->name, pField->byteOffset);
+                  LOGE("ABC: storing fieldname: %s for byteOffset:%d", pField->name, pField->byteOffset);
+              }
+              abcClazz->firstFieldOffset = minOffset;
+              u4 tmpVar = abcClazz->firstFieldOffset;
+              if(tmpVar <= fieldIdx)
+                  foundField = true;
+
+              /*if fieldIdx < minOffSet then fieldIdx belongs to a super class*/
+              if(!foundField){
+                  if(tmpClassObj->super != NULL){
+                      tmpClassName = tmpClassObj->super->descriptor;
+                      tmpClassObj = tmpClassObj->super;
+                  }else{
+                      LOGE("ABC: We hit an access to field %d belonging to super class (may be java/lang/Object) of class %s.",fieldIdx,clazz);
+                      foundField = true;
+                  }
+              }
+            
+            }else{
+              /* set foundField to true to exit loop. May be we hit memory issues and thus
+               * unable to allocate AbcClassFieldObject
+               */
+              foundField = true;
+              LOGE("ABC-ERROR: could not instantiate AbcClassField object when we hit a new Class");
+            }
+          }
+        }
+    }
+
     AbcRWAccess* access = (AbcRWAccess*)malloc(sizeof(AbcRWAccess));
     access->accessType = accessType;
     access->obj = obj;

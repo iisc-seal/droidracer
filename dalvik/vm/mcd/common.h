@@ -41,6 +41,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <limits.h>
 
 struct ArgumentStruct{
     Object* obj; //lock
