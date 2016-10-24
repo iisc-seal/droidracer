@@ -7,7 +7,7 @@ Note:
 faster builds (first build takes nearly 25 mins, and incremental builds between 
 2-6 minutes), otherwise may take hours based on resources provided.
 
-* DroidRacer has only been tested on Ubuntu 10.04 
+* DroidRacer has only been tested on Ubuntu 10.04 and 13.10.
 If Android source installation related requirements are satisfied, DroidRacer may
 work on later versions of Ubuntu too.
 

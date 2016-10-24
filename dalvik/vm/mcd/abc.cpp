@@ -20,10 +20,6 @@
  * @author Pallavi Maiya
  */
 
-/*todo:
- *
- */
-
 #include "abc.h"
 
 struct AbcGlobals* gAbc;
