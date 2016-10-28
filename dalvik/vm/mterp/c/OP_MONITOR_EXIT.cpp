@@ -20,9 +20,10 @@ HANDLE_OPCODE(OP_MONITOR_EXIT /*vAA*/)
             GOTO_exceptionThrown();
         }
         ILOGV("+ unlocking %p %s", obj, obj->clazz->descriptor);
-        /*Android bug-checker*/
+        /*Android bug-checker
+        //not logging lock - unlock as we do not need this to compute HB relation
         abcAddUnlockOperationToTrace(self, obj);
-        /*Android bug-checker*/
+        Android bug-checker*/
         if (!dvmUnlockObject(self, obj)) {
             assert(dvmCheckException(self));
             ADJUST_PC(1);

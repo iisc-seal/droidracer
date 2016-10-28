@@ -1307,8 +1307,12 @@ public class Thread implements Runnable {
     }
     
     /*Android bug-checker*/
-    public void abcPrintPostMsg(int msgHash, long delay, int isFrontPost){
-    	vmThread.abcPrintPostMsg(msgHash, delay, isFrontPost); 
+    /* Posting a message using sendMessageAtTime or postAtTime can also specify a
+     * negative time in which case such a message can get posted to front of the queue.
+     * We distinguish such a message using isNegPost flag.
+     */
+    public void abcPrintPostMsg(int msgHash, int queueHash, long delay, int isFrontPost, int isNegPost){
+    	vmThread.abcPrintPostMsg(msgHash, queueHash, delay, isFrontPost, isNegPost); 
     }
      
     public void abcPrintCallMsg(int msgCode){
@@ -1327,6 +1331,10 @@ public class Thread implements Runnable {
     	vmThread.abcPrintLoop(queueHash);
     }
     
+    public void abcLogIdlePostMsg(int msgId, int queueHash){
+    	vmThread.abcLogIdlePostMsg(msgId, queueHash);
+    }
+    
     public void abcLogRemoveIdleHandler(int idleHandlerHash, int queueHash){
     	vmThread.abcLogRemoveIdleHandler(idleHandlerHash, queueHash);
     }
@@ -1339,7 +1347,7 @@ public class Thread implements Runnable {
     	vmThread.abcLogQueueIdle(idleHandlerHash, queueHash);
     }
     
-    public void abcPrintRemoveMessage(int msg, String target, int what){ 
+    public void abcPrintRemoveMessage(int msg){ 
     	vmThread.abcPrintRemoveMsg(msg);
     }
 

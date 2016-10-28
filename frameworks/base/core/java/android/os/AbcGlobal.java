@@ -95,8 +95,14 @@ public class AbcGlobal {
 	
 	private static int abcIntentId;
 	
+	/* a map used to model IdleHandlers as usual event handlers*/
+	public static HashMap<AbcPairKey, Integer> abcIdleHandlerToEventMap =
+			new HashMap<AbcPairKey, Integer>();
 	
-	//<activity-intent-id-to-launch, actvity-instance-to-STOP>
+	/* a set used to prevent duplicate logging of post operations */
+	public static HashSet<Integer> abcPostLoggedMessages = new HashSet<Integer>();
+	
+	/* <activity-intent-id-to-launch, actvity-instance-to-STOP> */
 	public static HashMap<Integer, AbcHashNamePair> abcLaunchStopMap = 
 			new HashMap<Integer, AbcHashNamePair>();
 	
@@ -108,8 +114,8 @@ public class AbcGlobal {
 			new ArrayList<Integer>();
 	 */
 	
-	//a map from activity instance to a list of activity intent-id started 
-	//from the activity's context
+	/* a map from activity instance to a list of activity intent-id started 
+	 * from the activity's context*/
 	public static HashMap<Integer, ArrayList<Integer> > parentAndStartedActivitiesMap = 
 			new HashMap<Integer, ArrayList<Integer> >(); 
 	

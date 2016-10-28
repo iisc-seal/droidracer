@@ -529,9 +529,10 @@ GOTO_TARGET_DECL(exceptionThrown);
             if (ifield == NULL)                                             \
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 2);                                    \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             dvmGetField##_ftype(obj, ifield->byteOffset));                  \
         ILOGV("+ IGET '%s'=0x%08llx", ifield->field.name,                   \
@@ -559,9 +560,10 @@ GOTO_TARGET_DECL(exceptionThrown);
             if (ifield == NULL)                                             \
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 2);                                    \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst,                                        \
             dvmGetField##_ftype(obj, ifield->byteOffset));                  \
         ILOGV("+ IGET '%s'=0x%08llx", ifield->field.name,                   \
@@ -581,9 +583,10 @@ GOTO_TARGET_DECL(exceptionThrown);
         obj = (Object*) GET_REGISTER(vsrc1);                                \
         if (!checkForNullExportPC(obj, fp, pc))                             \
             GOTO_exceptionThrown();                                         \
-        /*Android bug-checker*/                                            \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 2);                                \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst, dvmGetField##_ftype(obj, ref));        \
         ILOGV("+ IGETQ %d=0x%08llx", ref,                                   \
             (u8) GET_REGISTER##_regsize(vdst));                             \
@@ -609,9 +612,10 @@ GOTO_TARGET_DECL(exceptionThrown);
             if (ifield == NULL)                                             \
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ifield->byteOffset,                        \
             GET_REGISTER##_regsize(vdst));                                  \
         ILOGV("+ IPUT '%s'=0x%08llx", ifield->field.name,                   \
@@ -639,9 +643,10 @@ GOTO_TARGET_DECL(exceptionThrown);
             if (ifield == NULL)                                             \
                 GOTO_exceptionThrown();                                     \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ifield->byteOffset,                        \
             GET_REGISTER##_regsize(vdst));                                  \
         ILOGV("+ IPUT '%s'=0x%08llx", ifield->field.name,                   \
@@ -661,9 +666,10 @@ GOTO_TARGET_DECL(exceptionThrown);
         obj = (Object*) GET_REGISTER(vsrc1);                                \
         if (!checkForNullExportPC(obj, fp, pc))                             \
             GOTO_exceptionThrown();                                         \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddObjectAccessToTrace(obj, ref, self, 1);                            \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         dvmSetField##_ftype(obj, ref, GET_REGISTER##_regsize(vdst));        \
         ILOGV("+ IPUTQ %d=0x%08llx", ref,                                   \
             (u8) GET_REGISTER##_regsize(vdst));                             \
@@ -695,10 +701,11 @@ GOTO_TARGET_DECL(exceptionThrown);
                 JIT_STUB_HACK(dvmJitEndTraceSelect(self,pc));               \
             }                                                               \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddStaticFieldAccessToTrace(curMethod->clazz->descriptor,        \
             sfield->name, ref, self, 2);                                         \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst, dvmGetStaticField##_ftype(sfield));    \
         ILOGV("+ SGET '%s'=0x%08llx",                                       \
             sfield->field.name, (u8)GET_REGISTER##_regsize(vdst));          \
@@ -722,10 +729,11 @@ GOTO_TARGET_DECL(exceptionThrown);
                 JIT_STUB_HACK(dvmJitEndTraceSelect(self,pc));               \
             }                                                               \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddStaticFieldAccessToTrace(curMethod->clazz->descriptor,        \
             sfield->name, ref, self, 2);                                         \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         SET_REGISTER##_regsize(vdst, dvmGetStaticField##_ftype(sfield));    \
         ILOGV("+ SGET '%s'=0x%08llx",                                       \
             sfield->field.name, (u8)GET_REGISTER##_regsize(vdst));          \
@@ -749,10 +757,10 @@ GOTO_TARGET_DECL(exceptionThrown);
                 JIT_STUB_HACK(dvmJitEndTraceSelect(self,pc));               \
             }                                                               \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
         abcAddStaticFieldAccessToTrace(curMethod->clazz->descriptor,        \
             sfield->name, ref, self, 1);                                         \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         dvmSetStaticField##_ftype(sfield, GET_REGISTER##_regsize(vdst));    \
         ILOGV("+ SPUT '%s'=0x%08llx",                                       \
             sfield->field.name, (u8)GET_REGISTER##_regsize(vdst));          \
@@ -776,10 +784,11 @@ GOTO_TARGET_DECL(exceptionThrown);
                 JIT_STUB_HACK(dvmJitEndTraceSelect(self,pc));               \
             }                                                               \
         }                                                                   \
-        /*Android bug-checker*/                                             \
+        /*Android bug-checker                                               \
+        //Not logging read - writes as purpose is not race detection
         abcAddStaticFieldAccessToTrace(curMethod->clazz->descriptor,        \
             sfield->name, ref, self, 1);                                         \
-        /*Android bug-checker*/                                             \
+        Android bug-checker*/                                             \
         dvmSetStaticField##_ftype(sfield, GET_REGISTER##_regsize(vdst));    \
         ILOGV("+ SPUT '%s'=0x%08llx",                                       \
             sfield->field.name, (u8)GET_REGISTER##_regsize(vdst));          \

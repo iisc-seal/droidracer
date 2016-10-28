@@ -11,9 +11,10 @@ HANDLE_OPCODE(OP_MONITOR_ENTER /*vAA*/)
         ILOGV("+ locking %p %s", obj, obj->clazz->descriptor);
         EXPORT_PC();    /* need for precise GC */
         dvmLockObject(self, obj);
-        /*Android bug-checker*/
+        /*Android bug-checker 
+        //not logging lock - unlock as we do not need this to compute HB relation
         abcAddLockOperationToTrace(self, obj);
-        /*Android bug-checker*/
+        Android bug-checker*/
     }
     FINISH(1);
 OP_END

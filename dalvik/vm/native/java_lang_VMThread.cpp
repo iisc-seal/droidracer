@@ -560,18 +560,16 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
 
         Thread* selfThread = dvmThreadSelf();
         u4 msgHash = args[1];
-        s8 delay = GET_ARG_LONG(args,2);
-        int isFrontPost = args[4];
+        u4 queueHash = args[2];
+        s8 delay = GET_ARG_LONG(args,3);
+        bool isFoQPost = (args[4] == 1)?(true):(false);
+        bool isNegPost = (args[5] == 1)?(true):(false);
 
-        if(isFrontPost == 1){
+        /*if(isFrontPost == 1){
             delay = -1;
         }else if(delay < 0){
             delay = 0;
-        }
-        //for delayed messages we maintain exact delays as its needed to decide FIFO edges
-       /* else if(delay > 0){
-            delay = 1;
-        } */
+        }*/
 
         int nativeEntryId = -1;
         std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
@@ -593,6 +591,7 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
             abcUnlockMutex(&gAbc->abcMainMutex);
         }
 
+
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         
         if(it->second->isOriginUntracked){
@@ -604,12 +603,23 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         msg->postId = abcOpCount++;
         abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
 
-        //delete front-of-queue messages and its descendents
+        //abcUniqueMsgMap.insert(std::make_pair(msgHash,abcMsgCount++));
+        std::map<u4,int>::iterator queueIt = abcQueueToThreadMap.find(queueHash);
+        int destThread = -1;
+        if(queueIt != abcQueueToThreadMap.end()){
+            destThread = queueIt->second;
+        }else{
+            LOGE("ABC: error in trace generation. An event is posted to a thread whose attachQ is not tracked!");
+            gDvm.isRunABC = false;
+	    abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }
+
+        /*//delete front-of-queue messages and its descendents
         if(delay == -1 || abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second->shouldRemove){
              //indicate that this async block should be removed
              abcAsyncStateMap.insert(std::make_pair(msg->msgId, std::make_pair(true, false)));
-//             LOGE("ABC: message to be removed %d", msg->msgId);
-        }else{
+        }else{*/
          
         std::map<int, AbcReceiver*>::iterator recIter = abcDelayedReceiverTriggerThreadMap.find(selfThread->threadId);
         if(recIter != abcDelayedReceiverTriggerThreadMap.end()){
@@ -621,15 +631,15 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         if(it->second->isOriginUntracked == true){
             if(gDvm.isRunABC == true){
                 addNativeEntryToTrace(nativeEntryId, selfThread->abcThreadId);
-                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, -1, delay);
+                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
                 addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
             }
         }else{
             if(gDvm.isRunABC == true){
-                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, -1, delay);
+                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
             }
         }
-        }
+        //}
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
     RETURN_VOID();
@@ -655,13 +665,16 @@ static void Dalvik_java_lang_VMThread_abcPrintCallMsg(const u4* args,
         if(gDvm.isRunABC == true){
             std::map<u4, AbcMsg*>::iterator msgIter = abcUniqueMsgMap.find(msgHash); 
             std::map<int, std::pair<bool,bool> >::iterator msgState = abcAsyncStateMap.find(msgIter->second->msgId);
+            //std::map<int, std::pair<bool,bool> >::iterator msgState = abcAsyncStateMap.find(msgIter->second);
             AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(curTid)->second;
+            //curAsync->asyncId = msgIter->second->msgId;
             curAsync->asyncId = msgIter->second->msgId;
             curAsync->shouldRemove = msgState->second.first;
             //if(msgIter != abcUniqueMsgMap.end()){
             if(!curAsync->shouldRemove){
-                AbcOp* op = abcTrace.find(msgIter->second->postId)->second;
+                /*AbcOp* op = abcTrace.find(msgIter->second->postId)->second;
                 op->arg3 = curTid;
+                addCallToTrace(abcOpCount++, curTid, msgIter->second->msgId);*/
                 addCallToTrace(abcOpCount++, curTid, msgIter->second->msgId);
                
                 std::map<int,AbcReceiver*>::iterator recIter = 
@@ -752,6 +765,47 @@ static void Dalvik_java_lang_VMThread_abcPrintRemoveMsg(const u4* args, JValue* 
     RETURN_VOID();
 }
 
+static void Dalvik_java_lang_VMThread_abcLogIdlePostMsg(const u4* args, JValue* pResult){
+    if(gDvm.isRunABC == true){
+        Thread* selfThread = dvmThreadSelf();
+        u4 msgHash = args[1];
+        u4 queueHash = args[2];
+
+        abcLockMutex(selfThread, &gAbc->abcMainMutex);
+
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
+            LOGE("Trace has a post idle-handler on native thread which is not addressed by "
+               " implementation. Cannot continue further");
+            gDvm.isRunABC = false;
+            abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }
+        
+        AbcMsg* msg = (AbcMsg*)malloc(sizeof(AbcMsg));
+        msg->msgId = abcMsgCount++;
+        msg->postId = abcOpCount++;
+        abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
+
+        std::map<u4,int>::iterator queueIt = abcQueueToThreadMap.find(queueHash);
+        int destThread = -1;
+        if(queueIt != abcQueueToThreadMap.end()){
+            destThread = queueIt->second;
+        }else{
+            LOGE("ABC: error in trace generation. An event is posted to a thread whose attachQ is not tracked!");
+            gDvm.isRunABC = false;
+	    abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }
+
+        msg->postId = addIdlePostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread);
+
+        abcUnlockMutex(&gAbc->abcMainMutex);
+    }
+
+    RETURN_VOID();
+}
+
 static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
     JValue* pResult){
     if(gDvm.isRunABC == true){
@@ -769,6 +823,7 @@ static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
         }
 
         if(gDvm.isRunABC == true){
+            abcQueueToThreadMap.insert(std::make_pair(queueHash, selfThread->abcThreadId));
             addAttachQToTrace(abcOpCount++, selfThread->abcThreadId, queueHash);
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -1158,6 +1213,8 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintAttachQueue },
     { "abcPrintLoop","(I)V",
         Dalvik_java_lang_VMThread_abcPrintLoop },
+    { "abcLogIdlePostMsg","(II)V",
+        Dalvik_java_lang_VMThread_abcLogIdlePostMsg },
     { "abcLogRemoveIdleHandler","(II)V",
         Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler },
     { "abcLogAddIdleHandler","(II)V",
@@ -1168,7 +1225,7 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintRetMsg },
     { "abcPrintCallMsg","(I)V",
         Dalvik_java_lang_VMThread_abcPrintCallMsg },
-    { "abcPrintPostMsg","(IJI)V",
+    { "abcPrintPostMsg","(IIJII)V",
         Dalvik_java_lang_VMThread_abcPrintPostMsg },
     { "create",         "(Ljava/lang/Thread;J)V",
         Dalvik_java_lang_VMThread_create },

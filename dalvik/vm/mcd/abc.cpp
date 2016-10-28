@@ -50,8 +50,8 @@ std::map<int, AbcMethObj*> abcLibCallerObjectMap;
 // Required only during trace generation.
 // There will be as many as the number of unique messages.
 std::map<u4, AbcMsg*> abcUniqueMsgMap;
-
-
+//std::map<u4, int> abcUniqueMsgMap;
+std::map<u4, int> abcQueueToThreadMap;
 
 // Cleanup  this strcuture completely.
 std::map<int, AbcThreadIds*> abcLogicalThreadIdMap;
@@ -825,11 +825,11 @@ void executeTestcase(){
     addAttachQToTrace(abcOpCount++, 1, 1);
 
     addNativeEntryToTrace(abcOpCount++, 2);
-    addPostToTrace(abcOpCount++, 2, 1, 1, 0);
+    addPostToTrace(abcOpCount++, 2, 1, 1, 0, false, false);
     addNativeExitToTrace(abcOpCount++, 2);
 
     addNativeEntryToTrace(abcOpCount++, 2);
-    addPostToTrace(abcOpCount++, 2, 2, 1, 0);
+    addPostToTrace(abcOpCount++, 2, 2, 1, 0, false, false);
     addNativeExitToTrace(abcOpCount++, 2);
 
     addLoopToTrace(abcOpCount++, 1, 1);
@@ -1390,7 +1390,7 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     }
 }
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, bool isFoqPost, bool isNegPost){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
     if(accessSetAdded){
@@ -1416,8 +1416,8 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay){
 
     std::ofstream outfile;
     outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << opId << " POST src:" << srcTid << " msg:" << msg 
-        << " dest:" << destTid << " delay:" << delay <<"\n";
+    outfile << opId << " POST src:" << srcTid << " msg:" << msg << " dest:" << destTid 
+        << " delay:" << delay << " foq:" << isFoqPost << " neg:" << isNegPost << "\n";
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
@@ -1509,6 +1509,42 @@ void addRemoveToTrace(int opId, int tid, u4 msg){
         gDvm.isRunABC = false;
         LOGE("Trace truncated as hit trace limit set by user");
     }
+}
+
+int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid){
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Entered - Add POST to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = msg;
+
+    op->opType = ABC_IDLE_POST;
+    op->arg1 = srcTid;
+    op->arg2 = arg2;
+    op->arg3 = destTid;
+    op->arg4 = 0;
+    op->tid = srcTid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " IDLE-POST src:" << srcTid << " msg:" << msg << " dest:" << destTid << "\n";
+    outfile.close();
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        gDvm.isRunABC = false;
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
+
+    return opId;
 }
 
 void addAttachQToTrace(int opId, int tid, u4 msgQ){
@@ -2268,6 +2304,10 @@ void processRetOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
         porTmpTrace.insert(std::make_pair(++traceFileOpIdCounter, opInfo));
         traceToTraceOpIdMap.insert(std::make_pair(opId, traceFileOpIdCounter));
     }
+}
+
+bool processIdlePostOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
+    return false;
 }
 
 void processRemoveOperation(int opId, AbcOp* op, AbcThreadBookKeep* threadBK){
@@ -5039,6 +5079,9 @@ bool abcPerformRaceDetection(){
              break;
         case ABC_RET :
              processRetOperation(opId, op, threadIt->second);
+             break;
+        case ABC_IDLE_POST :
+             shouldAbort = processIdlePostOperation(opId, op, threadIt->second);
              break;
         case ABC_LOCK :
              processLockOperation(opId, op, threadIt->second);

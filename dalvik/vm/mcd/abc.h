@@ -76,6 +76,7 @@
 #define ABC_NATIVE_POST 40
 #define ABC_UI_POST 41
 #define ABC_NOP 42
+#define ABC_IDLE_POST 43
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -310,6 +311,8 @@ extern std::map<int, AbcMethObj*> abcLibCallerObjectMap;
  * index the msg's async block
  */
 extern std::map<u4,AbcMsg*> abcUniqueMsgMap;
+//extern std::map<u4, int> abcUniqueMsgMap;
+extern std::map<u4, int> abcQueueToThreadMap;
 
 /*async block map with msg as key*/
 //extern std::map<int, AbcAsync*> abcAsyncMap;
@@ -431,13 +434,15 @@ bool abcPerformRaceDetection();
 
 void addAccessToTrace(int opId, int tid, u4 accessId);
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay);
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, bool isFoQPost, bool isNegPost);
 
 void addCallToTrace(int opId, int tid, u4 msg);
 
 void addRetToTrace(int opId, int tid, u4 msg);
 
 void addRemoveToTrace(int opId, int tid, u4 msg);
+
+int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid);
 
 void addAttachQToTrace(int opId, int tid, u4 msgQ);
 

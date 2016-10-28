@@ -80,8 +80,10 @@ public class MessageQueue {
         synchronized (this) {
         	/*Android bug-checker*/
         	if(AbcGlobal.abcLogFile != null){
-        		Thread.currentThread().abcLogAddIdleHandler(
-        				handler.hashCode(), this.hashCode());
+        		int msgId = AbcGlobal.getCurrentMsgId();
+        		AbcGlobal.abcIdleHandlerToEventMap.put(new AbcPairKey(this.hashCode(), handler.hashCode()), msgId);
+        		Thread.currentThread().abcLogIdlePostMsg(msgId, this.hashCode());
+//        		Thread.currentThread().abcLogAddIdleHandler(handler.hashCode(), this.hashCode());
         	}
         	/*Android bug-checker*/
             mIdleHandlers.add(handler);
@@ -264,16 +266,21 @@ public class MessageQueue {
                 mPendingIdleHandlers[i] = null; // release the reference to the handler
                 
                 /*Android bug-checker*/
-                /*send a dummy msg and make it seem as though QUEUE_IDLE is
-                 *an asyncblock corresponding to it. This is done so to be
-                 *compatible with our semantics
+                /* dequeue the dummy idle handler queued when addIdleHandler was performed.
+                 * This is done so to be compatible with HB semantics presented in literature.
                  */               
-                int abcQueueIdleMsgId = 0;
+//                int abcQueueIdleMsgId = 0;
+                AbcPairKey apk = new AbcPairKey(this.hashCode(), idler.hashCode());
+                Integer msgId = AbcGlobal.abcIdleHandlerToEventMap.get(apk);
                 if(AbcGlobal.abcLogFile != null){
-                    abcQueueIdleMsgId = AbcGlobal.getCurrentMsgId();
-                    Thread.currentThread().abcPrintPostMsg(abcQueueIdleMsgId, 0, 0);  
-                    Thread.currentThread().abcPrintCallMsg(abcQueueIdleMsgId);
-                    Thread.currentThread().abcLogQueueIdle(idler.hashCode(), this.hashCode());
+//                    abcQueueIdleMsgId = AbcGlobal.getCurrentMsgId();
+//                    Thread.currentThread().abcPrintPostMsg(abcQueueIdleMsgId, 0, 0);  
+                	if(msgId != null)
+                		Thread.currentThread().abcPrintCallMsg(msgId.intValue());
+                	else{
+                		Log.e(ModelCheckingDriver.TAG, "An idle handler was not added to abcIdleHandlerToEventMap.");
+                	}
+//                    Thread.currentThread().abcLogQueueIdle(idler.hashCode(), this.hashCode());
                 }
                 /*Android bug-checker*/
                 
@@ -284,20 +291,40 @@ public class MessageQueue {
                     Log.wtf("MessageQueue", "IdleHandler threw exception", t);
                 }
                 /*Android bug-checker*/
-                if(AbcGlobal.abcLogFile != null){
-                	Thread.currentThread().abcPrintRetMsg(abcQueueIdleMsgId);
-                }
+//                if(AbcGlobal.abcLogFile != null){
+//                	Thread.currentThread().abcPrintRetMsg(abcQueueIdleMsgId);
+//                }
                 /*Android bug-checker*/
                 if (!keep) {
                     synchronized (this) {
                     	/*Android bug-checker*/
                         if(AbcGlobal.abcLogFile != null){
-                        	Thread.currentThread().abcLogRemoveIdleHandler(
-                        			idler.hashCode(), this.hashCode());
+//                        	Thread.currentThread().abcLogRemoveIdleHandler(idler.hashCode(), this.hashCode());
+                        	if(msgId != null){
+                        		AbcGlobal.abcIdleHandlerToEventMap.remove(apk);
+                        		Thread.currentThread().abcPrintRetMsg(msgId.intValue());
+                        	}else{
+                            	Log.e(ModelCheckingDriver.TAG, "An idle handler was not added to abcIdleHandlerToEventMap.");
+                            }
                         }
                         mIdleHandlers.remove(idler);
                     }
                 }
+                /*Android bug-checker*/
+                else{
+                	if(AbcGlobal.abcLogFile != null){
+                		if(msgId != null){
+                			int newMsgId = AbcGlobal.getCurrentMsgId();
+                			AbcGlobal.abcIdleHandlerToEventMap.remove(apk);
+                			AbcGlobal.abcIdleHandlerToEventMap.put(apk, newMsgId);
+                			Thread.currentThread().abcLogIdlePostMsg(newMsgId, this.hashCode());
+                			Thread.currentThread().abcPrintRetMsg(msgId.intValue());
+                		}else{
+                			Log.e(ModelCheckingDriver.TAG, "An idle handler was not added to abcIdleHandlerToEventMap.");
+                		}
+                    }
+                }
+                /*Android bug-checker*/
             }
                         
             // Reset the idle handler count to 0 so we do not run them again.
@@ -329,7 +356,7 @@ public class MessageQueue {
             }
             
             /*Android bug-checker*/
-            if(when != 0) {        
+            if(when > 0) {        
             /*	if(AbcGlobal.abcLogFile != null){
             		File file = new File(AbcGlobal.abcLogFile);
             		String msgTxt = "JAVA-POST tid:" + String.valueOf(Thread.currentThread().getId()) 
@@ -351,11 +378,13 @@ public class MessageQueue {
             			e.printStackTrace();
             		}
             	}*/
-                Thread.currentThread().abcPrintPostMsg( msg.abcMsgId, 
-                		when - SystemClock.uptimeMillis(), 0);
+            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), 
+            			when - SystemClock.uptimeMillis(), 0, 0);
+            }else if(when < 0){
+            	//we do not use this when info. passing it in case of any future use on collected trace.
+            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), when, 0, 1); 
             }else { 
-            	Thread.currentThread().abcPrintPostMsg( 
-            			msg.abcMsgId, 0, 1);
+            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), 0, 1, 0);
             }	
             /*Android bug-checker*/
 
@@ -505,31 +534,8 @@ public class MessageQueue {
 
     /*Android bug-checker*/
     public void printRemoveMessage(Message msg){ 
-    	String target = "";
-    	if(msg.target != null)
-    		target = msg.target.toString();
-    	Thread.currentThread().abcPrintRemoveMessage(
-    			msg.abcMsgId, target, msg.what);  
-   /* 	if(ActivityThread.abcLogFile != null){
-    		File file = new File(ActivityThread.abcLogFile);
-    		String msgTxt = "REMOVE  msg:" + String.valueOf(msg) + "\t";
-    		msgTxt += " tid:" + String.valueOf(Thread.currentThread().getId()) 
-    				+ "\n";
-    		try {
-    			byte[] contentInBytes = msgTxt.getBytes();
-    			FileOutputStream fop = new FileOutputStream(file, true);
-    			fop.write(contentInBytes);
-    			fop.flush();
-    			fop.close();
-    		} catch (FileNotFoundException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		} catch (IOException e) {
-    			// TODO Auto-generated catch block
-    			e.printStackTrace();
-    		}
-        }*/
-	 }
+        Thread.currentThread().abcPrintRemoveMessage(msg.abcMsgId);  
+  	}
     /*Android bug-checker*/
     
     /*
