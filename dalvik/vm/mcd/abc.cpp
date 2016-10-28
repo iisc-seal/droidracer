@@ -1390,7 +1390,7 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     }
 }
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, bool isFoqPost, bool isNegPost){
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoqPost, int isNegPost){
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
     if(accessSetAdded){

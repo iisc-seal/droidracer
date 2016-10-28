@@ -22,6 +22,7 @@
 
 /*Android bug-checker*/
 #include "mcd/abc.h"
+#include <inttypes.h>
 /*Android bug-checker*/
 
 
@@ -561,9 +562,31 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         Thread* selfThread = dvmThreadSelf();
         u4 msgHash = args[1];
         u4 queueHash = args[2];
-        s8 delay = GET_ARG_LONG(args,3);
-        bool isFoQPost = (args[4] == 1)?(true):(false);
-        bool isNegPost = (args[5] == 1)?(true):(false);
+        int flag = args[3]; 
+        s8 delay = GET_ARG_LONG(args,4);
+        int isFoQPost = 0, isNegPost = 0;
+        if(flag == 0){
+            isFoQPost = 0;
+            isNegPost = 0;
+        }else if(flag == 1){
+            isFoQPost = 1;
+            isNegPost = 0;
+        }else if(flag == 2){
+            isFoQPost = 0;
+            isNegPost = 1;
+        }
+
+        /*if(args[4] == 1){
+            isFoQPost = true;
+        }else{
+            isFoQPost = false;
+        }
+
+        if(args[5] == 1){
+            isNegPost = true;
+        }else{
+            isNegPost = false;
+        }*/
 
         /*if(isFrontPost == 1){
             delay = -1;
@@ -1225,7 +1248,7 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintRetMsg },
     { "abcPrintCallMsg","(I)V",
         Dalvik_java_lang_VMThread_abcPrintCallMsg },
-    { "abcPrintPostMsg","(IIJII)V",
+    { "abcPrintPostMsg","(IIIJ)V",
         Dalvik_java_lang_VMThread_abcPrintPostMsg },
     { "create",         "(Ljava/lang/Thread;J)V",
         Dalvik_java_lang_VMThread_create },

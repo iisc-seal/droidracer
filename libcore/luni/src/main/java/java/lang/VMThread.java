@@ -76,7 +76,7 @@ class VMThread {
     native void nameChanged(String newName);
     
     /*Android bug-checker*/
-    native void abcPrintPostMsg(int msgHash, int queueHash, long delay, int isFrontPost, int isNegPost);
+    native void abcPrintPostMsg(int msgHash, int queueHash, int flag, long delay);
     
     native void abcPrintCallMsg(int msgCode);
     

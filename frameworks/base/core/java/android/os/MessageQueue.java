@@ -355,30 +355,9 @@ public class MessageQueue {
                 mQuiting = true;
             }
             
-            /*Android bug-checker*/
+            /*Android bug-checker
             if(when > 0) {        
-            /*	if(AbcGlobal.abcLogFile != null){
-            		File file = new File(AbcGlobal.abcLogFile);
-            		String msgTxt = "JAVA-POST tid:" + String.valueOf(Thread.currentThread().getId()) 
-            				+ " msg:" + String.valueOf(msg.abcMsgId) + "\t";
-            		msgTxt += " when:" + String.valueOf(when) + " delay:" + 
-            				String.valueOf(when - SystemClock.uptimeMillis()) 
-            				+ "\n";
-            		try {
-            			byte[] contentInBytes = msgTxt.getBytes();
-            			FileOutputStream fop = new FileOutputStream(file, true);
-            			fop.write(contentInBytes);
-            			fop.flush();
-            			fop.close();
-            		} catch (FileNotFoundException e) {
-            			// TODO Auto-generated catch block
-            			e.printStackTrace();
-            		} catch (IOException e) {
-            			// TODO Auto-generated catch block
-            			e.printStackTrace();
-            		}
-            	}*/
-            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), 
+               	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), 
             			when - SystemClock.uptimeMillis(), 0, 0);
             }else if(when < 0){
             	//we do not use this when info. passing it in case of any future use on collected trace.
@@ -386,7 +365,7 @@ public class MessageQueue {
             }else { 
             	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, this.hashCode(), 0, 1, 0);
             }	
-            /*Android bug-checker*/
+            Android bug-checker*/
 
             msg.when = when;
             //Log.d("MessageQueue", "Enqueing: " + msg);

@@ -101,6 +101,9 @@ public class AbcGlobal {
 	
 	/* a set used to prevent duplicate logging of post operations */
 	public static HashSet<Integer> abcPostLoggedMessages = new HashSet<Integer>();
+	public static final int ABC_NOT_FOQ_OR_NEG = 0;
+	public static final int ABC_FOQ_POST = 1;
+	public static final int ABC_NEG_POST = 2;
 	
 	/* <activity-intent-id-to-launch, actvity-instance-to-STOP> */
 	public static HashMap<Integer, AbcHashNamePair> abcLaunchStopMap = 

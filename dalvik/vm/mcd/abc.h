@@ -434,7 +434,7 @@ bool abcPerformRaceDetection();
 
 void addAccessToTrace(int opId, int tid, u4 accessId);
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, bool isFoQPost, bool isNegPost);
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoQPost, int isNegPost);
 
 void addCallToTrace(int opId, int tid, u4 msg);
 

@@ -456,6 +456,13 @@ public class Handler {
         if (delayMillis < 0) {
             delayMillis = 0;
         }
+        
+        /*Android bug-checker*/
+        Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
+        		AbcGlobal.ABC_NOT_FOQ_OR_NEG, delayMillis);
+        AbcGlobal.abcPostLoggedMessages.add(msg.abcMsgId);
+        /*Android bug-checker*/
+        
         return sendMessageAtTime(msg, SystemClock.uptimeMillis() + delayMillis);
     }
 
@@ -482,10 +489,25 @@ public class Handler {
         boolean sent = false;
         MessageQueue queue = mQueue;
         if (queue != null) {
-        	/*Android bug-checker*/
-        	 //   printPostedMessage(msg, uptimeMillis - SystemClock.uptimeMillis(), 0);
-        	/*Android bug-checker*/
             msg.target = this;
+            
+            /*Android bug-checker*/
+            if(uptimeMillis < 0){
+            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
+            			AbcGlobal.ABC_NEG_POST, uptimeMillis);
+            }else if(uptimeMillis == 0){
+            	Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
+            			AbcGlobal.ABC_FOQ_POST, 0);
+            }else{
+            	if(AbcGlobal.abcPostLoggedMessages.contains(msg.abcMsgId) == false){
+            		Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
+            				AbcGlobal.ABC_NOT_FOQ_OR_NEG, uptimeMillis - SystemClock.uptimeMillis());
+            	}else{
+            		AbcGlobal.abcPostLoggedMessages.remove(msg.abcMsgId);
+            	}
+            }
+            /*Android bug-checker*/
+            
             sent = queue.enqueueMessage(msg, uptimeMillis);
         }
         else {
@@ -513,10 +535,13 @@ public class Handler {
         boolean sent = false;
         MessageQueue queue = mQueue;
         if (queue != null) {
-        	/*Android bug-checker*/
-        	//    printPostedMessage(msg,0, 1);
-        	/*Android bug-checker*/
             msg.target = this;
+            
+            /*Android bug-checker*/
+            Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
+            		AbcGlobal.ABC_FOQ_POST, 0);
+            /*Android bug-checker*/
+            
             sent = queue.enqueueMessage(msg, 0);
         }
         else {

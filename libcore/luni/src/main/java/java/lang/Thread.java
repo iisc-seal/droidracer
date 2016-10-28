@@ -1311,8 +1311,8 @@ public class Thread implements Runnable {
      * negative time in which case such a message can get posted to front of the queue.
      * We distinguish such a message using isNegPost flag.
      */
-    public void abcPrintPostMsg(int msgHash, int queueHash, long delay, int isFrontPost, int isNegPost){
-    	vmThread.abcPrintPostMsg(msgHash, queueHash, delay, isFrontPost, isNegPost); 
+    public void abcPrintPostMsg(int msgHash, int queueHash, int flag, long delay){
+    	vmThread.abcPrintPostMsg(msgHash, queueHash, flag, delay); 
     }
      
     public void abcPrintCallMsg(int msgCode){
