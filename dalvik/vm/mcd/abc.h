@@ -77,6 +77,14 @@
 #define ABC_UI_POST 41
 #define ABC_NOP 42
 #define ABC_IDLE_POST 43
+#define ABC_NATIVE_NOTIFY 44
+#define ABC_POST_FOQ 45
+#define ABC_NATIVE_POST_FOQ 46
+#define ABC_POST_NEG 47
+#define ENABLE_TIMER_TASK 48
+#define TRIGGER_TIMER_TASK 49
+
+#define ABC_RUN_TIMER_TASK 18
 
 #define EVENT_CLICK 0
 #define EVENT_LONG_CLICK 1	
@@ -356,7 +364,7 @@ extern std::map<u4, std::set<int> > abcViewEventMap;
 extern std::map<int, AbcReceiver*> abcDelayedReceiverTriggerThreadMap;
 extern std::map<int, AbcReceiver*> abcDelayedReceiverTriggerMsgMap;
 
-
+extern int abcNativeTid; //all native ops will be indiccated as exeuted on this thread & operations of this thread are not program ordered.
 extern int abcThreadCount;
 extern int abcMsgCount;
 extern int abcAccessSetCount;

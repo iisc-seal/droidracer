@@ -189,6 +189,7 @@ std::set<std::string> dbUncategorizedRaces;
 //initialize during startup
 std::set<std::string> UiWidgetSet;
 
+int abcNativeTid = -1;
 int abcThreadCount = 1;
 int abcMsgCount = 1;
 int abcOpCount = 1;
@@ -533,7 +534,7 @@ bool checkAndIncrementLockCount(Object* lockObj, int threadId){
             LOGE("ABC: A thread %d is taking a lock %p when another thread %d holds the lock."
                  " The trace seems to have missed an unlock. Aborting trace generation.", 
                  threadId, lockObj, it->second->threadId);
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
     return addToTrace;
@@ -545,7 +546,7 @@ bool checkAndDecrementLockCount(Object* lockObj, int threadId){
     if(it == abcLockCountMap.end()){
         LOGE("ABC: Unlock seen by trace without a prior lock. We might have missed a "
              "lock statement. Aborting trace generation. tid:%d  lock: %p", threadId, lockObj);
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
     }else{
         if(it->second->threadId == threadId){
             it->second->count--;
@@ -556,7 +557,7 @@ bool checkAndDecrementLockCount(Object* lockObj, int threadId){
         }else{
             LOGE("ABC: A thread %d is performing an unlock when another thread holds the lock %p."
                  " The trace seems to have missed an unlock / lock. Aborting trace generation.", threadId, lockObj);
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
     return addToTrace;
@@ -859,9 +860,20 @@ void startAbcModelChecker(){
     gAbc = new AbcGlobals;
     pthread_cond_init(&gAbc->abcMainCond, NULL);
     dvmInitMutex(&gAbc->abcMainMutex);
+
+    binaryLogFile = std::string("/data/data/") + gDvm.app_for_ABC
+           + "/droidracer.blog";       
+    abcFp = fopen (binaryLogFile.c_str(),"wb");
+
+    binaryLogStringHelperFile = std::string("/data/data/") + gDvm.app_for_ABC
+           + "/droidracerStringHelper.blog";
+
     abcStartOpId = abcOpCount;
     addStartToTrace(abcOpCount++);
     addThreadInitToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId); 
+//  for the time being all native ops will get a tid of -1.
+//    abcNativeTid = abcThreadCount++;
+//    addThreadInitToTrace(abcOpCount++, abcNativeTid); 
     char * component = new char[2];
     strcpy(component, "");
     component[1] = '\0';
@@ -923,6 +935,7 @@ void startAbcModelChecker(){
     UiWidgetSet.insert("Landroid/widget/Toast;");
     
 }
+
 
 std::string getLifecycleForCode(int code, std::string lifecycle){
     switch(code){
@@ -998,13 +1011,23 @@ void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId){
     outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
     outfile.close();
 
+    serializeOperationIntoFile(ABC_WAIT, waitingThreadId, 0, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
 
 void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
+    int opType = -1;
+
+    if(tid == abcNativeTid){
+        opType = ABC_NATIVE_NOTIFY;
+    }else{
+        opType = ABC_NOTIFY;
+    }
+
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1012,8 +1035,7 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
     LOGE("%d ABC:Enter - Add NOTIFY to trace", opId);
 
     AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
-
-    op->opType = ABC_NOTIFY;
+    op->opType = opType;
     op->arg1 = notifiedTid;
     op->tid = tid;
     op->arg2 = NULL;
@@ -1026,8 +1048,10 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
     outfile << opId << " NOTIFY tid:" << tid << " notifiedTid:" << notifiedTid << "\n";
     outfile.close();
 
+    serializeOperationIntoFile(opType, notifiedTid, 0, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1064,7 +1088,7 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1100,8 +1124,28 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
 
+    std::string arg5Str(component);
+    int arg5 = -1;
+    std::map<std::string, int>::iterator strIt = argStringToNumKeyMap.find(arg5Str);
+    if(strIt == argStringToNumKeyMap.end()){
+        arg5 = abcStringKey++;
+        argStringToNumKeyMap.insert(std::make_pair(arg5Str, arg5));
+
+        OpArgHelper *opStr = (OpArgHelper*)malloc(sizeof(OpArgHelper));
+        opStr->key = arg5;
+        strncpy(opStr->str, arg5Str.c_str(), strlen(opStr->str));
+        opStr->str[sizeof(opStr->str)-1] = '\0';
+
+        FILE* fp = fopen (binaryLogStringHelperFile.c_str(),"ab");
+        fwrite(opStr, sizeof(OpArgHelper), 1, fp);
+        fclose(fp);
+    }else{
+        arg5 = strIt->second;
+    }
+    serializeOperationIntoFile(ABC_TRIGGER_SERVICE, state, componentId, 0, 0, arg5, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1139,13 +1183,40 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
         << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
 
+    std::string arg5Str(action);
+    int arg5 = -1;
+    std::map<std::string, int>::iterator strIt = argStringToNumKeyMap.find(arg5Str);
+    if(strIt == argStringToNumKeyMap.end()){
+        arg5 = abcStringKey++;
+        argStringToNumKeyMap.insert(std::make_pair(arg5Str, arg5));
+
+        OpArgHelper *opStr = (OpArgHelper*)malloc(sizeof(OpArgHelper));
+        opStr->key = arg5;
+        strncpy(opStr->str, arg5Str.c_str(), strlen(opStr->str));
+        opStr->str[sizeof(opStr->str)-1] = '\0';
+
+        FILE* fp = fopen (binaryLogStringHelperFile.c_str(),"ab");
+        fwrite(opStr, sizeof(OpArgHelper), 1, fp);
+        fclose(fp);
+    }else{
+        arg5 = strIt->second;
+    }
+    serializeOperationIntoFile(ABC_TRIGGER_RECEIVER, state, componentId, intentId, delayTriggerOpid, arg5, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
 
 void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
+    int opType = -1;
+    if(state == ABC_RUN_TIMER_TASK){
+        opType = ENABLE_TIMER_TASK;
+    }else{
+        opType = ABC_ENABLE_LIFECYCLE;
+    }
+
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1157,7 +1228,7 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentI
     arg2->obj = NULL;
     arg2->id = componentId;
 
-    op->opType = ABC_ENABLE_LIFECYCLE;
+    op->opType = opType;
     op->arg1 = state;
     op->arg2 = arg2;
     op->arg3 = -1;
@@ -1174,13 +1245,22 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentI
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(opType, state, componentId, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
 
 void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
+    int opType = -1;
+    if(state == ABC_RUN_TIMER_TASK){
+        opType = TRIGGER_TIMER_TASK;
+    }else{
+        opType = ABC_TRIGGER_LIFECYCLE;
+    }
+
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1192,7 +1272,7 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 component
     arg2->obj = NULL;
     arg2->id = componentId;
 
-    op->opType = ABC_TRIGGER_LIFECYCLE;
+    op->opType = opType;
     op->arg1 = state;
     op->arg2 = arg2;
     op->arg3 = -1;
@@ -1209,8 +1289,10 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(opType, state, componentId, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1244,8 +1326,10 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
         << " intentId:" << intentId <<"\n";
     outfile.close();
 
+    serializeOperationIntoFile(ABC_INSTANCE_INTENT, intentId, instance, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1279,8 +1363,10 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event){
         << " event:" << event <<"\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_ENABLE_EVENT, event, view, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1314,8 +1400,10 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
         << " event:" << event <<"\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_TRIGGER_EVENT, event, view, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1349,8 +1437,10 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
 
+    serializeOperationIntoFile(ENABLE_WINDOW_FOCUS, 0, windowHash, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1384,13 +1474,31 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
 
+    serializeOperationIntoFile(TRIGGER_WINDOW_FOCUS, 0, windowHash, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
 
 int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoqPost, int isNegPost){
+    int opType = -1;
+    if(srcTid == abcNativeTid){
+        if(isFoqPost == 1){
+            opType = ABC_NATIVE_POST_FOQ;
+        }else{
+            opType = ABC_NATIVE_POST;
+        }
+    }else{
+        if(isFoqPost == 1){
+            opType = ABC_POST_FOQ;
+        }else if(isNegPost == 1){
+            opType = ABC_POST_NEG;
+        }else{
+            opType = ABC_POST;
+        }
+    }
 
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, srcTid);
     if(accessSetAdded){
@@ -1403,7 +1511,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
     arg2->obj = NULL;
     arg2->id = msg;
  
-    op->opType = ABC_POST;
+    op->opType = opType;
     op->arg1 = srcTid;
     op->arg2 = arg2;
     op->arg3 = destTid;
@@ -1420,8 +1528,10 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
         << " delay:" << delay << " foq:" << isFoqPost << " neg:" << isNegPost << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(opType, srcTid, msg, destTid, delay, 0, srcTid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 
@@ -1449,8 +1559,10 @@ void addCallToTrace(int opId, int tid, u4 msg){
     outfile << opId << " CALL tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_CALL, tid, msg, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 
@@ -1483,8 +1595,10 @@ void addRetToTrace(int opId, int tid, u4 msg){
     outfile << opId << " RET tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_RET, tid, msg, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1505,8 +1619,10 @@ void addRemoveToTrace(int opId, int tid, u4 msg){
 
     abcTrace.insert(std::make_pair(opId, op));
 
+    serializeOperationIntoFile(ABC_REM, tid, msg, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1539,8 +1655,10 @@ int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid){
     outfile << opId << " IDLE-POST src:" << srcTid << " msg:" << msg << " dest:" << destTid << "\n";
     outfile.close();
 
+    serializeOperationIntoFile(ABC_IDLE_POST, srcTid, msg, destTid, 0, 0, srcTid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 
@@ -1574,8 +1692,10 @@ void addAttachQToTrace(int opId, int tid, u4 msgQ){
     outfile << opId << " ATTACH-Q tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_ATTACH_Q, tid, msgQ, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1607,8 +1727,10 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     outfile << opId << " LOOP tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close();
 
+    serializeOperationIntoFile(ABC_LOOP, tid, msgQ, 0, 0, 0, tid, -1); 
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1636,7 +1758,7 @@ void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     outfile.close();
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1668,7 +1790,7 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
     outfile.close();
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1696,7 +1818,7 @@ void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, in
     outfile.close();
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1729,7 +1851,7 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1762,7 +1884,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1795,8 +1917,10 @@ void addForkToTrace(int opId, int parentTid, int childTid){
         << childTid << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_FORK, parentTid, childTid, 0, 0, 0, parentTid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1818,8 +1942,10 @@ void addThreadInitToTrace(int opId, int tid){
     outfile << opId << " THREADINIT tid:" << tid << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_THREADINIT, tid, 0, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1846,8 +1972,10 @@ void addThreadExitToTrace(int opId, int tid){
     outfile << opId << " THREADEXIT tid:" << tid << "\n";
     outfile.close(); 
 
+    serializeOperationIntoFile(ABC_THREADEXIT, tid, 0, 0, 0, 0, tid, -1);
+
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1870,7 +1998,7 @@ void addNativeEntryToTrace(int opId, int tid){
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -1898,7 +2026,7 @@ void addNativeExitToTrace(int opId, int tid){
     outfile.close(); 
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         LOGE("Trace truncated as hit trace limit set by user");
     }
 }
@@ -2813,7 +2941,7 @@ bool processTriggerEventOperation(int opId, AbcOp* op, AbcThreadBookKeep* thread
     }else{
         LOGE("ABC: Trigger event seen without a corresponding enable event during processing."
              " Aborting processing.");
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         shouldAbort = true;
     }
     return shouldAbort;
@@ -2961,7 +3089,7 @@ bool processTriggerLifecycleOperation(int opId, AbcOp* op, AbcThreadBookKeep* th
         LOGE("ABC: Trigger-Lifecycle event seen for component %d and state %d without a "
              "corresponding enable event or mismatch in activity state machine during processing."
              " Aborting processing.", op->arg2->id, op->arg1);
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
     }
 
     return shouldAbort;
@@ -4816,7 +4944,7 @@ bool abcPerformRaceDetection(){
                  requiredEventEnableOps.insert(it->second.first);
              }else{
                  LOGE("ABC: found a trigger event without corresponding enable. view:%d event %d", op->arg2->id, op->arg1);
-                 gDvm.isRunABC = false;
+                 stopAbcModelChecker();
                  dvmThreadSelf()->status = oldStatus;
                  return false;
              }
@@ -5123,7 +5251,7 @@ bool abcPerformRaceDetection(){
              shouldAbort = processTriggerBroadcastReceiver(opId, op, threadIt->second);
              break;
         default: LOGE("ABC: found an unknown opType when processing abcTrace. Aborting.");
-                 gDvm.isRunABC = false;
+             stopAbcModelChecker();
              dvmThreadSelf()->status = oldStatus;
              return false;
         } 

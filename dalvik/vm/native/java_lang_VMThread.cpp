@@ -30,7 +30,8 @@
 
 static void Dalvik_java_lang_VMThread_abcStopTraceGeneration(const u4* args,
     JValue* pResult){
-    gDvm.isRunABC = false;
+    stopAbcModelChecker();
+   // gDvm.isRunABC = false;
     RETURN_VOID();
 }
 
@@ -114,7 +115,7 @@ static void Dalvik_java_lang_VMThread_abcPrintRacesDetectedToFile(const u4* args
 static void Dalvik_java_lang_VMThread_abcPerformRaceDetection(const u4* args,
     JValue* pResult){
     abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-    gDvm.isRunABC = false;
+    stopAbcModelChecker();
     abcUnlockMutex(&gAbc->abcMainMutex);
     bool success = abcPerformRaceDetection();
     if(success){
@@ -209,7 +210,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
 }
@@ -232,7 +233,7 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
 
@@ -285,7 +286,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
                 componentId, intentId, state, delayTriggerOpid);
         }else{
             //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
-            std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+            /*std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
             if(it == abcThreadMap.end()){
                 selfThread->abcThreadId = abcThreadCount++;
                 abcAddThreadToMap(selfThread, dvmGetThreadName(selfThread).c_str());
@@ -298,9 +299,9 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
                     return;
                 }
                 addThreadToCurAsyncMap(selfThread->abcThreadId);
-            }
+            }*/ //we will not be logging native entry - exit hence wont track native threads & we know that this particular op is always executed on native thread
 
-            addNativeEntryToTrace(abcOpCount++, selfThread->abcThreadId);
+            //addNativeEntryToTrace(abcOpCount++, selfThread->abcThreadId);
 
             AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
             receiver->action = new char[strlen(action) + 1];
@@ -312,9 +313,11 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
                     selfThread->threadId, receiver));
 
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
+            //addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
+            //    componentId, intentId, state, delayTriggerOpid);
+            addTriggerBroadcastLifecycleToTrace(abcOpCount++, abcNativeTid, action, 
                 componentId, intentId, state, delayTriggerOpid);
-            addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
+            //addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
 
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
@@ -333,7 +336,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
         if(it == abcViewEventMap.end()){
             LOGE("ABC: triggering an event for which an enable is not seen. Something is missing."
                  "Aborting");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             std::ofstream outfile;
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "NO-TRIGGER  viewHash:" << view << "  event:" << event << "\n";
@@ -342,7 +345,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
             if(it->second.find(event) == it->second.end()){
                 LOGE("ABC: triggering an event for which view exists but an enable is not seen."
                      "Something is missing. Aborting");
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 std::ofstream outfile;
                 outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
                 outfile << "NO-TRIGGER  viewHash:" << view << "  event:" << event << "\n";
@@ -387,7 +390,7 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
 
@@ -455,7 +458,7 @@ static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, J
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
 
@@ -478,7 +481,7 @@ static void Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent(const u4* 
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
     
@@ -501,7 +504,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4*
             outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
 
@@ -576,27 +579,9 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
             isNegPost = 1;
         }
 
-        /*if(args[4] == 1){
-            isFoQPost = true;
-        }else{
-            isFoQPost = false;
-        }
-
-        if(args[5] == 1){
-            isNegPost = true;
-        }else{
-            isNegPost = false;
-        }*/
-
-        /*if(isFrontPost == 1){
-            delay = -1;
-        }else if(delay < 0){
-            delay = 0;
-        }*/
-
-        int nativeEntryId = -1;
+//        int nativeEntryId = -1;
         std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
-        if(it == abcThreadMap.end()){
+        /*if(it == abcThreadMap.end()){
             abcLockMutex(selfThread, &gAbc->abcMainMutex);
             
             selfThread->abcThreadId = abcThreadCount++;
@@ -607,19 +592,20 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
             }else{
                 LOGE("ABC: error in model checking. A native thread not added to map!");
                 gDvm.isRunABC = false;
+                abcUnlockMutex(&gAbc->abcMainMutex);
                 return;
             }
             addThreadToCurAsyncMap(selfThread->abcThreadId);
               
             abcUnlockMutex(&gAbc->abcMainMutex);
-        }
+        }*/ //we will not be logging native entry - exit hence wont track native threads
 
 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         
-        if(it->second->isOriginUntracked){
+        /*if(it->second->isOriginUntracked){
             nativeEntryId = abcOpCount++;
-        }
+        }*/ //commented this as we do not log native enntr-exit
 
         AbcMsg* msg = (AbcMsg*)malloc(sizeof(AbcMsg));
         msg->msgId = abcMsgCount++;
@@ -633,7 +619,7 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
             destThread = queueIt->second;
         }else{
             LOGE("ABC: error in trace generation. An event is posted to a thread whose attachQ is not tracked!");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
 	    abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }
@@ -651,11 +637,13 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         }
              
         abcAsyncStateMap.insert(std::make_pair(msg->msgId, std::make_pair(false, false)));
-        if(it->second->isOriginUntracked == true){
+        //if(it->second->isOriginUntracked == true){
+        if(it == abcThreadMap.end()){
             if(gDvm.isRunABC == true){
-                addNativeEntryToTrace(nativeEntryId, selfThread->abcThreadId);
-                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
-                addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
+                //addNativeEntryToTrace(nativeEntryId, selfThread->abcThreadId);
+                //msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
+                msg->postId = addPostToTrace(msg->postId, abcNativeTid, msg->msgId, destThread, delay, isFoQPost, isNegPost);
+                //addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
             }
         }else{
             if(gDvm.isRunABC == true){
@@ -679,7 +667,7 @@ static void Dalvik_java_lang_VMThread_abcPrintCallMsg(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a CALL on native thread which is not addressed by "
                " implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         } 
@@ -800,7 +788,7 @@ static void Dalvik_java_lang_VMThread_abcLogIdlePostMsg(const u4* args, JValue* 
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a post idle-handler on native thread which is not addressed by "
                " implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }
@@ -816,7 +804,7 @@ static void Dalvik_java_lang_VMThread_abcLogIdlePostMsg(const u4* args, JValue* 
             destThread = queueIt->second;
         }else{
             LOGE("ABC: error in trace generation. An event is posted to a thread whose attachQ is not tracked!");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
 	    abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }
@@ -840,7 +828,7 @@ static void Dalvik_java_lang_VMThread_abcPrintAttachQueue(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a ATTACH-Q on native thread which is not addressed by "
                 "implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }
@@ -866,7 +854,7 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a LOOP on native thread which is not addressed by "
                 "implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }
@@ -893,7 +881,7 @@ static void Dalvik_java_lang_VMThread_abcLogQueueIdle(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a QUEUE_IDLE on native thread which is not addressed by "
                 "implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }else{
@@ -916,7 +904,7 @@ static void Dalvik_java_lang_VMThread_abcLogAddIdleHandler(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a ADD_IDLE_HANDLER on native thread which is not addressed by "
                 "implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             return;
         }else{
             AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
@@ -945,7 +933,7 @@ static void Dalvik_java_lang_VMThread_abcLogRemoveIdleHandler(const u4* args,
         if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
             LOGE("Trace has a REMOVE_IDLE_HANDLER on native thread which is not addressed by "
                 "implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             abcUnlockMutex(&gAbc->abcMainMutex);
             return;
         }else{

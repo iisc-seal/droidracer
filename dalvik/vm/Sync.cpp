@@ -789,7 +789,7 @@ static void notifyMonitor(Thread* self, Monitor* mon)
             /*Android bug-checker*/
             if(gDvm.isRunABC == true){
                 std::map<int, AbcThread*>::iterator selfIter = abcThreadMap.find(self->abcThreadId);
-                if(selfIter == abcThreadMap.end()){
+                /*if(selfIter == abcThreadMap.end()){
                     self->abcThreadId = abcThreadCount++;
                     abcAddThreadToMap(self, dvmGetThreadName(self).c_str());
                     selfIter = abcThreadMap.find(self->abcThreadId);
@@ -801,24 +801,28 @@ static void notifyMonitor(Thread* self, Monitor* mon)
                         return;
                     }
                     addThreadToCurAsyncMap(self->abcThreadId);
-                }
+                }*/ //we will not be logging native entry - exit hence wont track native threads
 
             //    LOGE("native-notify: notifiedTid:%d from tid:%d",thread->abcThreadId, self->abcThreadId);
 
                 std::map<int, AbcThread*>::iterator it = abcThreadMap.find(thread->abcThreadId);
                 //notify is logged only on tracked threads
                 if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
-                    selfIter = abcThreadMap.find(self->abcThreadId);
+                    //selfIter = abcThreadMap.find(self->abcThreadId);
                     abcLockMutex(self, &gAbc->abcMainMutex);
-                    if(selfIter->second->isOriginUntracked){
+                    /*if(selfIter->second->isOriginUntracked){
                         addNativeEntryToTrace(abcOpCount++, self->abcThreadId);
+                    }*/ //we will not be logging native entry - exit
+
+		    //abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
+                    if(selfIter == abcThreadMap.end()){
+                        abcAddNotifyToTrace(abcOpCount++, abcNativeTid, thread->abcThreadId);
+                    }else{
+                        abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
                     }
-
-                    abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
-
-                    if(selfIter->second->isOriginUntracked){
+                    /*if(selfIter->second->isOriginUntracked){
                         addNativeExitToTrace(abcOpCount++, self->abcThreadId);
-                    }
+                    }*/
                     abcUnlockMutex(&gAbc->abcMainMutex);
                 }
             }
@@ -853,7 +857,7 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
     std::map<int, AbcThread*>::iterator selfIter;
     if(gDvm.isRunABC == true){
         std::map<int, AbcThread*>::iterator selfIter = abcThreadMap.find(self->abcThreadId);
-        if(selfIter == abcThreadMap.end()){
+        /*if(selfIter == abcThreadMap.end()){
             abcLockMutex(self, &gAbc->abcMainMutex);
             self->abcThreadId = abcThreadCount++;
             abcAddThreadToMap(self, dvmGetThreadName(self).c_str());
@@ -867,7 +871,7 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
             }
             addThreadToCurAsyncMap(self->abcThreadId);
             abcUnlockMutex(&gAbc->abcMainMutex);
-        }
+        }*/ //we will not be logging native entry - exit hence wont track native threads
     }
     /*Android bug-checker*/
  
@@ -884,17 +888,21 @@ static void notifyAllMonitor(Thread* self, Monitor* mon)
            //     LOGE("native-notify: notifiedTid:%d from tid:%d",thread->abcThreadId, self->abcThreadId);
                 //notify is logged only on tracked threads
                 if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
-                    selfIter = abcThreadMap.find(self->abcThreadId);
+                    //selfIter = abcThreadMap.find(self->abcThreadId);
                     abcLockMutex(self, &gAbc->abcMainMutex);
-                    if(selfIter->second->isOriginUntracked){
+                    /*if(selfIter->second->isOriginUntracked){
                         addNativeEntryToTrace(abcOpCount++, self->abcThreadId);
+                    }*/ //we will not be logging native entry - exit 
+
+                    if(selfIter == abcThreadMap.end()){
+                        abcAddNotifyToTrace(abcOpCount++, abcNativeTid, thread->abcThreadId);
+                    }else{
+                        abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
                     }
 
-                    abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
-
-                    if(selfIter->second->isOriginUntracked){
+                    /*if(selfIter->second->isOriginUntracked){
                         addNativeExitToTrace(abcOpCount++, self->abcThreadId);
-                    }
+                    }*/ //we will not be logging native entry - exit
                     abcUnlockMutex(&gAbc->abcMainMutex);
                 }
             }
@@ -1177,7 +1185,7 @@ void dvmObjectWait(Thread* self, Object *obj, s8 msec, s4 nsec,
     /*Android bug-checker*/
     //wait gives up locks acquired on the monitor
     //locks are logged only if there is a app method in thread stack or there is a tracked object
-    int abcLockCount = 0;
+    /*int abcLockCount = 0;
     if(gDvm.isRunABC == true){
         abcLockCount = abcGetRecursiveLockCount(obj);
         int ctr = abcLockCount;
@@ -1185,7 +1193,7 @@ void dvmObjectWait(Thread* self, Object *obj, s8 msec, s4 nsec,
             abcAddUnlockOpToTrace(self, obj);
             ctr--;
         }
-    }
+    }*/ //uncomment this block if you want to track locks
     /*Android bug-checker*/
 
     waitMonitor(self, mon, msec, nsec, interruptShouldThrow);
@@ -1204,10 +1212,10 @@ void dvmObjectWait(Thread* self, Object *obj, s8 msec, s4 nsec,
         }
 
         //log lock operations
-        while(abcLockCount > 0){
+        /*while(abcLockCount > 0){
             abcAddLockOpToTrace(self, obj);
             abcLockCount--;
-        }
+        }*/ //uncomment this block when you want to track locks
     }
     /*Android bug-checker*/
 }

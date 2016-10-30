@@ -243,7 +243,7 @@ bool checkAndUpdateBroadcastState(int opId, AbcOp* op){
         AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
         if(opAsync == NULL){
             LOGE("ABC-ABORT: missing async block for onReceive of broadcast action: %s", action.c_str());
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             return updated;
         }
 
@@ -561,7 +561,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     addEdgeToHBGraph(service->firstCreateServiceRequest, opAsync->postId);
                 }else{
                     LOGE("ABC-ABORT: missing async block for CREATE-SERVICE of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
@@ -582,7 +582,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                      " bindService or startService; or hit with an existing CREATE-SERVICE." 
                      " Hit a service usage pattern that is not"
                      " supported by ABC for service %s", serviceName.c_str());
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 return updated;
             }
 
@@ -603,7 +603,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     addEdgeToHBGraph(service->firstBindServiceRequest, opAsync->postId);
                 }else{
                     LOGE("ABC-ABORT: missing async block for BIND-SERVICE of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
@@ -622,7 +622,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     updated = true;
                   break;
                   default: LOGE("state %d of service %s encountered spurious previous state %d", state, serviceName.c_str(), prevOp->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      return updated;
                 }
 
@@ -633,7 +633,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
             }else{
                 LOGE("ABC-ABORT: BIND-SERVICE seen without a prior CREATE-SERVICE or a ServiceMap entry"
                      " or with an existing BIND-SERVICE call, for service %s", serviceName.c_str());
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 return updated;
             }
 
@@ -644,7 +644,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync == NULL){
                     LOGE("ABC-ABORT: missing async block for BIND-SERVICE of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
                 /*add edges from all previous valid (those made when an active connection was present)
@@ -680,7 +680,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     updated = true;
                   break;
                   default: LOGE("state %d of service %s encountered spurious previous state %d", state, serviceName.c_str(), prevOp->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      return updated;
                 }
     
@@ -728,7 +728,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                             LOGE("ABC-ABORT: missing connection entry in AbcServiceConnectMap when "
                                  "performing UNBIND-SERVICE for service %s", serviceName.c_str());
                             updated = false;
-                            gDvm.isRunABC = false;
+                            stopAbcModelChecker();
                             return updated;
                         }
                     }
@@ -739,7 +739,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
             }else{
                 LOGE("ABC-ABORT: UNBIND-SERVICE seen without a prior ServiceMap entry"
                      " or with no existing BIND-SERVICE call, for service %s", serviceName.c_str());
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 return updated;
             }
 
@@ -750,7 +750,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync == NULL){
                     LOGE("ABC-ABORT: missing async block for STOP-SERVICE of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
@@ -793,7 +793,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                         }else{
                             LOGE("ABC-ABORT: STOP-SERVICE seen on started service %s without"
                                  " a stopService or stopSelf request", serviceName.c_str());
-                            gDvm.isRunABC = false;
+                            stopAbcModelChecker();
                             return updated;
                         }
                     }
@@ -807,14 +807,14 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 }else{
                     LOGE("state %d of service %s encountered spurious previous states "
                          "started: %d and bound:%d", state, serviceName.c_str(), prevStartedOp->opPtr->arg1, prevBoundOp->opPtr->arg1);
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
             }else{
                 LOGE("ABC-ABORT: STOP-SERVICE seen without a prior ServiceMap entry"
                      " or with no existing CREATE-SERVICE call, for service %s", serviceName.c_str());
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 return updated;
             } 
 
@@ -825,7 +825,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                 AbcAsync* opAsync = getAsyncBlockFromId(op->asyncId);
                 if(opAsync == NULL){
                     LOGE("ABC-ABORT: missing async block for SERVICE-ARGS of service: %s", serviceName.c_str());
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
@@ -847,7 +847,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     free(tmpPtr);
                 }else{
                     LOGE("ABC-ABORT: onStartCommand seen without corresponding startService");
-                    gDvm.isRunABC = false;
+                    stopAbcModelChecker();
                     return updated;
                 }
 
@@ -863,7 +863,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     updated = true;
                   break;
                   default: LOGE("state %d of service %s encountered spurious previous state %d", state, serviceName.c_str(), prevOp->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      return updated;
                 }
 
@@ -875,7 +875,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
             }else{
                 LOGE("ABC-ABORT: onStartCommand seen without a prior ServiceMap entry"
                      " or with no existing CREATE-SERVICE call, for service %s", serviceName.c_str());
-                gDvm.isRunABC = false;
+                stopAbcModelChecker();
                 return updated;
             }  
 
@@ -993,7 +993,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     }else{
                         LOGE("ABC-ABORT: service state machine not created for %s even though bindService seen."
                              "something wrong in ABC code",serviceName.c_str());
-                        gDvm.isRunABC = false;
+                        stopAbcModelChecker();
                         return updated;
                     }
                 }
@@ -1022,7 +1022,7 @@ bool abcMapInstanceWithIntentId(u4 instance, int intentId){
         ActivityStateMap.erase(intentId);
         ActivityStateMap.insert(std::make_pair(instance, tmpOp));
     }else{
-        gDvm.isRunABC = false;
+        stopAbcModelChecker();
         shouldAbort = true;
         LOGE("ABC-MISSING: Activity state machine error. instance %d supplied without "
              "intentId %d entry in stateMap", instance, intentId);
@@ -1249,7 +1249,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
             curOpAsync = getAsyncBlockFromId(op->asyncId);
             prevOpAsync = getAsyncBlockFromId(prevOperation->opPtr->asyncId);
         }else{
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
             LOGE("ABC-MISSING: Activity state machine error. state %d seen before instantiation", state);
             return updated;
         }
@@ -1285,7 +1285,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker(); 
                      updated = false;
         } 
         break;	  
@@ -1297,7 +1297,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;
@@ -1309,7 +1309,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;
@@ -1321,7 +1321,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;
@@ -1333,7 +1333,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;
@@ -1346,7 +1346,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;
@@ -1360,7 +1360,7 @@ bool checkAndUpdateComponentState(int opId, AbcOp* op){
               updated = true;
               break;
             default: LOGE("state %d of instance %d encountered spurious previous state %d", state, instance, prevOperation->opPtr->arg1);
-                     gDvm.isRunABC = false;
+                     stopAbcModelChecker();
                      updated = false;
         }
         break;

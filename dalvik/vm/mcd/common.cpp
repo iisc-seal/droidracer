@@ -21,6 +21,39 @@
 
 #include "common.h"
 
+std::string binaryLogFile;
+std::string binaryLogStringHelperFile;
+FILE *abcFp;
+std::map<std::string, int> argStringToNumKeyMap;
+int abcStringKey = 1;
+
+
+void stopAbcModelChecker(){
+    if(gDvm.isRunABC){
+        //close binary log file
+        fclose(abcFp);
+        gDvm.isRunABC = false;
+    }
+}
+
+void serializeOperationIntoFile(int opType, int arg1, u4 arg2, int arg3, int arg4,
+    int arg5, int tid, int taskId){
+    
+    OpLog* op = (OpLog*)malloc(sizeof(OpLog));
+    op->opType = opType;
+    op->arg1 = arg1;
+    op->arg2 = arg2;
+    op->arg3 = arg3;
+    op->arg4 = arg4;
+    op->arg5 = arg5;
+    op->tid = tid;
+    op->taskId = taskId;
+
+    //write this datastructure into log file
+    fwrite(op, sizeof(OpLog), 1, abcFp);
+}
+
+
 bool isHbEdge(int src, int dest){
     return adjGraph[src-1][dest-1];
 }

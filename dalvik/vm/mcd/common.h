@@ -42,6 +42,24 @@
 #include <fstream>
 #include <list>
 
+struct opLogStruct{
+    int opType;
+    int arg1;
+    u4 arg2;
+    int arg3;
+    int arg4; //delay argument for post
+    int arg5; //arg5 corresponds to a key in OpArgHelper and can be used to retrieve corresponding string
+    int tid;  //thread executing the operation
+    int taskId; //task in which this operation is executed
+};  
+typedef struct opLogStruct OpLog;//this datastructure will be logged into a file
+
+struct opArgHelperStruct{
+    int key;
+    char str[50];
+};
+typedef struct opArgHelperStruct OpArgHelper; 
+
 struct ArgumentStruct{
     Object* obj; //lock
     u4 id; //thread-id/msg-id/access-id
@@ -57,7 +75,7 @@ struct operationStruct{
    // int followingOpId;
     char* arg5; //holds actionof broadcast receiver 
     int tid; //thread executing the operation
-    int asyncId; //async-block from ehich the operation is posted; -1 if posted from non MQ thread
+    int asyncId; //async-block from which the operation is posted; -1 if posted from non MQ thread
     bool tbd; //true if node to be deleted
 };
 typedef struct operationStruct AbcOp;
@@ -123,6 +141,14 @@ extern std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-op
 extern std::list<std::pair<int, int> > porHBList;
 extern std::map<int, int> nativeOrUiPostToNopMap;
 
+/*fields related to logging ops into a file in binary mode*/
+extern std::string binaryLogFile;
+extern std::string binaryLogStringHelperFile;
+extern FILE *abcFp;
+//map from string to integer keys, so that when serializing these keys are used than strings.
+//strings are needed only for debug purpose
+extern std::map<std::string, int> argStringToNumKeyMap;
+extern int abcStringKey;
 
 bool isHbEdge(int src, int dest);
 void addEdgeToHBGraph(int op1, int op2);
@@ -130,5 +156,8 @@ AbcAsync* getAsyncBlockFromId(int asyncId);
 int getAsyncIdOfOperation(int opId);
 void storeHBInfoExplicitly(int srcOpId, int destOpId);
 int getTraceIdForPORFromOpId(int opId);
+void serializeOperationIntoFile(int opType, int arg1, u4 arg2, int arg3, int arg4, 
+    int arg5, int tid, int taskId);
+void stopAbcModelChecker();
 
 #endif  //common.h

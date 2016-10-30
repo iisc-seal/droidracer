@@ -1477,11 +1477,11 @@ bool dvmCreateInterpThread(Object* threadObj, int reqStackSize)
         }else{
             LOGE("Trace has a FORK inside an async block forced to be deleted which is not addressed by "
                " implementation. Cannot continue further");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
         }else{
             LOGE("ABC-MISSING : A thread id supposed to be present in abcThreadMap ismissing");
-            gDvm.isRunABC = false;
+            stopAbcModelChecker();
         }
     }
     /*Android bug-checker*/
@@ -2212,7 +2212,8 @@ void dvmDetachCurrentThread()
     //notify for joins
     if(gDvm.isRunABC == true && self->abcThreadId != -1){
          std::map<int, AbcThread*>::iterator iter = abcThreadMap.find(self->abcThreadId);
-         if(!iter->second->isOriginUntracked){
+         //if(!iter->second->isOriginUntracked){
+         if(iter != abcThreadMap.end() && !iter->second->isOriginUntracked){
 
              abcLockMutex(self, &gAbc->abcMainMutex);
              if(gDvm.isRunABC == true){
