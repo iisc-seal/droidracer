@@ -1917,7 +1917,8 @@ void addForkToTrace(int opId, int parentTid, int childTid){
         << childTid << "\n";
     outfile.close(); 
 
-    serializeOperationIntoFile(ABC_FORK, parentTid, childTid, 0, 0, 0, parentTid, -1);
+    //we will serialize childTid as int instead of u4. Hence, we use arg3 for to store childTid
+    serializeOperationIntoFile(ABC_FORK, parentTid, 0, childTid, 0, 0, parentTid, -1);
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
         stopAbcModelChecker();
