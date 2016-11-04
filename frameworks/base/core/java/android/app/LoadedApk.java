@@ -653,7 +653,7 @@ public final class LoadedApk {
                             + " to " + (rd != null ? rd.mReceiver : null));
                 }
                 if (rd != null) {
-                	/*Android bug-checker*/
+                	/*Android bug-checker
                 	if(AbcGlobal.abcLogFile != null){
                 		//set class loader before doing a get on bundle
                 		if(intent.getExtras() != null){
@@ -677,7 +677,7 @@ public final class LoadedApk {
                 	    		intent.getIntExtra("androidBugCheckerIntentId", -9), 
                 	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE_LATER);	
                 	}
-                	/*Android bug-checker*/
+                	Android bug-checker*/
                 	
                     rd.performReceive(intent, resultCode, data, extras,
                             ordered, sticky);
@@ -754,6 +754,22 @@ public final class LoadedApk {
                     intent.setExtrasClassLoader(cl);
                     setExtrasClassLoader(cl);
                     receiver.setPendingResult(this);
+                    
+                    /*Android bug-checker*/
+                	if(AbcGlobal.abcLogFile != null){
+                		//set class loader before doing a get on bundle
+                		
+                		String actionString = "";
+                		if(intent.getAction() != null){
+                			actionString = intent.getAction();
+                		}
+                	    Thread.currentThread().abcTriggerBroadcastLifecycle(
+                	    		actionString, mReceiver.hashCode(), 
+                	    		intent.getIntExtra("androidBugCheckerIntentId", -9), 
+                	    		AbcGlobal.ABC_TRIGGER_ONRECIEVE);	
+                	}
+                	/*Android bug-checker*/
+                	
                     receiver.onReceive(mContext, intent);
                 } catch (Exception e) {
                     if (mRegistered && ordered) {

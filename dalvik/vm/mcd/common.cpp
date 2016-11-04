@@ -31,7 +31,7 @@ int abcStringKey = 1;
 void stopAbcModelChecker(){
     if(gDvm.isRunABC){
         //close binary log file
-        fclose(abcFp);
+        //fclose(abcFp);
         gDvm.isRunABC = false;
     }
 }
@@ -50,7 +50,9 @@ void serializeOperationIntoFile(int opType, int arg1, u4 arg2, int arg3, int arg
     op->taskId = taskId;
 
     //write this datastructure into log file
+    abcFp = fopen (binaryLogFile.c_str(),"ab");
     fwrite(op, sizeof(OpLog), 1, abcFp);
+    fclose(abcFp);
 }
 
 

@@ -863,10 +863,14 @@ void startAbcModelChecker(){
 
     binaryLogFile = std::string("/data/data/") + gDvm.app_for_ABC
            + "/droidracer.blog";       
-    abcFp = fopen (binaryLogFile.c_str(),"wb");
+    //abcFp = fopen (binaryLogFile.c_str(),"wb");
 
     binaryLogStringHelperFile = std::string("/data/data/") + gDvm.app_for_ABC
            + "/droidracerStringHelper.blog";
+
+    std::string timeTickActionString("android.intent.action.TIME_TICK");
+    argStringToNumKeyMap.insert(std::make_pair(timeTickActionString, abcStringKey++));
+
 
     abcStartOpId = abcOpCount;
     addStartToTrace(abcOpCount++);
@@ -1174,15 +1178,6 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
-    std::string lifecycle("");
-    std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
-    outfile << opId << " TRIGGER-BROADCAST tid:" << tid << " action:" << action
-        << " component:" << componentId << " intent:"<< intentId << " onRecLater:" << delayTriggerOpid
-        << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
-    outfile.close();
-
     std::string arg5Str(action);
     int arg5 = -1;
     std::map<std::string, int>::iterator strIt = argStringToNumKeyMap.find(arg5Str);
@@ -1201,6 +1196,17 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     }else{
         arg5 = strIt->second;
     }
+
+    abcTrace.insert(std::make_pair(opId, op));
+    std::string lifecycle("");
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " TRIGGER-BROADCAST tid:" << tid << " action:" << action <<" action-key:" << arg5 
+        << " component:" << componentId << " intent:"<< intentId << " onRecLater:" << delayTriggerOpid
+        << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
+    outfile.close();
+
+
     serializeOperationIntoFile(ABC_TRIGGER_RECEIVER, state, componentId, intentId, delayTriggerOpid, arg5, tid, -1);
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
