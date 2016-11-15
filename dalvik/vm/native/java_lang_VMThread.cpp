@@ -117,12 +117,16 @@ static void Dalvik_java_lang_VMThread_abcPerformRaceDetection(const u4* args,
     abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
     stopAbcModelChecker();
     abcUnlockMutex(&gAbc->abcMainMutex);
+    /* uncomment this to detect data races
     bool success = abcPerformRaceDetection();
+    
     if(success){
         RETURN_INT(1);
     }else{
         RETURN_INT(0);
-    }
+    }*/
+
+    RETURN_INT(1);
 }
 
 static void Dalvik_java_lang_VMThread_abcComputeMemoryUsedByRaceDetector(const u4* args,
@@ -512,6 +516,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4*
 }
 
 static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue* pResult){
+    //uncomment below code to log database read-writes
+    /*
     if(gDvm.isRunABC == true && abcThreadBaseMethodMap.find(dvmThreadSelf()->threadId)
             != abcThreadBaseMethodMap.end()){
     AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
@@ -546,13 +552,11 @@ static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue
 
     }
     }else{
-    /*   LOGE("Trace has a READ/WRITE for a async block forced to be deleted which is not addressed by "
-               " implementation. Cannot continue further"); 
-       gDvm.isRunABC = false; */
        LOGE("ABC-DONT-LOG: found a read/write to database in deleted async block. not logging it");
        return;
     }
     }
+    */
 
     RETURN_VOID();
 }

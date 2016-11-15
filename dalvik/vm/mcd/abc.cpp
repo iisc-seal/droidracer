@@ -883,15 +883,16 @@ void startAbcModelChecker(){
     component[1] = '\0';
     addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, 0, ABC_BIND);
 
+    /* We dont need POR related instrumentation
     //add a dummy UI events posting thread. This is needed by our POR processing technique
     //as it cannot handle posts outside tasks from threads processing tasks
     addForkToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, abcThreadCount++);
     porUiTid = abcThreadCount - 1; //abc Thread ID of this newly created thread
     addThreadInitToTrace(abcOpCount++, porUiTid); 
+    */
 
-    //add a dummy natiive binder thread. Whenever you see a native-entry, native-exit 
-    //add the operation (only post) to this thread.
 
+    /* below initialization needed only for race detection
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");
     UiWidgetSet.insert("Landroid/widget/TextView;");
@@ -937,7 +938,7 @@ void startAbcModelChecker(){
     UiWidgetSet.insert("Landroid/widget/TabHost;");
     UiWidgetSet.insert("Landroid/widget/TabWidget;");
     UiWidgetSet.insert("Landroid/widget/Toast;");
-    
+    */
 }
 
 
