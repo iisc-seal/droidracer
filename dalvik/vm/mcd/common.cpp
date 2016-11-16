@@ -119,19 +119,4 @@ int getAsyncIdOfOperation(int opId){
     return asyncId;
 }
 
-void storeHBInfoExplicitly(int srcOpId, int destOpId){
-    std::map<int, int>::iterator it = nativeOrUiPostToNopMap.find(destOpId);
-    if(it != nativeOrUiPostToNopMap.end()){
-        destOpId = it->second;
-    }
-    porHBList.push_back(std::make_pair(srcOpId, destOpId));
-}
 
-int getTraceIdForPORFromOpId(int opId){
-    std::map<int, int>::iterator it = traceToTraceOpIdMap.find(opId);
-    if(it != traceToTraceOpIdMap.end()){
-        return it->second;
-    }else{
-        return -1;
-    }
-}

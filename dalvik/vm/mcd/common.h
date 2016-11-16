@@ -42,6 +42,10 @@
 #include <fstream>
 #include <list>
 
+//When using AbcModel.h, delete the below define
+#define ABC_BIND 4
+#define ABC_TRIGGER_ONRECIEVE_LATER 32
+
 struct opLogStruct{
     int opType;
     int arg1;
@@ -132,15 +136,6 @@ extern WorklistElem* worklist;
 extern std::map<int, std::pair<Destination*, Source*> > adjMap;
 extern std::map<int, AbcAsync*> abcAsyncMap;
 
-//to compute opId as will be shown in trace file used by POR project
-extern int traceFileOpIdCounter;
-extern std::string traceFile; 
-extern std::string hbFile;
-extern std::ofstream traceIO;
-extern std::map<int, int> traceToTraceOpIdMap; // <abc-trace-opid, trace-file-opid>
-extern std::list<std::pair<int, int> > porHBList;
-extern std::map<int, int> nativeOrUiPostToNopMap;
-
 /*fields related to logging ops into a file in binary mode*/
 extern std::string binaryLogFile;
 extern std::string binaryLogStringHelperFile;
@@ -150,12 +145,8 @@ extern FILE *abcFp;
 extern std::map<std::string, int> argStringToNumKeyMap;
 extern int abcStringKey;
 
-bool isHbEdge(int src, int dest);
-void addEdgeToHBGraph(int op1, int op2);
 AbcAsync* getAsyncBlockFromId(int asyncId);
 int getAsyncIdOfOperation(int opId);
-void storeHBInfoExplicitly(int srcOpId, int destOpId);
-int getTraceIdForPORFromOpId(int opId);
 void serializeOperationIntoFile(int opType, int arg1, u4 arg2, int arg3, int arg4, 
     int arg5, int tid, int taskId);
 void stopAbcModelChecker();

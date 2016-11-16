@@ -36,7 +36,7 @@
 #define ABC_H_
 
 #include "common.h"
-#include "AbcModel.h"
+//#include "AbcModel.h"
 
 #define ABC_WRITE 1 
 #define ABC_READ 2
@@ -185,12 +185,6 @@ struct MsgStruct{
     int postId;
 };
 typedef struct MsgStruct AbcMsg;
-
-/*struct receiverStruct{
-    char* component;
-    char* action;
-};
-typedef struct receiverStruct AbcReceiver;*/
 
 struct ThreadLockCountStruct{
     int threadId;
@@ -356,13 +350,6 @@ extern std::map<int, std::pair<bool,bool> > abcAsyncStateMap;
 //a map maintained during trace generation to track enabled events on views
 extern std::map<u4, std::set<int> > abcViewEventMap;
 
-// <<view, event>, enable-event-opId> only abc.cpp modifies it and hence need not be extern
-//extern std::map<std::pair<int, int>, int> abcEnabledEventMap;
-//extern std::map<std::pair<int, int>, int> abcEnabledLifecycleMap;
-
-//some maps to handle broadcast receivers
-extern std::map<int, AbcReceiver*> abcDelayedReceiverTriggerThreadMap;
-extern std::map<int, AbcReceiver*> abcDelayedReceiverTriggerMsgMap;
 
 extern int abcNativeTid; //all native ops will be indiccated as exeuted on this thread & operations of this thread are not program ordered.
 extern int abcThreadCount;
@@ -438,8 +425,6 @@ void abcRemoveLockFromList(int abcThreadId, Object *lockObj);
 
 void startAbcModelChecker();
 
-bool abcPerformRaceDetection();
-
 void addAccessToTrace(int opId, int tid, u4 accessId);
 
 int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoQPost, int isNegPost);
@@ -498,39 +483,8 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId);
 void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 componentId, 
          int intentId, int state, int delayTriggerOpid);
 
-//void addRegisterBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
-
-//void addTriggerBroadcastReceiverToTrace(int opId, int tid, char* component, char* action);
-
 void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId);
 
 void abcAddNotifyToTrace(int opId, int tid, int notifiedTid);
 
-int abcGetTraceLength();
-
-int abcGetThreadCount();
-
-int abcGetMessageQueueCount();
-
-int abcGetAsyncBlockCount();
-
-int abcGetEventTriggerCount();
-
-int abcGetFieldCount();
-
-int abcGetMultiThreadedRaceCount();
-
-int abcGetAsyncRaceCount();
-
-int abcGetDelayPostRaceCount();
-
-int abcGetCrossPostRaceCount();
-
-int abcGetCoEnabledEventUiRaces();
-
-int abcGetCoEnabledEventNonUiRaces();
-
-void abcPrintRacesDetectedToFile();
-
-void abcComputeMemoryUsedByRaceDetector();
 #endif  // ABC_H_

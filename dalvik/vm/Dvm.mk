@@ -184,7 +184,6 @@ LOCAL_SRC_FILES := \
 	test/TestHash.cpp \
 	test/TestIndirectRefTable.cpp \
         mcd/common.cpp \
-        mcd/AbcModel.cpp \
         mcd/abc.cpp 
 
 # TODO: this is the wrong test, but what's the right one?
