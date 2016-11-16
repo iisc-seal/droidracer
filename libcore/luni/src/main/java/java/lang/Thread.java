@@ -1331,6 +1331,10 @@ public class Thread implements Runnable {
     	vmThread.abcPrintLoop(queueHash);
     }
     
+    public void abcPrintExitLoop(int queueHash){
+    	vmThread.abcPrintExitLoop(queueHash);
+    }
+    
     public void abcLogIdlePostMsg(int msgId, int queueHash){
     	vmThread.abcLogIdlePostMsg(msgId, queueHash);
     }

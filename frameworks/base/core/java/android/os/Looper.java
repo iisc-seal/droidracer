@@ -134,8 +134,8 @@ public class Looper {
             if (msg != null) {
                 if (msg.target == null) {
                     // No target is a magic identifier for the quit message.
-                	/*Android bug-checker*/
-                	myQueue().printRemoveMessage(msg);
+                	/*Android bug-checker*/ 
+                	Thread.currentThread().abcPrintExitLoop(myQueue().hashCode());
                 	/*Android bug-checker*/
                     return;
                 }

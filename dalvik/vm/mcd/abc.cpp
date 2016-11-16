@@ -1631,6 +1631,41 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     }
 }
 
+void addLoopExitToTrace(int opId, int tid, u4 msgQ){
+
+    bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
+    if(accessSetAdded){
+        opId = abcOpCount++;
+    }
+    LOGE("%d ABC:Entered - Add LOOP-EXIT to trace", opId);
+
+    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
+    arg2->obj = NULL;
+    arg2->id = msgQ;
+
+    op->opType = ABC_LOOP_EXIT;
+    op->arg1 = tid;
+    op->arg2 = arg2;
+    op->tid = tid;
+    op->tbd = false;
+    op->asyncId = -1;
+
+    abcTrace.insert(std::make_pair(opId, op));
+
+    std::ofstream outfile;
+    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile << opId << " LOOP-EXIT tid:" << tid << "\t queue:" << msgQ <<"\n";
+    outfile.close();
+
+    serializeOperationIntoFile(ABC_LOOP_EXIT, tid, msgQ, 0, 0, 0, tid, -1);
+
+    if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
+        stopAbcModelChecker();
+        LOGE("Trace truncated as hit trace limit set by user");
+    }
+}
+
 void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     LOGE("%d ABC:Entered - Add QUEUE_IDLE to trace", opId);
 

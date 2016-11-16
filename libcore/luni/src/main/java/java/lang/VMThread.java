@@ -86,6 +86,8 @@ class VMThread {
     
     native void abcPrintLoop(int queueHash);
     
+    native void abcPrintExitLoop(int queueHash);
+    
     native void abcLogIdlePostMsg(int msgId, int queueHash);
     
     native void abcLogAddIdleHandler(int idleHandlerHash, int queueHash);

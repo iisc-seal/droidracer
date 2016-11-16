@@ -57,11 +57,11 @@
 #define ABC_REM 16
 #define ABC_ACCESS 17
 #define ABC_LOOP 18
+#define ABC_LOOP_EXIT 23
 #define ABC_ENABLE_EVENT 19
 #define ABC_TRIGGER_EVENT 20
 #define ABC_ENABLE_LIFECYCLE 21
 #define ABC_TRIGGER_LIFECYCLE 22
-//#define ABC_REGISTER_RECEIVER 23
 #define ABC_TRIGGER_RECEIVER 24
 #define ABC_TRIGGER_SERVICE 25
 #define ABC_INSTANCE_INTENT 26
@@ -440,6 +440,8 @@ int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid);
 void addAttachQToTrace(int opId, int tid, u4 msgQ);
 
 void addLoopToTrace(int opId, int tid, u4 msgQ);
+
+void addLoopExitToTrace(int opId, int tid, u4 msgQ);
 
 void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid);
 

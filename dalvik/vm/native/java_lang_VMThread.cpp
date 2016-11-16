@@ -520,7 +520,14 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         AbcMsg* msg = (AbcMsg*)malloc(sizeof(AbcMsg));
         msg->msgId = abcMsgCount++;
         msg->postId = abcOpCount++;
-        abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
+        std::map<u4,AbcMsg*>::iterator msgIter = abcUniqueMsgMap.find(msgHash);
+        if(msgIter != abcUniqueMsgMap.end()){
+            //this can happen only when a posted message got removed in which case the entry in abcUniqueMsgMap will remaiin.
+            //so just go ahead and re-assign the key to a new value.
+            msgIter->second = msg;   
+        }else{
+            abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
+        }
 
         //abcUniqueMsgMap.insert(std::make_pair(msgHash,abcMsgCount++));
         std::map<u4,int>::iterator queueIt = abcQueueToThreadMap.find(queueHash);
@@ -629,17 +636,10 @@ static void Dalvik_java_lang_VMThread_abcPrintRemoveMsg(const u4* args, JValue* 
         abcLockMutex(selfThread, &gAbc->abcMainMutex);
         if(gDvm.isRunABC == true){
             std::map<u4,AbcMsg*>::iterator msgIter = abcUniqueMsgMap.find(msgHash);
-//            LOGE("ABC: REMOVE seen for msg %d post %d", msgIter->second->msgId, msgIter->second->postId);
-            //remove the corresponding post from the trace
-            AbcOp* tmpPtr1 = abcTrace.find(msgIter->second->postId)->second;
-            abcTrace.erase(msgIter->second->postId);
-            free(tmpPtr1);
-
-            abcAsyncStateMap.erase(msgIter->second->msgId);
-
-            AbcMsg* tmpPtr2 = msgIter->second;
-            abcUniqueMsgMap.erase(msgHash);
-            free(tmpPtr2);
+            if(msgIter != abcUniqueMsgMap.end()){
+                addRemoveToTrace(abcOpCount++, selfThread->abcThreadId, msgIter->second->msgId);
+            } 
+            //dont remove from abcUniqueMsgMap. This is problematic if this message is dequeued but has not yet finished execution.
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
         
@@ -667,6 +667,8 @@ static void Dalvik_java_lang_VMThread_abcLogIdlePostMsg(const u4* args, JValue* 
         AbcMsg* msg = (AbcMsg*)malloc(sizeof(AbcMsg));
         msg->msgId = abcMsgCount++;
         msg->postId = abcOpCount++;
+        //due to the way we generate msgHash for simulated post for IdleHandler, this msgHash is unique.
+        //Hence, no need to check and insert unlike a normal post where a msg gets reused and can thus have same hash.
         abcUniqueMsgMap.insert(std::make_pair(msgHash, msg));
 
         std::map<u4,int>::iterator queueIt = abcQueueToThreadMap.find(queueHash);
@@ -733,6 +735,40 @@ static void Dalvik_java_lang_VMThread_abcPrintLoop(const u4* args,
         if(gDvm.isRunABC == true){
             abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second->hasMQ = true;
             addLoopToTrace(abcOpCount++, selfThread->abcThreadId, queueHash);
+        }
+        abcUnlockMutex(&gAbc->abcMainMutex);
+    }
+
+    RETURN_VOID();
+}
+
+static void Dalvik_java_lang_VMThread_abcPrintExitLoop(const u4* args,
+    JValue* pResult){
+    if(gDvm.isRunABC == true){
+        Thread* selfThread = dvmThreadSelf();
+        u4 queueHash = args[1];
+
+        abcLockMutex(selfThread, &gAbc->abcMainMutex);
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(selfThread->abcThreadId);
+        if(it == abcThreadMap.end() || it->second->isOriginUntracked == true){
+            LOGE("Trace has a EXIT LOOP on native thread which is not addressed by "
+                "implementation. Cannot continue further");
+            stopAbcModelChecker();
+            abcUnlockMutex(&gAbc->abcMainMutex);
+            return;
+        }
+
+        if(gDvm.isRunABC == true){
+            std::map<int, AbcCurAsync*>::iterator curAsyncIt = abcThreadCurAsyncMap.find(selfThread->abcThreadId);
+            if(curAsyncIt != abcThreadCurAsyncMap.end() && curAsyncIt->second->hasMQ){
+                curAsyncIt->second->hasMQ = false;
+                addLoopExitToTrace(abcOpCount++, selfThread->abcThreadId, queueHash);
+            }else{
+                LOGE("Seeing a LOOP exit on a thread for which LOOP-ON-Q has not been logged.");
+                stopAbcModelChecker();
+                abcUnlockMutex(&gAbc->abcMainMutex);
+                return;
+            }
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
     }
@@ -1095,6 +1131,8 @@ const DalvikNativeMethod dvm_java_lang_VMThread[] = {
         Dalvik_java_lang_VMThread_abcPrintAttachQueue },
     { "abcPrintLoop","(I)V",
         Dalvik_java_lang_VMThread_abcPrintLoop },
+    { "abcPrintExitLoop","(I)V",
+        Dalvik_java_lang_VMThread_abcPrintExitLoop },
     { "abcLogIdlePostMsg","(II)V",
         Dalvik_java_lang_VMThread_abcLogIdlePostMsg },
     { "abcLogRemoveIdleHandler","(II)V",
