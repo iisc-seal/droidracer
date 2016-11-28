@@ -698,7 +698,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                     //clear this service entry in each connection that was associated with this service
                     std::set<u4>::iterator connIt = service->connectionSet.begin();
                     for( ; connIt != service->connectionSet.end(); ++connIt){
-                        bindIter = AbcServiceConnectMap.find(identifier);
+                        bindIter = AbcServiceConnectMap.find(*connIt);
                         if(bindIter != AbcServiceConnectMap.end()){
                             AbcRequestBind* tmpArb = bindIter->second;
                             AbcRequestBind* tmpArbAhead = NULL;
@@ -706,7 +706,7 @@ bool checkAndUpdateServiceState(int opId, AbcOp* op){
                                 if(tmpArb->serviceClassname == serviceName){
                                     if(tmpArbAhead == NULL){
                                         if(tmpArb->prev == NULL){
-                                            AbcServiceConnectMap.erase(identifier);
+                                            AbcServiceConnectMap.erase(bindIter);
                                             delete tmpArb;
                                             break;
                                         }else{

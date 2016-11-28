@@ -105,7 +105,7 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
                 + "/abc_log.txt";
 
             
-            dvmDbgActive();
+            //dvmDbgActive();
             dvmThreadSelf()->abcThreadId = abcThreadCount++;
             abcAddThreadToMap(dvmThreadSelf(), dvmGetThreadName(dvmThreadSelf()).c_str());
             addThreadToCurAsyncMap(dvmThreadSelf()->abcThreadId);

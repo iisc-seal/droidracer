@@ -1189,18 +1189,12 @@ class ContextImpl extends Context {
 	    	    		if(pkgAppsList.size() > 0){
 	    	    			resolvedService = pkgAppsList.get(0).serviceInfo.name;
 	    	    			
-		    	    		//connection logs for race detection
 	    	    			//assign a random no. (8888) as unique identifier as this wont be necessary to
 	    	    			//track service outside app
 		    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
 		    	    				8888, AbcGlobal.ABC_REQUEST_START_SERVICE);
 	    	    		}else{
-	    	    	//     	Log.e(ModelCheckingDriver.TAG, "backtracking on request to bind to a Service of another app");
-//	    	    	     	Log.e(ModelCheckingDriver.TAG, "backtracking as no service found for requested intent");
-//	    	    	    	McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-//	        			    SQLiteDatabase database = mcdDB.getWritableDatabase();
-//	        			    Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
-	    	    			Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
+	    	    	        Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
 	    	    		}
 	    	    	}else{
 	    	    		//a tag for the system service to know that the startActivity request originated 
@@ -1211,12 +1205,12 @@ class ContextImpl extends Context {
 	    	    		//set class loader before doing a get on bundle
 						service.setExtrasClassLoader(this.getClassLoader());
 						
-	    	    		//connection logs for race detection
-	    	    		Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
+						Thread.currentThread().abcTriggerServiceLifecycle(resolvedService, 
 	    	    				service.getIntExtra("androidBugCheckerIntentId", 8888), 
 	    	    				AbcGlobal.ABC_REQUEST_START_SERVICE);
 	    	    	}
-    	    	}else{
+	    	    	
+    	    	}else{		
     	    		Log.e("ABC", "Could not find a suitable component for service intent. continue silently");
     	    	}
     	    	
