@@ -20,11 +20,6 @@
 #include "Dalvik.h"
 #include "native/InternalNativePriv.h"
 
-/*Android bug-checker*/
-#include "mcd/abc.h"
-/*Android bug-checker*/
-
-
 /*
  * private Object internalClone()
  *

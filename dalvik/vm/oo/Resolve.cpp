@@ -552,8 +552,8 @@ Method* dvmResolveInterfaceMethod(const ClassObject* referrer, u4 methodIdx)
     DexProto proto;
     dexProtoSetFromMethodId(&proto, pDvmDex->pDexFile, pMethodId);
 
-    //LOGVV("+++ looking for '%s' '%s' in resClass='%s'",
-    //    methodName, methodSig, resClass->descriptor);
+    LOGVV("+++ looking for '%s' '%s' in resClass='%s'",
+        methodName, methodSig, resClass->descriptor);
     resMethod = dvmFindInterfaceMethodHier(resClass, methodName, &proto);
     if (resMethod == NULL) {
         dvmThrowNoSuchMethodError(methodName);
