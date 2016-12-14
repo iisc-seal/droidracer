@@ -21,6 +21,7 @@
 
 #include "common.h"
 
+std::string abcLogFile;
 std::string binaryLogFile;
 std::string binaryLogStringHelperFile;
 FILE *abcFp;
@@ -93,7 +94,7 @@ void addEdgeToHBGraph(int op1, int op2){
         }
 
 /*        std::ofstream outfile;
-        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+        outfile.open(abcLogFile.c_str(), std::ios_base::app);
         outfile << "( " << op1 << ", " << op2  << " ) \n";
         outfile.close();  */
     }

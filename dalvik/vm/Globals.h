@@ -730,8 +730,6 @@ struct DvmGlobals {
     char*       app_for_ABC;
     char*       package_ABC_app; /*represents the Lcom/xyz/abc form of package*/
     bool        isRunABC;
-    bool        stopAbc;
-    std::string abcLogFile;
     /*Android bug-checker*/
 };
 

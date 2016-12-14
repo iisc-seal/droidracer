@@ -136,6 +136,8 @@ extern WorklistElem* worklist;
 extern std::map<int, std::pair<Destination*, Source*> > adjMap;
 extern std::map<int, AbcAsync*> abcAsyncMap;
 
+//file where ops are logged in text mode to aid quick debugging
+extern std::string abcLogFile;
 /*fields related to logging ops into a file in binary mode*/
 extern std::string binaryLogFile;
 extern std::string binaryLogStringHelperFile;

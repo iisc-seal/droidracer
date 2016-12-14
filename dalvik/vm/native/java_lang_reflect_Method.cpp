@@ -81,14 +81,10 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
         while(std::getline(file, str))
         {
             if(j == 1){
-                gDvm.app_for_ABC = new char[str.size() + 1];
-                std::copy(str.begin(), str.end(), gDvm.app_for_ABC);
-                gDvm.app_for_ABC[str.size()] = '\0';
+                gDvm.app_for_ABC = strdup(str.c_str());
                 LOGE("ABC: string in file - %s", gDvm.app_for_ABC);
             }else if(j == 2){
-                gDvm.package_ABC_app = new char[str.size() + 1];
-                std::copy(str.begin(), str.end(), gDvm.package_ABC_app);
-                gDvm.package_ABC_app[str.size()] = '\0';
+                gDvm.package_ABC_app = strdup(str.c_str());
                 LOGE("ABC: second string in file - %s", gDvm.package_ABC_app);
             }else if(j == 7){
                 abcTraceLengthLimit = atoi(str.c_str());
@@ -101,7 +97,7 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
             j++;
         }
         if(strcmp(gDvm.app_for_ABC, get_process_name()) == 0){
-            gDvm.abcLogFile = std::string("/data/data/") + gDvm.app_for_ABC
+            abcLogFile = std::string("/data/data/") + gDvm.app_for_ABC
                 + "/abc_log.txt";
 
             

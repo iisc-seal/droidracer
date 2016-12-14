@@ -3480,10 +3480,6 @@ jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {
     UniquePtr<const char*[]> argv(new const char*[args->nOptions]);
     memset(argv.get(), 0, sizeof(char*) * (args->nOptions));
     
-    /*Android bug-checker*/
-    gDvm.isRunABC = false;
-    /*Android bug-checker*/
-
     /*
      * Convert JNI args to argv.
      *
@@ -3537,6 +3533,12 @@ jint JNI_CreateJavaVM(JavaVM** p_vm, JNIEnv** p_env, void* vm_args) {
             argv[argc++] = optStr;
         }
     }
+
+    /*Android bug-checker*/
+    gDvm.app_for_ABC = NULL;
+    gDvm.package_ABC_app = NULL;
+    gDvm.isRunABC = false;
+    /*Android bug-checker*/
 
     if (gDvmJni.useCheckJni) {
         dvmUseCheckedJniVm(pVM);

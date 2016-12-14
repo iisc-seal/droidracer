@@ -1789,6 +1789,11 @@ bool dvmCreateInternalThread(pthread_t* pHandle, const char* name,
         return false;
     }
 
+    /*Android bug-checker*/
+    newThread->abcThreadId = -1;
+    newThread->shouldABCTrack = false;
+    /*Android bug-checker*/
+
     /* thread could be in any state now (except early init states) */
     //assert(newThread->status == THREAD_RUNNING);
 
@@ -1941,8 +1946,8 @@ bool dvmAttachCurrentThread(const JavaVMAttachArgs* pArgs, bool isDaemon)
         dvmThreadSelf()->shouldABCTrack = false;
         //LOGE("ABC: added NATIVE thread %s with abc id: %d", pArgs->name, dvmThreadSelf()->abcThreadId);
     }*/
-    dvmThreadSelf()->abcThreadId = -1;
-    dvmThreadSelf()->shouldABCTrack = false;
+    self->abcThreadId = -1;
+    self->shouldABCTrack = false;
     /*Android bug-checker*/
 
     dvmUnlockThreadList();

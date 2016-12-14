@@ -2485,7 +2485,7 @@ void dvmDbgPostException(void* throwFp, int throwRelPc, void* catchFp,
                     const Method* met = abcPopLastMethodInThreadStack(
                             selfThread->threadId);
               /*      std::ofstream outfile;
-                    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                    outfile.open(abcLogFile.c_str(), std::ios_base::app);
                     outfile << "THROW METHOD EXIT tid:" << dvmThreadSelf()->threadId << "\t meth:"
                         << met->name << "\t class:" << met->clazz->descriptor << "\n";
                     outfile.close();*/

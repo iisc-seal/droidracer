@@ -149,11 +149,13 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
         }else{
             LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
         }
+
+        free(component);
     }
 }
 
@@ -172,11 +174,13 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
         }else{
             LOGE("ABC-DONT-LOG: enable lifecycle found in a deleted async block. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
         }
+        
+        free(component);
     }
 
     RETURN_VOID();
@@ -192,6 +196,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         addTriggerLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
         abcUnlockMutex(&gAbc->abcMainMutex);
+ 
+        free(component);
     }
 
     RETURN_VOID();
@@ -216,7 +222,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
         }else{
             LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             gDvm.isRunABC = false;
@@ -231,6 +237,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
+
+        free(action);
     }
     RETURN_VOID();
 }
@@ -248,7 +256,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
                  "Aborting");
             stopAbcModelChecker();
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "NO-TRIGGER  viewHash:" << view << "  event:" << event << "\n";
             outfile.close();
         }else{
@@ -257,7 +265,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerEvent(const u4* args, JValue* pR
                      "Something is missing. Aborting");
                 stopAbcModelChecker();
                 std::ofstream outfile;
-                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
                 outfile << "NO-TRIGGER  viewHash:" << view << "  event:" << event << "\n";
                 outfile.close();
             }else{
@@ -297,7 +305,7 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
         }else{
             LOGE("ABC-DONT-LOG: force-enable event found in a deleted async block. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
@@ -365,7 +373,7 @@ static void Dalvik_java_lang_VMThread_abcAddEnableEventForView(const u4* args, J
         }else{
             LOGE("ABC-DONT-LOG: enable event found in a deleted async block. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
@@ -388,7 +396,7 @@ static void Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent(const u4* 
         }else{
             LOGE("ABC-ABORT: ENABLE-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
@@ -411,7 +419,7 @@ static void Dalvik_java_lang_VMThread_abcTriggerWindowFocusChangeEvent(const u4*
         }else{
             LOGE("ABC-ABORT: TRIGGER-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
             outfile.close();
             stopAbcModelChecker();
@@ -449,7 +457,7 @@ static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue
             addReadWriteToTrace(abcRWCount++, accessType, NULL, "", 0,
                 NULL, pathStr, dvmThreadSelf()->abcThreadId);
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << dvmThreadSelf()->abcThreadId
                             << " database:" << dbPath << "\n";
             outfile.close(); 

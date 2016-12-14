@@ -474,15 +474,15 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash);
 
 void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash);
 
-void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
+void addTriggerServiceLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state);
 
-void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
+void addEnableLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state);
 
-void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state);
+void addTriggerLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state);
 
 void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId);
 
-void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* component, u4 componentId, 
+void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, 
          int intentId, int state, int delayTriggerOpid);
 
 void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId);

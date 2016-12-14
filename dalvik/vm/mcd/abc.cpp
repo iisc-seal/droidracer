@@ -676,7 +676,7 @@ void abcLockMutex(Thread* self, pthread_mutex_t* pMutex){
 
     ThreadStatus oldStatus;
     
-    if (self == NULL)       // try to get it from TLS 
+    /*if (self == NULL)       // try to get it from TLS 
         self = dvmThreadSelf();
 
     if (self != NULL) {
@@ -685,13 +685,16 @@ void abcLockMutex(Thread* self, pthread_mutex_t* pMutex){
     } else {
         // happens during VM shutdown 
         oldStatus = THREAD_UNDEFINED;  // shut up gcc
-    } 
+    }*/ 
 
+    oldStatus = dvmChangeStatus(self,THREAD_VMWAIT);
     dvmLockMutex(pMutex); 
-  /*  
-    if (self != NULL)
+    dvmChangeStatus(self,oldStatus);
+    
+    /*if (self != NULL){
         self->status = oldStatus;
-    */
+    }*/
+    
 }
 
 void abcUnlockMutex(pthread_mutex_t* pMutex){
@@ -708,7 +711,7 @@ void addStartToTrace(int opId){
     abcTrace.insert(std::make_pair(opId, op));
     
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " START" << "\n";
     outfile.close(); 
 }
@@ -772,13 +775,8 @@ void startAbcModelChecker(){
     abcStartOpId = abcOpCount;
     addStartToTrace(abcOpCount++);
     addThreadInitToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId); 
-//  for the time being all native ops will get a tid of -1.
-//    abcNativeTid = abcThreadCount++;
-//    addThreadInitToTrace(abcOpCount++, abcNativeTid); 
-    char * component = new char[2];
-    strcpy(component, "");
-    component[1] = '\0';
-    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, 0, ABC_BIND);
+
+    addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, "", 0, ABC_BIND);
 
 
     /* below initialization needed only for race detection
@@ -901,7 +899,7 @@ void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId){
 
     abcTrace.insert(std::make_pair(opId, op));
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
     outfile.close();
 
@@ -938,7 +936,7 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
 
     abcTrace.insert(std::make_pair(opId, op));
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NOTIFY tid:" << tid << " notifiedTid:" << notifiedTid << "\n";
     outfile.close();
 
@@ -976,7 +974,7 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
     }
     
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ACCESS tid:" << tid << "\t accessId:"
        << accessId << "\n";
     outfile.close(); 
@@ -987,7 +985,7 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
     }
 }
 
-void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
+void addTriggerServiceLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
@@ -1004,8 +1002,7 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
     op->arg2 = arg2;
     op->arg3 = -1;
     op->arg4 = -1;
-    op->arg5 = new char[strlen(component) + 1];
-    strcpy(op->arg5, component);
+    op->arg5 = strdup(component);
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
@@ -1013,7 +1010,7 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
     abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-SERVICE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close();
@@ -1044,7 +1041,7 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, char* component, u4 co
     }
 }
 
-void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 componentId, 
+void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* action, u4 componentId, 
         int intentId, int state, int delayTriggerOpid){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
@@ -1062,8 +1059,7 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     op->arg2 = arg2;
     op->arg3 = intentId;
     op->arg4 = delayTriggerOpid;
-    op->arg5 = new char[strlen(action) + 1];
-    strcpy(op->arg5, action);
+    op->arg5 = strdup(action);
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
@@ -1090,7 +1086,7 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-BROADCAST tid:" << tid << " action:" << action <<" action-key:" << arg5 
         << " component:" << componentId << " intent:"<< intentId << " onRecLater:" << delayTriggerOpid
         << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
@@ -1105,7 +1101,7 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, char* action, u4 com
     }
 }
 
-void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
+void addEnableLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state){
     int opType = -1;
     if(state == ABC_RUN_TIMER_TASK){
         opType = ENABLE_TIMER_TASK;
@@ -1136,7 +1132,7 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentI
     abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ENABLE-LIFECYCLE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
@@ -1149,7 +1145,7 @@ void addEnableLifecycleToTrace(int opId, int tid, char* component, u4 componentI
     }
 }
 
-void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 componentId, int state){
+void addTriggerLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, int state){
     int opType = -1;
     if(state == ABC_RUN_TIMER_TASK){
         opType = TRIGGER_TIMER_TASK;
@@ -1180,7 +1176,7 @@ void addTriggerLifecycleToTrace(int opId, int tid, char* component, u4 component
     abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-LIFECYCLE tid:" << tid << " component:" << component
         << " id:" << componentId << " state:" << getLifecycleForCode(state, lifecycle) <<"\n";
     outfile.close(); 
@@ -1217,7 +1213,7 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
     abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " INSTANCE-INTENT tid:" << tid << " instance:" << instance
         << " intentId:" << intentId <<"\n";
     outfile.close();
@@ -1254,7 +1250,7 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ENABLE-EVENT tid:" << tid << " view:" << view 
         << " event:" << event <<"\n";
     outfile.close(); 
@@ -1291,7 +1287,7 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-EVENT tid:" << tid << " view:" << view
         << " event:" << event <<"\n";
     outfile.close(); 
@@ -1328,7 +1324,7 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ENABLE-WINDOW-FOCUS tid:" << tid 
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
@@ -1365,7 +1361,7 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " TRIGGER-WINDOW-FOCUS tid:" << tid 
         << " windowHash:" << windowHash <<"\n";
     outfile.close();
@@ -1419,7 +1415,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " POST src:" << srcTid << " msg:" << msg << " dest:" << destTid 
         << " delay:" << delay << " foq:" << isFoqPost << " neg:" << isNegPost << "\n";
     outfile.close(); 
@@ -1451,7 +1447,7 @@ void addCallToTrace(int opId, int tid, u4 msg){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " CALL tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
 
@@ -1487,7 +1483,7 @@ void addRetToTrace(int opId, int tid, u4 msg){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " RET tid:" << tid << "\t msg:" << msg  << "\n";
     outfile.close(); 
 
@@ -1547,7 +1543,7 @@ int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " IDLE-POST src:" << srcTid << " msg:" << msg << " dest:" << destTid << "\n";
     outfile.close();
 
@@ -1584,7 +1580,7 @@ void addAttachQToTrace(int opId, int tid, u4 msgQ){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ATTACH-Q tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close(); 
 
@@ -1619,7 +1615,7 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " LOOP tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close();
 
@@ -1654,7 +1650,7 @@ void addLoopExitToTrace(int opId, int tid, u4 msgQ){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " LOOP-EXIT tid:" << tid << "\t queue:" << msgQ <<"\n";
     outfile.close();
 
@@ -1684,7 +1680,7 @@ void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " QUEUE_IDLE tid:" << tid << " idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
 
@@ -1716,7 +1712,7 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " ADD_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
 
@@ -1744,7 +1740,7 @@ void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, in
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " REMOVE_IDLE_HANDLER idler:" << idleHandlerHash << " queue:" << queueHash <<"\n";
     outfile.close();
 
@@ -1777,7 +1773,7 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " LOCK" << " tid:" << tid << "\t lock-obj:" << lockObj << "\n";
     outfile.close(); 
 
@@ -1810,7 +1806,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " UNLOCK" << " tid:" << tid << "\t lock-obj:" << lockObj << "\n";
     outfile.close(); 
 
@@ -1843,7 +1839,7 @@ void addForkToTrace(int opId, int parentTid, int childTid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " FORK par-tid:" << parentTid << "\t child-tid:"
         << childTid << "\n";
     outfile.close(); 
@@ -1870,7 +1866,7 @@ void addThreadInitToTrace(int opId, int tid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " THREADINIT tid:" << tid << "\n";
     outfile.close(); 
 
@@ -1900,7 +1896,7 @@ void addThreadExitToTrace(int opId, int tid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " THREADEXIT tid:" << tid << "\n";
     outfile.close(); 
 
@@ -1925,7 +1921,7 @@ void addNativeEntryToTrace(int opId, int tid){
     abcTrace.insert(std::make_pair(opId, op));
 
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NATIVE-ENTRY tid:" << tid << "thread-name:" << dvmGetThreadName(dvmThreadSelf()).c_str() << "\n";
     outfile.close(); 
 
@@ -1953,7 +1949,7 @@ void addNativeExitToTrace(int opId, int tid){
     abcTrace.insert(std::make_pair(opId, op));
     
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NATIVE-EXIT tid:" << tid << "thread-name:" << dvmGetThreadName(dvmThreadSelf()).c_str() << "\n";
     outfile.close(); 
 
@@ -1967,13 +1963,9 @@ void addReadWriteToTrace(int rwId, int accessType, const char* clazz, std::strin
     AbcRWAccess* access = (AbcRWAccess*)malloc(sizeof(AbcRWAccess));
     access->accessType = accessType;
     access->obj = obj;
-    access->dbPath = new char[dbPath.size() + 1];
-    std::copy(dbPath.begin(), dbPath.end(), access->dbPath);
-    access->dbPath[dbPath.size()] = '\0';
+    access->dbPath = strdup(dbPath.c_str());
     access->clazz = clazz;
-    access->field = new char[field.size() + 1];
-    std::copy(field.begin(), field.end(), access->field);
-    access->field[field.size()] = '\0';
+    access->field = strdup(field.c_str());
     access->fieldIdx = fieldIdx;
     access->tid = tid;
  
@@ -2074,7 +2066,7 @@ bool checkAndAbortIfAssumtionsFailed(int opId, AbcOp* op, AbcThreadBookKeep* thr
 
 void abcComputeMemoryUsedByRaceDetector(){
     std::ofstream outfile;
-    outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+    outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << "\n\nMemory used for race detection\n" << "\n";
     outfile << "AbcTrace         : " << abcTrace.size() << " * " << sizeof(AbcOp) << "\n"; 
     outfile << "AbcAsyncMap      : " << abcAsyncMap.size() << " * " << sizeof(AbcAsync) << "\n";

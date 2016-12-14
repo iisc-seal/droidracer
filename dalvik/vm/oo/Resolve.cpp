@@ -61,7 +61,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                     addReadWriteToTrace(abcRWCount++, accessType, obj->clazz->descriptor, "", fieldIdx,
                         obj, "", self->abcThreadId);
                         std::ofstream outfile;
-                        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                        outfile.open(abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx  
                             << "\n";
@@ -89,7 +89,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                             obj, "", self->abcThreadId);
 
                         std::ofstream outfile;
-                        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                        outfile.open(abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId  
                             << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                             << "\n";
@@ -106,7 +106,7 @@ void abcAddObjectAccessToTrace(Object * obj, u4 fieldIdx, Thread * self, int acc
                                 obj, "", self->abcThreadId);
 
                             std::ofstream outfile;
-                            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                            outfile.open(abcLogFile.c_str(), std::ios_base::app);
                             outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                                 << " obj:" << obj << " class:" << obj->clazz->descriptor << " field:" << fieldIdx 
                                 << "\n";
@@ -140,7 +140,7 @@ void abcAddArrayAccessToTrace(ArrayObject * obj, int index, Thread * self, int a
             strcmp("<clinit>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0 &&
             strcmp("<init>", abcGetLastMethodInThreadStack(self->threadId)->name) != 0) {
             std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ARRAY-ACCESS " << access << " tid:" << self->abcThreadId
                     << " obj:" << obj << " class:" << obj->clazz->descriptor << " index:" << index
                     << "\n";
@@ -175,7 +175,7 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                     addReadWriteToTrace(abcRWCount++, accessType, clazz, fieldName, fieldIdx,
                         NULL, "", self->abcThreadId);
                         std::ofstream outfile;
-                        outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                        outfile.open(abcLogFile.c_str(), std::ios_base::app);
                         outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId          
                             << " class:" << clazz << " field:" << fieldIdx 
                             << "\n";
@@ -207,7 +207,7 @@ void abcAddStaticFieldAccessToTrace(const char* clazz, const char* field,
                         NULL, "", self->abcThreadId);
                 }
                 std::ofstream outfile;
-                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
                 outfile << "rwId:" << abcRWCount-1 << " " << access << " tid:" << self->abcThreadId
                     << " class:" << clazz << " field:" << fieldIdx 
                     << "\n";

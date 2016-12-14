@@ -805,7 +805,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
             }
 
            /* std::ofstream outfile;
-            outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << " meth:"
                    << method->name << " class:" << method->clazz->descriptor << "\n";
             outfile.close();*/
@@ -815,7 +815,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                self->shouldABCTrack = false;
              
              /*  std::ofstream outfile;
-               outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+               outfile.open(abcLogFile.c_str(), std::ios_base::app);
                outfile << "METHOD ENTRY tid:" << dvmThreadSelf()->abcThreadId << " meth:"
                    << method->name << " class:" << method->clazz->descriptor << "\n";
                outfile.close();*/
@@ -939,7 +939,7 @@ static void updateDebugger(const Method* method, const u2* pc, const u4* fp,
                 abcPopLastMethodInThreadStack(self->threadId);
 
                /* std::ofstream outfile;
-                outfile.open(gDvm.abcLogFile.c_str(), std::ios_base::app);
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
                 outfile << "METHOD EXIT tid:" << self->abcThreadId << " meth:"
                     << method->name << " class:" << method->clazz->descriptor << "\n";
                 outfile.close(); */
