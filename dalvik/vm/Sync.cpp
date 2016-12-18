@@ -719,6 +719,28 @@ static void waitMonitor(Thread* self, Monitor* mon, s8 msec, s4 nsec,
 #endif
         assert(ret == 0 || ret == ETIMEDOUT);
     }
+
+    /*Android bug-checker*/
+    if(gDvm.isRunABC == true){
+        //log wait operation
+        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(self->abcThreadId);
+        /*WAIT operation is logged only on tracked threads even if their stack
+         *has no app method
+         */
+        if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
+            abcLockMutex(self, &gAbc->abcMainMutex);
+            abcAddWaitOpToTrace(abcOpCount++, self->abcThreadId, self->abcThreadId, timed);
+            abcUnlockMutex(&gAbc->abcMainMutex);
+        }
+
+        //log lock operations
+        /*while(abcLockCount > 0){
+            abcAddLockOpToTrace(self, obj);
+            abcLockCount--;
+        }*/ //uncomment this block when you want to track locks
+    }
+    /*Android bug-checker*/
+
     if (self->interrupted) {
         wasInterrupted = true;
     }
@@ -1182,42 +1204,8 @@ void dvmObjectWait(Thread* self, Object *obj, s8 msec, s4 nsec,
     }
     mon = LW_MONITOR(obj->lock);
 
-    /*Android bug-checker*/
-    //wait gives up locks acquired on the monitor
-    //locks are logged only if there is a app method in thread stack or there is a tracked object
-    /*int abcLockCount = 0;
-    if(gDvm.isRunABC == true){
-        abcLockCount = abcGetRecursiveLockCount(obj);
-        int ctr = abcLockCount;
-        while(ctr > 0){
-            abcAddUnlockOpToTrace(self, obj);
-            ctr--;
-        }
-    }*/ //uncomment this block if you want to track locks
-    /*Android bug-checker*/
-
     waitMonitor(self, mon, msec, nsec, interruptShouldThrow);
 
-    /*Android bug-checker*/
-    if(gDvm.isRunABC == true){
-        //log wait operation
-        std::map<int, AbcThread*>::iterator it = abcThreadMap.find(self->abcThreadId);
-        /*WAIT operation is logged only on tracked threads even if their stack
-         *has no app method
-         */
-        if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
-            abcLockMutex(self, &gAbc->abcMainMutex);
-            abcAddWaitOpToTrace(abcOpCount++, self->abcThreadId, self->abcThreadId);
-            abcUnlockMutex(&gAbc->abcMainMutex);
-        }
-
-        //log lock operations
-        /*while(abcLockCount > 0){
-            abcAddLockOpToTrace(self, obj);
-            abcLockCount--;
-        }*/ //uncomment this block when you want to track locks
-    }
-    /*Android bug-checker*/
 }
 
 /*
@@ -1338,6 +1326,26 @@ void dvmThreadInterrupt(Thread* thread)
      */
     if (thread->waitMonitor != NULL) {
         pthread_cond_signal(&thread->waitCond);
+
+        /*Android bug-checker*/
+        if(gDvm.isRunABC == true){
+            Thread* self = dvmThreadSelf();
+            std::map<int, AbcThread*>::iterator selfIter = abcThreadMap.find(self->abcThreadId);
+
+            std::map<int, AbcThread*>::iterator it = abcThreadMap.find(thread->abcThreadId);
+            //notify is logged only on tracked threads
+            if(it != abcThreadMap.end() && !it->second->isOriginUntracked){
+                abcLockMutex(self, &gAbc->abcMainMutex);
+                if(selfIter == abcThreadMap.end()){
+                    abcAddNotifyToTrace(abcOpCount++, abcNativeTid, thread->abcThreadId);
+                }else{
+                    abcAddNotifyToTrace(abcOpCount++, self->abcThreadId, thread->abcThreadId);
+                }
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }
+        }
+        /*Android bug-checker*/
+
     }
 
     dvmUnlockMutex(&thread->waitMutex);

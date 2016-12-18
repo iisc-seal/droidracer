@@ -302,9 +302,12 @@ public class ModelCheckingDriver {
 	public static final int TYPE_TEXT_NUMBER_NORMAL = 15;
 	public static final int TYPE_TEXT_DEFAULT = 16;
 	
-	public static int DEPTH_LIMIT = 5; //this should be supplied by a file and set in the beginning
+	public static int DEPTH_LIMIT = 0; //this should be supplied by a file and set in the beginning
 	public static int initDelay = 0;
 	public static int abcPort = 0;
+	public static boolean variableEventPriority = true;
+	public int priorityDiff = 3;
+	public static boolean allowControlFlowOutsideApp = false;
 	
 	public void initKeyPressEventsAndRotateScreen(SQLiteDatabase db){
 		ContentValues values;
@@ -1842,20 +1845,56 @@ public class ModelCheckingDriver {
 	//eventType: 0 - ui-event, 1 - intent
 	public void addEventToUnexploredList(long eventID, int eventType, int pathNodeID, 
 			int priority, SQLiteDatabase database) throws McdException{
+		//if an entry for eventId and eventType already exists then create a new one 
+		//by updating the most recent old one's priority, else create one with default event priority.
+		Cursor eventRes = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_PRIORITY + ", " + 
+		        McdDB.COLUMN_IS_EXPLORED + " FROM " +
+	    		McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " + McdDB.COLUMN_EVENT_ID + " = ? AND " + 
+				McdDB.COLUMN_EVENT_TYPE + " = ? ORDER BY " + McdDB.COLUMN_NODE_ID + 
+				" DESC LIMIT 1", 
+				new String[]{String.valueOf(eventID), String.valueOf(eventType)});
 		
-		ContentValues values = new ContentValues();
+		if(eventRes.moveToFirst()){
+			int curPriority = eventRes.getInt(eventRes.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_PRIORITY));
+			int isExplored = eventRes.getInt(eventRes.getColumnIndexOrThrow(McdDB.COLUMN_IS_EXPLORED));
+			if(variableEventPriority){
+				if(isExplored == 1){
+					//only if this event was explored the last time it was available reduce its priority elsekeep it as is
+				    curPriority = curPriority - priorityDiff;
+				}
+			    if(curPriority > 0){
+				    priority = curPriority;
+			    }
+			}
+			ContentValues values = new ContentValues();
+			values.put(McdDB.COLUMN_EVENT_ID, eventID);
+			values.put(McdDB.COLUMN_EVENT_TYPE, eventType);
+			values.put(McdDB.COLUMN_NODE_ID, pathNodeID);
+			values.put(McdDB.COLUMN_EVENT_PRIORITY, priority);
 		
-		values.put(McdDB.COLUMN_EVENT_ID, eventID);
-		values.put(McdDB.COLUMN_EVENT_TYPE, eventType);
-		values.put(McdDB.COLUMN_NODE_ID, pathNodeID);
-		values.put(McdDB.COLUMN_EVENT_PRIORITY, priority);
+			long insertID = database.insert(McdDB.TABLE_UNEXPLORED_EVENTS, null, values);
 		
-		long insertID = database.insert(McdDB.TABLE_UNEXPLORED_EVENTS, null, values);
-		
-		if(!(insertID > -1)){
-			mcdRaiseException("Android Bug-checker returned a database row for" +
+			if(!(insertID > -1)){
+				eventRes.close();
+				mcdRaiseException("Android Bug-checker returned a database row for" +
 						" for UnexploredEvents table with primary key -1", database);
+			}
+		}else{
+			ContentValues values = new ContentValues();
+			values.put(McdDB.COLUMN_EVENT_ID, eventID);
+			values.put(McdDB.COLUMN_EVENT_TYPE, eventType);
+			values.put(McdDB.COLUMN_NODE_ID, pathNodeID);
+			values.put(McdDB.COLUMN_EVENT_PRIORITY, priority);
+		
+			long insertID = database.insert(McdDB.TABLE_UNEXPLORED_EVENTS, null, values);
+		
+			if(!(insertID > -1)){
+				eventRes.close();
+				mcdRaiseException("Android Bug-checker returned a database row for" +
+						" for UnexploredEvents table with primary key -1", database);
+			}
 		}
+		eventRes.close();
 	}
 	
 	public boolean isEditTextWritable(EditText et){
@@ -2640,13 +2679,21 @@ public class ModelCheckingDriver {
 					//delete node-data tracking field from the table
 					database.delete(McdDB.TABLE_PATH_NODE_DATA, McdDB.COLUMN_NODE_ID + " = ?", 
 							new String[]{String.valueOf(pathNodeId)});
-					//delete the text input event
-					database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
-					McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
-					McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
-							McdDB.COLUMN_EVENT_ID + " FROM " + 
-							McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
-					McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+					//update exploration status of the text input event
+					database.execSQL("UPDATE " + McdDB.TABLE_UNEXPLORED_EVENTS + " SET " + 
+							McdDB.COLUMN_IS_EXPLORED + " = 1 WHERE " + 
+							McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+							McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+									McdDB.COLUMN_EVENT_ID + " FROM " + 
+									McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+									McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+					
+//					database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
+//					McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+//					McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+//							McdDB.COLUMN_EVENT_ID + " FROM " + 
+//							McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+//					McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
 				}
 				
 				typeData.close();
@@ -2683,13 +2730,22 @@ public class ModelCheckingDriver {
 					if(typeData.getCount() == 0){
 						database.delete(McdDB.TABLE_PATH_NODE_DATA, McdDB.COLUMN_NODE_ID + " = ?", 
 								new String[]{String.valueOf(pathNodeId)});
-						//delete the text input event
-						database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
-						McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
-						McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
-								McdDB.COLUMN_EVENT_ID + " FROM " + 
-								McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
-						McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+						
+						//update exploration status of the text input event
+						database.execSQL("UPDATE " + McdDB.TABLE_UNEXPLORED_EVENTS + " SET " + 
+								McdDB.COLUMN_IS_EXPLORED + " = 1 WHERE " + 
+								McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+								McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+										McdDB.COLUMN_EVENT_ID + " FROM " + 
+										McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+										McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+						
+//						database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
+//						McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+//						McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+//								McdDB.COLUMN_EVENT_ID + " FROM " + 
+//								McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+//						McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
 					}
 					
 					typeData.close();
@@ -2697,13 +2753,22 @@ public class ModelCheckingDriver {
 					}else{
 						database.delete(McdDB.TABLE_PATH_NODE_DATA, McdDB.COLUMN_NODE_ID + " = ?", 
 								new String[]{String.valueOf(pathNodeId)});
-						//delete the text input event
-						database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
-						McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
-						McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
-								McdDB.COLUMN_EVENT_ID + " FROM " + 
-								McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
-						McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+						
+						//update exploration status of the text input event
+						database.execSQL("UPDATE " + McdDB.TABLE_UNEXPLORED_EVENTS + " SET " + 
+								McdDB.COLUMN_IS_EXPLORED + " = 1 WHERE " + 
+								McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+								McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+										McdDB.COLUMN_EVENT_ID + " FROM " + 
+										McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+										McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
+						
+//						database.execSQL("DELETE FROM " + McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " +
+//						McdDB.COLUMN_NODE_ID + " = " + String.valueOf(pathNodeId) + " AND " +
+//						McdDB.COLUMN_EVENT_ID + " IN (SELECT "+ McdDB.TABLE_PATH_NODE + "." + 
+//								McdDB.COLUMN_EVENT_ID + " FROM " + 
+//								McdDB.TABLE_PATH_NODE + " WHERE " + McdDB.TABLE_PATH_NODE + "." + 
+//						McdDB.COLUMN_ID + " = " + String.valueOf(pathNodeId) + ");");
 					}
 					
 					cus.close();
@@ -3528,7 +3593,7 @@ public class ModelCheckingDriver {
 	//note: this method arguments have to be modified when you want to express apps with no UI
 	//returns int array of size 2. [0]:eventID, [1]:eventType
 	public int[] selectNextEventToTrigger(int pathNodeID, int ui_envID, int activityId,
-			SQLiteDatabase database) throws McdException{
+			boolean onlyUnexploredEvents, SQLiteDatabase database) throws McdException{
 		int[] eventInfo = {-1, -1};
 		
 		//if event selected is of the type text input, then do not remove it here from
@@ -3537,10 +3602,13 @@ public class ModelCheckingDriver {
 		//in select event always get the highest <viewType,event> available for the
 		//pathNodeID in unexploredList.
 		
-		 Cursor cursor = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID + ", " + 
+		 Cursor cursor;
+		 if(onlyUnexploredEvents){
+			 //this is the case when a brand new event needs to be executed due to backtracking
+		     cursor = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID + ", " + 
 					McdDB.COLUMN_EVENT_TYPE + ", " + McdDB.COLUMN_ID + " FROM " + 
-					McdDB.TABLE_UNEXPLORED_EVENTS + 
-					" WHERE " + McdDB.COLUMN_NODE_ID + " = ? AND " + McdDB.COLUMN_EVENT_ID + 
+					McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " + 
+				    McdDB.COLUMN_NODE_ID + " = ? AND " + McdDB.COLUMN_IS_EXPLORED + " = 0 AND " + McdDB.COLUMN_EVENT_ID + 
 					" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_IGNORE_EVENT
 					+ " WHERE " + McdDB.COLUMN_UI_ENV_ID + " = ?) AND " + McdDB.COLUMN_EVENT_ID +
 					" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_ACTIVITY_WIDE_IGNORE_EVENT
@@ -3548,6 +3616,21 @@ public class ModelCheckingDriver {
 					" ORDER BY " + McdDB.COLUMN_EVENT_PRIORITY + " DESC, " + McdDB.COLUMN_ID +
 					" ASC LIMIT 1", new String[]{String.valueOf(pathNodeID), 
 				 String.valueOf(ui_envID), String.valueOf(activityId)});
+		 }else{
+			 //this is the case if the same screen is visited in the same run and backtracking depth not yet reached
+			 cursor = database.rawQuery("SELECT " + McdDB.COLUMN_EVENT_ID + ", " + 
+						McdDB.COLUMN_EVENT_TYPE + ", " + McdDB.COLUMN_ID + " FROM " + 
+						McdDB.TABLE_UNEXPLORED_EVENTS + " WHERE " + 
+					    McdDB.COLUMN_NODE_ID + " = ? AND " + McdDB.COLUMN_EVENT_ID + 
+						" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_IGNORE_EVENT
+						+ " WHERE " + McdDB.COLUMN_UI_ENV_ID + " = ?) AND " + McdDB.COLUMN_EVENT_ID +
+						" NOT IN (SELECT " + McdDB.COLUMN_EVENT_ID + " FROM " + McdDB.TABLE_ACTIVITY_WIDE_IGNORE_EVENT
+						+ " WHERE " + McdDB.COLUMN_ACTIVITY_ID + " = ?)" +
+						" ORDER BY " + McdDB.COLUMN_EVENT_PRIORITY + " DESC, " + McdDB.COLUMN_ID +
+						" ASC LIMIT 1", new String[]{String.valueOf(pathNodeID), 
+					 String.valueOf(ui_envID), String.valueOf(activityId)});
+		 }
+		 
 		 if(cursor.moveToFirst()){
 			 eventInfo[0] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_ID));
 			 eventInfo[1] = cursor.getInt(cursor.getColumnIndexOrThrow(McdDB.COLUMN_EVENT_TYPE));
@@ -3565,16 +3648,28 @@ public class ModelCheckingDriver {
 				 
 				 if(!textDataViewSet.contains(tempRes.getInt(tempRes.getColumnIndexOrThrow(
  	        			McdDB.COLUMN_UI_EVENT_TYPE)))){
-					 database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?", 
-							 new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
-									 McdDB.COLUMN_ID)))});
+					 ContentValues cv = new ContentValues();
+					 cv.put(McdDB.COLUMN_IS_EXPLORED, 1);
+					 database.update(McdDB.TABLE_UNEXPLORED_EVENTS, cv, McdDB.COLUMN_ID + " = ?", 
+								new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
+										 McdDB.COLUMN_ID)))});
+					 
+//					 database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?", 
+//							 new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
+//									 McdDB.COLUMN_ID)))});
 				 }
 				 tempRes.close();
 				 tempRes = null;
 			 }else{
-				 database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?", 
-						 new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
-								 McdDB.COLUMN_ID)))});
+				 ContentValues cv = new ContentValues();
+				 cv.put(McdDB.COLUMN_IS_EXPLORED, 1);
+				 database.update(McdDB.TABLE_UNEXPLORED_EVENTS, cv, McdDB.COLUMN_ID + " = ?", 
+							new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
+									 McdDB.COLUMN_ID)))});
+				 
+//				 database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_ID + " = ?", 
+//						 new String[]{String.valueOf(cursor.getInt(cursor.getColumnIndexOrThrow(
+//								 McdDB.COLUMN_ID)))});
 			 }
 		 }
 		 cursor.close();
@@ -4091,11 +4186,11 @@ public class ModelCheckingDriver {
     		if(eventType == -1){
     			//control has reached the backtrack node, select a new event and explore
     			
-    			int[] nextEvent = selectNextEventToTrigger(nodeToExecute, uiEnvID, activityID, database);
+    			int[] nextEvent = selectNextEventToTrigger(nodeToExecute, uiEnvID, activityID, true, database);
             	updatePathNodeWithEvent(nodeToExecute, nextEvent[0], nextEvent[1], database);
             	if(nextEvent[1] == -1){
             		//no event to be triggered at this point. so backtrack
-            		//delete any event remaining in unexplored loist but not triggered due to their 
+            		//delete any event remaining in unexplored list but not triggered due to their 
             		//being in ignored list too
             		//delete the dummy node created
             		database.delete(McdDB.TABLE_UNEXPLORED_EVENTS, McdDB.COLUMN_NODE_ID + " = ?", 
@@ -4983,7 +5078,7 @@ public class ModelCheckingDriver {
         		addEventToUnexploredList(ROTATE_SCREEN_EVENT_ID, UI_EVENT, pathNodeID, KEY_PRESS_EVENT_PRIORITY, database);
         	}
         	
-        	int[] nextEvent = selectNextEventToTrigger(pathNodeID, ui_envID, activityID, database);
+        	int[] nextEvent = selectNextEventToTrigger(pathNodeID, ui_envID, activityID, false, database);
         	updatePathNodeWithEvent(pathNodeID, nextEvent[0], nextEvent[1], database);
         	if(nextEvent[1] == -1){
         		//no event to be triggered at this point. so backtrack

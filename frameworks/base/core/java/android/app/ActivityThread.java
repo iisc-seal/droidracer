@@ -1251,8 +1251,8 @@ public final class ActivityThread {
                             msg.arg2, false);
                     /*Android bug-checker*/
                     if(AbcGlobal.abcLogFile != null){
-                    	if(Looper.mcd.getVisibleActivity().hashCode() == 
-                    			Looper.mcd.getLastDestroyedActivity().hashCode()){
+                    	if(!ModelCheckingDriver.allowControlFlowOutsideApp && 
+                    			Looper.mcd.getVisibleActivity().hashCode() == Looper.mcd.getLastDestroyedActivity().hashCode()){
                     		//event has taken control outside the app under test
                     		//because visible activity hash not yet changed
                     		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
@@ -2733,6 +2733,14 @@ public final class ActivityThread {
                 }
             }
         }
+        /*Android bug-checker*/
+        else if(AbcGlobal.abcLogFile != null && r != null){
+        	//we need to emit RESUME if it was not emitted in case the activity is finishing 
+        	Thread.currentThread().abcTriggerLifecycleEvent(
+    			r.activity.getLocalClassName(), r.activity.hashCode(),	
+    			AbcGlobal.ABC_RESUME);
+    	}
+    	/*Android bug-checker*/
         return r;
     }
 
@@ -3124,14 +3132,14 @@ public final class ActivityThread {
         if (localLOGV) Slog.v(TAG, "Performing stop of " + r);
         Bundle state = null;
         if (r != null) {
-        	/*Android bug-checker*/
+        	/*Android bug-checker - uncomment this if you see missing STOP_ACTs. Currently moved near performStop()
         	if(AbcGlobal.abcLogFile != null){
         	    Thread.currentThread().abcTriggerLifecycleEvent(
         			r.activity.getLocalClassName(),
         			r.activity.hashCode(),
         			AbcGlobal.ABC_STOP);
         	}
-        	/*Android bug-checker*/
+        	Android bug-checker*/
         	
             if (!keepShown && r.stopped) {
                 if (r.activity.mFinished) {
@@ -3175,6 +3183,15 @@ public final class ActivityThread {
 
             if (!keepShown) {
                 try {
+                	/*Android bug-checker*/
+                	if(AbcGlobal.abcLogFile != null){
+                	    Thread.currentThread().abcTriggerLifecycleEvent(
+                			r.activity.getLocalClassName(),
+                			r.activity.hashCode(),
+                			AbcGlobal.ABC_STOP);
+                	}
+                	/*Android bug-checker*/
+                	
                     // Now we are idle.
                     r.activity.performStop();
                 } catch (Exception e) {
@@ -3264,11 +3281,13 @@ public final class ActivityThread {
         	//check if control has been passed to an activity of another app 
         	//If an Activiy of same package is started but in a different process
         	//you may not be able to detect it in startActivityForResult
-        	if(Looper.mcd.getVisibleActivity().hashCode() == r.activity.hashCode()
-      			 && Looper.mcd.resumedTime < SystemClock.uptimeMillis()){
-        		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-    			SQLiteDatabase database = mcdDB.getWritableDatabase();
-    			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+        	if(!ModelCheckingDriver.allowControlFlowOutsideApp){
+            	if(Looper.mcd.getVisibleActivity().hashCode() == r.activity.hashCode()
+        			 && Looper.mcd.resumedTime < SystemClock.uptimeMillis()){
+            		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+    		    	SQLiteDatabase database = mcdDB.getWritableDatabase();
+    			    Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+            	}
         	}
         }
         /*Android bug-checker*/

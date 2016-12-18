@@ -3215,15 +3215,30 @@ public class Activity extends ContextThemeWrapper
 	    	
 	    	if(!performStart){
 	    		Log.e(ModelCheckingDriver.TAG, "backtracking on request to start an Activity of another app");
-	    		McdDB mcdDB = new McdDB(Looper.mcd.getContext());
-    			SQLiteDatabase database = mcdDB.getWritableDatabase();
-    			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    		if(ModelCheckingDriver.allowControlFlowOutsideApp){
+	    			//we dont care if redundant enable-pause are issued. We wont bookkeep
+	    			//anything related to outside app activity as we wont have any control outside this app.
+	    			//We will only store things so that lifecycle of this activity is captured well.
+	    			if(Looper.mcd.getVisibleActivity().hashCode() == this.hashCode()){
+	    			    Thread.currentThread().abcEnableLifecycleEvent(
+		    				this.getLocalClassName(), this.hashCode(),
+		    				AbcGlobal.ABC_PAUSE);
+    				}
+	    			
+	    			if(requestCode != -1){
+		    			AbcGlobal.abcResultExpectingActivities.add(this.hashCode());
+		    		}
+	    		}else{
+	    		    McdDB mcdDB = new McdDB(Looper.mcd.getContext());
+        			SQLiteDatabase database = mcdDB.getWritableDatabase();
+        			Looper.mcd.backtrack(database, mcdDB, ModelCheckingDriver.FLAG_NO_ERROR);
+	    		}
 	    	}else{
 	    		//a tag for the system service to know that the startActivity request originated 
 	    		//from the app under test
 	    		intent.putExtra("androidBugCheckerAppUT", Looper.mcd.appUT);
-	    		intent.putExtra("androidBugCheckerIntentId", 
-	    				AbcGlobal.getAndIncrementAbcIntentId());
+	    		int abcIntentId = AbcGlobal.getAndIncrementAbcIntentId();
+	    		intent.putExtra("androidBugCheckerIntentId", abcIntentId);
 	    		
 	    		//set class loader before doing a get on bundle
     			intent.setExtrasClassLoader(
@@ -3245,13 +3260,10 @@ public class Activity extends ContextThemeWrapper
 	    				}
 	    					    				
 		    			ArrayList<Integer> tmpStartedActivities = new ArrayList<Integer>();
-		    			tmpStartedActivities.add(intent.getIntExtra("androidBugCheckerIntentId", 
-			    						AbcGlobal.getAbcIntentId()));
+		    			tmpStartedActivities.add(abcIntentId);
 		    			AbcGlobal.parentAndStartedActivitiesMap.put(this.hashCode(), tmpStartedActivities);
 	    			}else{
-	    				AbcGlobal.parentAndStartedActivitiesMap.get(this.hashCode()).add(
-		    					intent.getIntExtra("androidBugCheckerIntentId", 
-			    						AbcGlobal.getAbcIntentId()));
+	    				AbcGlobal.parentAndStartedActivitiesMap.get(this.hashCode()).add(abcIntentId);
 	    			}	    			
 				}
 
@@ -3259,14 +3271,12 @@ public class Activity extends ContextThemeWrapper
 				//type singleTop, then it may directly call performNewIntent() instead of
 				//calling hanleLaunchActivity first
 				if(Looper.mcd.getVisibleActivity().getLocalClassName().equals(resolvedActivity)){
-					Thread.currentThread().abcEnableLifecycleEvent("", 
-							intent.getIntExtra("androidBugCheckerIntentId", AbcGlobal.getAbcIntentId()), 
+					Thread.currentThread().abcEnableLifecycleEvent("", abcIntentId, 
     						AbcGlobal.ABC_START_NEW_INTENT);
 				}
 	    			    		
 	    		if(requestCode != -1){
-	    			AbcGlobal.abcResultSendingActivityIntents.put(
-	    					intent.getIntExtra("androidBugCheckerIntentId", -1), 
+	    			AbcGlobal.abcResultSendingActivityIntents.put(abcIntentId,
 	    					new AbcHashNamePair(this.hashCode(), this.getLocalClassName()));
 	    			AbcGlobal.abcResultExpectingActivities.add(this.hashCode());
 	    		}
@@ -3281,7 +3291,7 @@ public class Activity extends ContextThemeWrapper
                     intent, requestCode);
             if (ar != null) {
             	/*Android bug-checker*/
-            	//result is being sent even before the nect acivity is
+            	//result is being sent even before the next acivity is
             	//started. Indicate this using ENABLE
                 if(AbcGlobal.abcLogFile != null){
                 	if(AbcGlobal.abcResultExpectingActivities.contains(this.hashCode())){
@@ -3291,7 +3301,7 @@ public class Activity extends ContextThemeWrapper
                 	}
                 	AbcGlobal.abcResultExpectingActivities.remove(this.hashCode());
                 	AbcGlobal.abcResultSendingActivityIntents.remove(
-                			intent.getIntExtra("androidBugCheckerIntentId", 5999));
+                			intent.getIntExtra("androidBugCheckerIntentId", 55555));
                 }
                 /*Android bug-checker*/
                 mMainThread.sendActivityResult(
@@ -3829,7 +3839,12 @@ public class Activity extends ContextThemeWrapper
                 		this.getLocalClassName(), this.hashCode(), 
                 		AbcGlobal.ABC_DESTROY);
                     
-                  //set class loader before doing a get on bundle
+
+            	    AbcHashNamePair actPair = new AbcHashNamePair(this.hashCode(), 
+                			this.getLocalClassName());
+                	AbcGlobal.abcActivityDestroyList.add(actPair);
+                	
+                    //set class loader before doing a get on bundle
                     if(mIntent.getExtras() != null){
         			    mIntent.setExtrasClassLoader(
         					this.getClass().getClassLoader());

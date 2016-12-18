@@ -150,6 +150,8 @@ public class AbcGlobal {
 	    	String appUT = null;
 	    	int event_depth = 0;
 	    	int initDelay = 0;
+	    	boolean variableEventPriority = true;
+	    	boolean allowControlFlowOutsideApp = false;
 	    	String sampleAppClass = null;
 	    	int port = 0;
 			try {
@@ -160,10 +162,54 @@ public class AbcGlobal {
 				//read the depth for event to be executed (should be greater than one)
 				//it is in 3rd line of abc.txt
 			   	br.readLine(); //skip second line
+			   	
 			   	sampleAppClass = br.readLine();
-			   	event_depth = Integer.valueOf(br.readLine());
-			    initDelay = Integer.valueOf(br.readLine());
-			    port = Integer.valueOf(br.readLine());
+			   	
+			   	String depthStr = br.readLine();
+			   	if(depthStr != null){
+			   	    event_depth = Integer.valueOf(depthStr);
+			   	}else{
+			   		event_depth = 10; //some default event depth
+			   	}
+			   	
+			   	String delayStr = br.readLine();
+			   	if(delayStr != null){
+			        initDelay = Integer.valueOf(delayStr);
+			   	}else{
+			   		initDelay = 0;
+			   	}
+			   	
+			   	String portStr = br.readLine();
+			   	if(portStr != null){
+			        port = Integer.valueOf(portStr);
+			   	}else{
+			   		port = 9999;
+			   	}
+			   	
+			   	br.readLine(); //skip this line
+			   	
+			   	String priorityStr = br.readLine();
+			   	if(priorityStr != null){
+			   		if(priorityStr.equals("true") || priorityStr.equals("TRUE")){
+			   			variableEventPriority = true;
+			   		}else if(priorityStr.equals("false") || priorityStr.equals("FALSE")){
+			   			variableEventPriority = false;
+			   		}
+			   	}else{
+			   	    variableEventPriority = true;	
+			   	}
+			   	
+			   	String controlStr = br.readLine();
+			   	if(controlStr != null){
+			   		if(controlStr.equals("true") || controlStr.equals("TRUE")){
+			   			allowControlFlowOutsideApp = true;
+			   		}else if(controlStr.equals("false") || controlStr.equals("FALSE")){
+			   			allowControlFlowOutsideApp = false;
+			   		}
+			   	}else{
+			   		allowControlFlowOutsideApp = false;
+			   	}
+			   	
 				br.close();	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -176,6 +222,8 @@ public class AbcGlobal {
 				ModelCheckingDriver.DEPTH_LIMIT = event_depth;
 				ModelCheckingDriver.initDelay = initDelay;
 				ModelCheckingDriver.abcPort = port;
+				ModelCheckingDriver.variableEventPriority = variableEventPriority;
+				ModelCheckingDriver.allowControlFlowOutsideApp = allowControlFlowOutsideApp;
 				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
 						Looper.mcd.sampleAppClass +
 						" event-depth-limit:" 

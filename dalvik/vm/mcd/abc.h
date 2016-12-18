@@ -68,6 +68,7 @@
 #define ENABLE_WINDOW_FOCUS 27
 #define TRIGGER_WINDOW_FOCUS 28
 #define ABC_WAIT 29
+#define ABC_TIMED_WAIT 50
 #define ABC_NOTIFY 30
 #define ABC_QUEUE_IDLE 31
 #define ABC_ADD_IDLE_HANDLER 32
@@ -485,7 +486,7 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId);
 void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* component, u4 componentId, 
          int intentId, int state, int delayTriggerOpid);
 
-void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId);
+void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId, bool timed);
 
 void abcAddNotifyToTrace(int opId, int tid, int notifiedTid);
 

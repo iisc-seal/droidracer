@@ -702,13 +702,13 @@ void abcUnlockMutex(pthread_mutex_t* pMutex){
 }
 
 void addStartToTrace(int opId){
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_START;
     op->tid = dvmThreadSelf()->abcThreadId;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
     
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -881,29 +881,42 @@ bool addIntermediateReadWritesToTrace(int opId, int tid){
     return accessSetAdded;
 }
 
-void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId){
+void abcAddWaitOpToTrace(int opId, int tid, int waitingThreadId, bool timed){
     bool accessSetAdded = addIntermediateReadWritesToTrace(opId, tid);
     if(accessSetAdded){
         opId = abcOpCount++;
     }
     LOGE("%d ABC:Enter - Add WAIT to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
 
-    op->opType = ABC_WAIT;
+    if(timed){
+        op->opType = ABC_TIMED_WAIT;
+    }else{
+        op->opType = ABC_WAIT;
+    }
     op->arg1 = waitingThreadId;
     op->tid = tid;
     op->arg2 = NULL;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
-    outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
+    if(timed){
+        outfile << opId << " TIMED-WAIT tid:" << waitingThreadId <<"\n";
+    }else{
+        outfile << opId << " WAIT tid:" << waitingThreadId <<"\n";
+    }
     outfile.close();
 
-    serializeOperationIntoFile(ABC_WAIT, waitingThreadId, 0, 0, 0, 0, tid, -1);
+    if(timed){
+        serializeOperationIntoFile(ABC_TIMED_WAIT, waitingThreadId, 0, 0, 0, 0, tid, -1);
+    }else{
+        serializeOperationIntoFile(ABC_WAIT, waitingThreadId, 0, 0, 0, 0, tid, -1);
+    }
 
     if(abcTraceLengthLimit != -1 && opId >= abcTraceLengthLimit){
         stopAbcModelChecker();
@@ -926,7 +939,7 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
     }
     LOGE("%d ABC:Enter - Add NOTIFY to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = opType;
     op->arg1 = notifiedTid;
     op->tid = tid;
@@ -934,7 +947,8 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " NOTIFY tid:" << tid << " notifiedTid:" << notifiedTid << "\n";
@@ -950,7 +964,7 @@ void abcAddNotifyToTrace(int opId, int tid, int notifiedTid){
 
 void addAccessToTrace(int opId, int tid, u4 accessId){
     LOGE("%d ABC:Entered - Add ACCESS to trace", opId);
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = accessId;
@@ -962,7 +976,7 @@ void addAccessToTrace(int opId, int tid, u4 accessId){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::map<int, std::pair<int, std::list<int> > >::iterator 
         absIter = abcRWAbstractionMap.find(accessId);
@@ -992,7 +1006,7 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, const char* component,
     }
     LOGE("%d ABC:Enter - Add TRIGGER-SERVICE to trace tid:%d  state: %d", opId, tid, state);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = componentId;
@@ -1007,7 +1021,8 @@ void addTriggerServiceLifecycleToTrace(int opId, int tid, const char* component,
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::string lifecycle("");
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1049,7 +1064,7 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* action, 
     }
     LOGE("%d ABC:Enter - Add TRIGGER-BROADCAST to trace tid:%d  state: %d", opId, tid, state);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = componentId;
@@ -1063,6 +1078,7 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* action, 
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::string arg5Str(action);
     int arg5 = -1;
@@ -1083,7 +1099,6 @@ void addTriggerBroadcastLifecycleToTrace(int opId, int tid, const char* action, 
         arg5 = strIt->second;
     }
 
-    abcTrace.insert(std::make_pair(opId, op));
     std::string lifecycle("");
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1115,7 +1130,7 @@ void addEnableLifecycleToTrace(int opId, int tid, const char* component, u4 comp
     }
     LOGE("%d ABC:Enter - Add ENABLE-LIFECYCLE to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = componentId;
@@ -1129,7 +1144,8 @@ void addEnableLifecycleToTrace(int opId, int tid, const char* component, u4 comp
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::string lifecycle("");
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1159,7 +1175,7 @@ void addTriggerLifecycleToTrace(int opId, int tid, const char* component, u4 com
     }
     LOGE("%d ABC:Enter - Add TRIGGER-LIFECYCLE to trace tid:%d  state: %d", opId, tid, state);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = componentId;
@@ -1173,7 +1189,8 @@ void addTriggerLifecycleToTrace(int opId, int tid, const char* component, u4 com
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::string lifecycle("");
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1196,7 +1213,7 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
     }
     LOGE("%d ABC:Enter - Add INSTANCE-INTENT to trace tid:%d ", opId, tid);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = instance;
@@ -1210,7 +1227,8 @@ void addInstanceIntentMapToTrace(int opId, int tid, u4 instance, int intentId){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
+
     std::string lifecycle("");
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1233,7 +1251,7 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     }
     LOGE("%d ABC:Enter - Add ENABLE-EVENT to trace", opId);
    
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = view;
@@ -1247,7 +1265,7 @@ void addEnableEventToTrace(int opId, int tid, u4 view, int event){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1270,7 +1288,7 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
     }
     LOGE("%d ABC:Enter - Add TRIGGER-EVENT to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = view;
@@ -1284,7 +1302,7 @@ void addTriggerEventToTrace(int opId, int tid, u4 view, int event){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1307,7 +1325,7 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     }
     LOGE("%d ABC:Enter - Add ENABLE-WINDOW-FOCUS to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = windowHash;
@@ -1321,7 +1339,7 @@ void addEnableWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1344,7 +1362,7 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     }
     LOGE("%d ABC:Enter - Add TRIGGER-WINDOW-FOCUS to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = windowHash;
@@ -1358,7 +1376,7 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1398,7 +1416,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
     }
     LOGE("%d ABC:Entered - Add POST to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msg;
@@ -1412,7 +1430,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1432,7 +1450,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
 
 void addCallToTrace(int opId, int tid, u4 msg){
     LOGE("%d ABC:Entered - Add CALL to trace", opId);
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msg;
@@ -1444,7 +1462,7 @@ void addCallToTrace(int opId, int tid, u4 msg){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1468,7 +1486,7 @@ void addRetToTrace(int opId, int tid, u4 msg){
     }
     LOGE("%d ABC:Entered - Add RET to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msg;
@@ -1480,7 +1498,7 @@ void addRetToTrace(int opId, int tid, u4 msg){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1497,7 +1515,7 @@ void addRetToTrace(int opId, int tid, u4 msg){
 
 void addRemoveToTrace(int opId, int tid, u4 msg){
     LOGE("ABC:Entered - Add REMOVE to trace");
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msg;
@@ -1509,7 +1527,7 @@ void addRemoveToTrace(int opId, int tid, u4 msg){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     serializeOperationIntoFile(ABC_REM, tid, msg, 0, 0, 0, tid, -1);
 
@@ -1526,7 +1544,7 @@ int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid){
     }
     LOGE("%d ABC:Entered - Add POST to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msg;
@@ -1540,7 +1558,7 @@ int addIdlePostToTrace(int opId, int srcTid, u4 msg, int destTid){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1565,7 +1583,7 @@ void addAttachQToTrace(int opId, int tid, u4 msgQ){
     }
     LOGE("%d ABC:Entered - Add ATTACHQ to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msgQ;
@@ -1577,7 +1595,7 @@ void addAttachQToTrace(int opId, int tid, u4 msgQ){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1600,7 +1618,7 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     }
     LOGE("%d ABC:Entered - Add LOOP to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msgQ;
@@ -1612,7 +1630,7 @@ void addLoopToTrace(int opId, int tid, u4 msgQ){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1635,7 +1653,7 @@ void addLoopExitToTrace(int opId, int tid, u4 msgQ){
     }
     LOGE("%d ABC:Entered - Add LOOP-EXIT to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = msgQ;
@@ -1647,7 +1665,7 @@ void addLoopExitToTrace(int opId, int tid, u4 msgQ){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1665,7 +1683,7 @@ void addLoopExitToTrace(int opId, int tid, u4 msgQ){
 void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     LOGE("%d ABC:Entered - Add QUEUE_IDLE to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->id = idleHandlerHash;
     arg2->obj = NULL;
@@ -1677,7 +1695,7 @@ void addQueueIdleToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1697,7 +1715,7 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
     }
     LOGE("%d ABC:Entered - Add ADD_IDLE_HANDLER to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->id = idleHandlerHash;
     arg2->obj = NULL;
@@ -1709,7 +1727,7 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1725,7 +1743,7 @@ void addIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid)
 void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, int tid){
     LOGE("%d ABC:Entered - Add REMOVE_IDLE_HANDLER to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->id = idleHandlerHash;
     arg2->obj = NULL;
@@ -1737,7 +1755,7 @@ void addRemoveIdleHandlerToTrace(int opId, u4 idleHandlerHash, int queueHash, in
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1758,7 +1776,7 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     }
     LOGE("%d ABC:Entered - Add LOCK to trace obj:%p tid:%d", opId, lockObj, tid);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = lockObj;
     arg2->id = 0;
@@ -1770,7 +1788,7 @@ void addLockToTrace(int opId, int tid, Object* lockObj){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1791,7 +1809,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     }
     LOGE("%d ABC:Entered - Add UNLOCK to trace obj:%p tid:%d", opId, lockObj, tid);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = lockObj;
     arg2->id = 0;
@@ -1803,7 +1821,7 @@ void addUnlockToTrace(int opId, int tid, Object* lockObj){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1824,7 +1842,7 @@ void addForkToTrace(int opId, int parentTid, int childTid){
     }
     LOGE("%d ABC:Entered - Add FORK to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     AbcArg* arg2 = (AbcArg*)malloc(sizeof(AbcArg));
     arg2->obj = NULL;
     arg2->id = childTid;
@@ -1836,7 +1854,7 @@ void addForkToTrace(int opId, int parentTid, int childTid){
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1855,15 +1873,15 @@ void addForkToTrace(int opId, int parentTid, int childTid){
 
 void addThreadInitToTrace(int opId, int tid){
     LOGE("%d ABC:Entered - Add THREADINIT to trace", opId);
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
 
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_THREADINIT;
     op->arg1 = tid;
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1886,14 +1904,14 @@ void addThreadExitToTrace(int opId, int tid){
     }
     LOGE("%d ABC:Entered - Add THREADEXIT to trace", opId);
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_THREADEXIT;
     op->arg1 = tid;
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1910,15 +1928,15 @@ void addThreadExitToTrace(int opId, int tid){
 
 void addNativeEntryToTrace(int opId, int tid){
     LOGE("%d ABC:Entered - Add NATIVE_ENTRY to trace", opId);
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
 
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_NATIVE_ENTRY;
     op->arg1 = tid;
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
 
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
@@ -1939,14 +1957,14 @@ void addNativeExitToTrace(int opId, int tid){
         opId = abcOpCount++;
     }
 
-    AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
+    /*AbcOp* op = (AbcOp*)malloc(sizeof(AbcOp));
     op->opType = ABC_NATIVE_EXIT;
     op->arg1 = tid;
     op->tid = tid;
     op->tbd = false;
     op->asyncId = -1;
 
-    abcTrace.insert(std::make_pair(opId, op));
+    abcTrace.insert(std::make_pair(opId, op));*/
     
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);

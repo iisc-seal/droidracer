@@ -140,14 +140,25 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
         char *component = dvmCreateCstrFromString(compStr);
         u4 componentId = args[2];
         int state = args[3];
+        Thread* selfThread = dvmThreadSelf();
 
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
-        if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-            addTriggerServiceLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
-            abcUnlockMutex(&gAbc->abcMainMutex);
+        std::map<int, AbcCurAsync*>::iterator asyncIt = abcThreadCurAsyncMap.find(selfThread->abcThreadId);
+        if(asyncIt != abcThreadCurAsyncMap.end()){
+            AbcCurAsync* curAsync = asyncIt->second;
+            if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
+                abcLockMutex(selfThread, &gAbc->abcMainMutex);
+                addTriggerServiceLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, component, componentId, state);
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }else{
+                LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
+                std::ofstream outfile;
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
+                outfile << "ABC: ABORT " << "\n";
+                outfile.close();
+                stopAbcModelChecker();
+            }
         }else{
-            LOGE("ABC-DONT-LOG: trigger service lifecycle found in a deleted async block. aborting trace creation");
+            LOGE("ABC-DONT-LOG: trigger service lifecycle found on an untracked thread. Truncating trace collection.");
             std::ofstream outfile;
             outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
@@ -165,14 +176,25 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
         char *component = dvmCreateCstrFromString(compStr);        
         u4 componentId = args[2];
         int state = args[3];
+        Thread* selfThread = dvmThreadSelf();
         
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
-        if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-            addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
-            abcUnlockMutex(&gAbc->abcMainMutex);
+        std::map<int, AbcCurAsync*>::iterator asyncIt = abcThreadCurAsyncMap.find(selfThread->abcThreadId);
+        if(asyncIt != abcThreadCurAsyncMap.end()){
+            AbcCurAsync* curAsync = asyncIt->second;
+            if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
+                abcLockMutex(selfThread, &gAbc->abcMainMutex);
+                addEnableLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, component, componentId, state);
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }else{
+                LOGE("ABC-DONT-LOG: enable lifecycle found in a deleted async block. aborting trace creation");
+                std::ofstream outfile;
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
+                outfile << "ABC: ABORT " << "\n";
+                outfile.close();
+                stopAbcModelChecker();
+            }
         }else{
-            LOGE("ABC-DONT-LOG: enable lifecycle found in a deleted async block. aborting trace creation");
+            LOGE("ABC-DONT-LOG: enable activity lifecycle found on an untracked thread. Truncating trace collection.");
             std::ofstream outfile;
             outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";
@@ -228,15 +250,25 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
             gDvm.isRunABC = false;
         }*/
         
-        abcLockMutex(selfThread, &gAbc->abcMainMutex);
-        if(state != ABC_TRIGGER_ONRECIEVE_LATER){
-            addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
-                componentId, intentId, state, delayTriggerOpid);
+        std::map<int, AbcCurAsync*>::iterator asyncIt = abcThreadCurAsyncMap.find(selfThread->abcThreadId);
+        if(asyncIt != abcThreadCurAsyncMap.end()){
+            abcLockMutex(selfThread, &gAbc->abcMainMutex);
+            if(state != ABC_TRIGGER_ONRECIEVE_LATER){
+                addTriggerBroadcastLifecycleToTrace(abcOpCount++, selfThread->abcThreadId, action, 
+                    componentId, intentId, state, delayTriggerOpid);
+            }else{
+                //do nothing. ONRECEIVE_LATER was earlier needed but now is handled more elegantly by better instrumentation.
+                //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
+            }
+            abcUnlockMutex(&gAbc->abcMainMutex);
         }else{
-            //do nothing. ONRECEIVE_LATER was earlier needed but now is handled more elegantly by better instrumentation.
-            //onReceive can be posted from native thread (we have a trigger there and hence should be tracked).
+            LOGE("ABC-DONT-LOG: trigger broadcast receiver found on an untracked thread. Truncating trace collection.");
+            std::ofstream outfile;
+            outfile.open(abcLogFile.c_str(), std::ios_base::app);
+            outfile << "ABC: ABORT " << "\n";
+            outfile.close();
+            stopAbcModelChecker();
         }
-        abcUnlockMutex(&gAbc->abcMainMutex);
 
         free(action);
     }
@@ -287,20 +319,20 @@ static void Dalvik_java_lang_VMThread_abcForceAddEnableEvent(const u4* args, JVa
         AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->abcThreadId)->second;
         if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
 
-        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
-        if(it == abcViewEventMap.end()){
-            std::set<int> eventSet;
-            eventSet.insert(event);
-            abcViewEventMap.insert(std::make_pair(view, eventSet));
-            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
-        }else{
-            if(it->second.find(event) == it->second.end()){
-                it->second.insert(event);
-            } 
-            addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
-        }
-        abcUnlockMutex(&gAbc->abcMainMutex);
+            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
+            std::map<u4, std::set<int> >::iterator it = abcViewEventMap.find(view);
+            if(it == abcViewEventMap.end()){
+                std::set<int> eventSet;
+                eventSet.insert(event);
+                abcViewEventMap.insert(std::make_pair(view, eventSet));
+                addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
+            }else{
+                if(it->second.find(event) == it->second.end()){
+                    it->second.insert(event);
+                } 
+                addEnableEventToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, view, event);
+            }
+            abcUnlockMutex(&gAbc->abcMainMutex);
 
         }else{
             LOGE("ABC-DONT-LOG: force-enable event found in a deleted async block. aborting trace creation");
@@ -388,13 +420,23 @@ static void Dalvik_java_lang_VMThread_abcEnableWindowFocusChangeEvent(const u4* 
         u4 windowHash = args[1];
  
         Thread* selfThread = dvmThreadSelf();
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(selfThread->abcThreadId)->second;
-        if(!curAsync->hasMQ || curAsync->asyncId != -1){
-            abcLockMutex(selfThread, &gAbc->abcMainMutex);
-            addEnableWindowFocusChangeEventToTrace(abcOpCount++, selfThread->abcThreadId, windowHash);
-            abcUnlockMutex(&gAbc->abcMainMutex);
+        std::map<int, AbcCurAsync*>::iterator asyncIt = abcThreadCurAsyncMap.find(selfThread->abcThreadId);
+        if(asyncIt != abcThreadCurAsyncMap.end()){
+            AbcCurAsync* curAsync = asyncIt->second;
+            if(!curAsync->hasMQ || curAsync->asyncId != -1){
+                abcLockMutex(selfThread, &gAbc->abcMainMutex);
+                addEnableWindowFocusChangeEventToTrace(abcOpCount++, selfThread->abcThreadId, windowHash);
+                abcUnlockMutex(&gAbc->abcMainMutex);
+            }else{
+                LOGE("ABC-ABORT: ENABLE-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
+                std::ofstream outfile;
+                outfile.open(abcLogFile.c_str(), std::ios_base::app);
+                outfile << "ABC: ABORT " << "\n";
+                outfile.close();
+                stopAbcModelChecker();
+            }
         }else{
-            LOGE("ABC-ABORT: ENABLE-WINDOW-FOCUS found outside async block in a thread with message queue. aborting trace creation");
+            LOGE("ABC-DONT-LOG: enable window-focus found on an untracked thread. Truncating trace collection.");
             std::ofstream outfile;
             outfile.open(abcLogFile.c_str(), std::ios_base::app);
             outfile << "ABC: ABORT " << "\n";

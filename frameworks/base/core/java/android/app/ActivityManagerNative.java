@@ -2512,6 +2512,17 @@ class ActivityManagerProxy implements IActivityManager
     }
     public void setRequestedOrientation(IBinder token, int requestedOrientation)
             throws RemoteException {
+    	/*Android bug-checker*/
+    	if(AbcGlobal.abcLogFile != null){
+            Thread.currentThread().abcEnableLifecycleEvent(
+        		Looper.mcd.getVisibleActivity().getLocalClassName(), 
+         		Looper.mcd.getVisibleActivity().hashCode(), AbcGlobal.ABC_RELAUNCH);
+            Thread.currentThread().abcEnableLifecycleEvent("", 0,
+        		AbcGlobal.ABC_CHANGE_CONFIG);
+            Thread.currentThread().abcEnableLifecycleEvent("", 0,
+    			AbcGlobal.ABC_CHANGE_ACT_CONFIG);
+    	}
+        /*Android bug-checker*/
         Parcel data = Parcel.obtain();
         Parcel reply = Parcel.obtain();
         data.writeInterfaceToken(IActivityManager.descriptor);

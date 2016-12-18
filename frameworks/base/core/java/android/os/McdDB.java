@@ -81,6 +81,7 @@ public class McdDB extends SQLiteOpenHelper{
 	  public static final String COLUMN_EXPLORE_DEFAULT = "exploreDefault"; 
       public static final String COLUMN_INPUT_TYPE = "inputType"; 
       public static final String COLUMN_EVENT_PRIORITY = "eventPriority";
+      public static final String COLUMN_IS_EXPLORED = "isExplored";
       public static final String COLUMN_NEXT_EVENT = "nextEvent";
       public static final String COLUMN_IS_FIRST_NODE = "isFirstNode";
 	  public static final String COLUMN_HAS_MENU = "activityHasMenu";
@@ -232,7 +233,8 @@ public class McdDB extends SQLiteOpenHelper{
 	      + " integer not null, " + COLUMN_EVENT_TYPE
 	      + " integer not null, " + COLUMN_EVENT_ID
 	      + " integer not null, " + COLUMN_EVENT_PRIORITY
-	      + " integer not null," 
+	      + " integer not null," + COLUMN_IS_EXPLORED
+	      + " bool default 0," 
 	      + " FOREIGN KEY ("+ COLUMN_NODE_ID +") REFERENCES "+ TABLE_PATH_NODE
 	      + "("+ COLUMN_ID +") ON DELETE SET NULL ON UPDATE SET NULL);";
       
