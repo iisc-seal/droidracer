@@ -459,7 +459,7 @@ public class Handler {
         
         /*Android bug-checker*/
         Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
-        		AbcGlobal.ABC_NOT_FOQ_OR_NEG, delayMillis);
+        		AbcGlobal.ABC_DELAY_POST, delayMillis);
         AbcGlobal.abcPostLoggedMessages.add(msg.abcMsgId);
         /*Android bug-checker*/
         
@@ -501,7 +501,7 @@ public class Handler {
             }else{
             	if(AbcGlobal.abcPostLoggedMessages.contains(msg.abcMsgId) == false){
             		Thread.currentThread().abcPrintPostMsg(msg.abcMsgId, mQueue.hashCode(), 
-            				AbcGlobal.ABC_NOT_FOQ_OR_NEG, uptimeMillis - SystemClock.uptimeMillis());
+            				AbcGlobal.ABC_AT_TIME_POST, uptimeMillis - SystemClock.uptimeMillis());
             	}else{
             		AbcGlobal.abcPostLoggedMessages.remove(msg.abcMsgId);
             	}

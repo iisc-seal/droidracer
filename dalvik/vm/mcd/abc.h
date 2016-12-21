@@ -84,6 +84,7 @@
 #define ABC_POST_NEG 47
 #define ENABLE_TIMER_TASK 48
 #define TRIGGER_TIMER_TASK 49
+#define ABC_AT_TIME_POST 51
 
 #define ABC_RUN_TIMER_TASK 18
 
@@ -428,7 +429,7 @@ void startAbcModelChecker();
 
 void addAccessToTrace(int opId, int tid, u4 accessId);
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoQPost, int isNegPost);
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoQPost, int isNegPost, int isAtTimePost);
 
 void addCallToTrace(int opId, int tid, u4 msg);
 

@@ -308,6 +308,7 @@ public class ModelCheckingDriver {
 	public static boolean variableEventPriority = true;
 	public int priorityDiff = 3;
 	public static boolean allowControlFlowOutsideApp = false;
+	public static boolean automatedUIExplore = true;
 	
 	public void initKeyPressEventsAndRotateScreen(SQLiteDatabase db){
 		ContentValues values;
@@ -3742,10 +3743,15 @@ public class ModelCheckingDriver {
 	
 	//implementation of Android Bug-checker algorithm
 	public void androidBugChecker() throws McdException{
+		if(!automatedUIExplore){
+		    return;	
+		}
+		
 		if(initDelay > 0){
 			initDelay--;
 			return;
 		}
+		
 		if(abcSilentReturn){
 			return;
 		}else{ 

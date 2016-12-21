@@ -716,47 +716,6 @@ void addStartToTrace(int opId){
     outfile.close(); 
 }
 
-//a test trace. this is not called anywhere by default except when 
-//a small testcase is required
-void executeTestcase(){
-    Object* obj = new Object;
-    Object* obj1 = new Object;
-    //testing graph generation
-
-    addForkToTrace(abcOpCount++, 1, 3);
-    addAttachQToTrace(abcOpCount++, 1, 1);
-
-    addNativeEntryToTrace(abcOpCount++, 2);
-    addPostToTrace(abcOpCount++, 2, 1, 1, 0, false, false);
-    addNativeExitToTrace(abcOpCount++, 2);
-
-    addNativeEntryToTrace(abcOpCount++, 2);
-    addPostToTrace(abcOpCount++, 2, 2, 1, 0, false, false);
-    addNativeExitToTrace(abcOpCount++, 2);
-
-    addLoopToTrace(abcOpCount++, 1, 1);
-
-    addThreadInitToTrace(abcOpCount++, 3);
-    addLockToTrace(abcOpCount++, 3, obj);
-    addReadWriteToTrace(1, ABC_WRITE, "abcClazz", NULL, 4, obj1, "", 3);
-    addUnlockToTrace(abcOpCount++, 3, obj);
-    addThreadExitToTrace(abcOpCount++, 3);
-
-    addCallToTrace(abcOpCount++, 1, 1);
-    addLockToTrace(abcOpCount++, 1, obj);
-    addReadWriteToTrace(2, ABC_WRITE, "abcClazz", NULL, 4, obj1, "", 1);
-    addUnlockToTrace(abcOpCount++, 1, obj);
-    addRetToTrace(abcOpCount++, 1, 1);
-
-    addCallToTrace(abcOpCount++, 1, 2);
-    addLockToTrace(abcOpCount++, 1, obj);
-    addReadWriteToTrace(3, ABC_READ, "abcClazz", NULL, 4, obj1, "", 1);
-    addUnlockToTrace(abcOpCount++, 1, obj);
-    addRetToTrace(abcOpCount++, 1, 2);
-
-    addThreadExitToTrace(abcOpCount++, 1);
-}
-
 void startAbcModelChecker(){
     gAbc = new AbcGlobals;
     pthread_cond_init(&gAbc->abcMainCond, NULL);
@@ -1392,11 +1351,15 @@ void addTriggerWindowFocusChangeEventToTrace(int opId, int tid, u4 windowHash){
     }
 }
 
-int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoqPost, int isNegPost){
+int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFoqPost, int isNegPost, int isAtTimePost){
     int opType = -1;
     if(srcTid == abcNativeTid){
         if(isFoqPost == 1){
             opType = ABC_NATIVE_POST_FOQ;
+        }else if(isNegPost == 1){
+            opType = ABC_POST_NEG;
+        }else if(isAtTimePost == 1){
+            opType = ABC_AT_TIME_POST;
         }else{
             opType = ABC_NATIVE_POST;
         }
@@ -1405,6 +1368,8 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
             opType = ABC_POST_FOQ;
         }else if(isNegPost == 1){
             opType = ABC_POST_NEG;
+        }else if(isAtTimePost == 1){
+            opType = ABC_AT_TIME_POST;
         }else{
             opType = ABC_POST;
         }
@@ -1435,7 +1400,7 @@ int addPostToTrace(int opId, int srcTid, u4 msg, int destTid, s8 delay, int isFo
     std::ofstream outfile;
     outfile.open(abcLogFile.c_str(), std::ios_base::app);
     outfile << opId << " POST src:" << srcTid << " msg:" << msg << " dest:" << destTid 
-        << " delay:" << delay << " foq:" << isFoqPost << " neg:" << isNegPost << "\n";
+        << " delay:" << delay << " foq:" << isFoqPost << " neg:" << isNegPost << " atTime:" << isAtTimePost << "\n";
     outfile.close(); 
 
     serializeOperationIntoFile(opType, srcTid, msg, destTid, delay, 0, srcTid, -1);

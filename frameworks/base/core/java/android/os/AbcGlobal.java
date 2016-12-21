@@ -101,9 +101,10 @@ public class AbcGlobal {
 	
 	/* a set used to prevent duplicate logging of post operations */
 	public static HashSet<Integer> abcPostLoggedMessages = new HashSet<Integer>();
-	public static final int ABC_NOT_FOQ_OR_NEG = 0;
+	public static final int ABC_DELAY_POST = 0;
 	public static final int ABC_FOQ_POST = 1;
 	public static final int ABC_NEG_POST = 2;
+	public static final int ABC_AT_TIME_POST = 3;
 	
 	/* <activity-intent-id-to-launch, actvity-instance-to-STOP> */
 	public static HashMap<Integer, AbcHashNamePair> abcLaunchStopMap = 
@@ -152,6 +153,7 @@ public class AbcGlobal {
 	    	int initDelay = 0;
 	    	boolean variableEventPriority = true;
 	    	boolean allowControlFlowOutsideApp = false;
+	    	boolean automatedUIExplore = false;
 	    	String sampleAppClass = null;
 	    	int port = 0;
 			try {
@@ -210,6 +212,17 @@ public class AbcGlobal {
 			   		allowControlFlowOutsideApp = false;
 			   	}
 			   	
+			   	String uiExploreStr = br.readLine();
+			   	if(uiExploreStr != null){
+			   		if(uiExploreStr.equals("true") || uiExploreStr.equals("TRUE")){
+			   			automatedUIExplore = true;
+			   		}else if(uiExploreStr.equals("false") || uiExploreStr.equals("FALSE")){
+			   			automatedUIExplore = false;
+			   		}
+			   	}else{
+			   		automatedUIExplore = true;
+			   	}
+			   	
 				br.close();	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -224,10 +237,16 @@ public class AbcGlobal {
 				ModelCheckingDriver.abcPort = port;
 				ModelCheckingDriver.variableEventPriority = variableEventPriority;
 				ModelCheckingDriver.allowControlFlowOutsideApp = allowControlFlowOutsideApp;
+				ModelCheckingDriver.automatedUIExplore = automatedUIExplore;
+				
 				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
 						Looper.mcd.sampleAppClass +
-						" event-depth-limit:" 
-						+ event_depth + " init-delay:" + initDelay);
+						" event-depth-limit:" + event_depth 
+						+ " init-delay:" + initDelay
+						+ " variablePriority:" + variableEventPriority
+						+ " cfgOut:" + allowControlFlowOutsideApp
+						+ " automatedUI:" + automatedUIExplore
+						);
 				Looper.mcd.abcSilentReturn = false;
 				
 				//initialize abcIntentId which will be set as a argument of

@@ -527,16 +527,13 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
         u4 queueHash = args[2];
         int flag = args[3]; 
         s8 delay = GET_ARG_LONG(args,4);
-        int isFoQPost = 0, isNegPost = 0;
-        if(flag == 0){
-            isFoQPost = 0;
-            isNegPost = 0;
-        }else if(flag == 1){
+        int isFoQPost = 0, isNegPost = 0, isAtTimePost = 0;
+        if(flag == 1){
             isFoQPost = 1;
-            isNegPost = 0;
         }else if(flag == 2){
-            isFoQPost = 0;
             isNegPost = 1;
+        }else if(flag == 3){
+            isAtTimePost = 1; 
         }
 
 //        int nativeEntryId = -1;
@@ -598,12 +595,12 @@ static void Dalvik_java_lang_VMThread_abcPrintPostMsg(const u4* args,
             if(gDvm.isRunABC == true){
                 //addNativeEntryToTrace(nativeEntryId, selfThread->abcThreadId);
                 //msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
-                msg->postId = addPostToTrace(msg->postId, abcNativeTid, msg->msgId, destThread, delay, isFoQPost, isNegPost);
+                msg->postId = addPostToTrace(msg->postId, abcNativeTid, msg->msgId, destThread, delay, isFoQPost, isNegPost, isAtTimePost);
                 //addNativeExitToTrace(abcOpCount++, selfThread->abcThreadId);
             }
         }else{
             if(gDvm.isRunABC == true){
-                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost);
+                msg->postId = addPostToTrace(msg->postId, selfThread->abcThreadId, msg->msgId, destThread, delay, isFoQPost, isNegPost, isAtTimePost);
             }
         }
         //}
