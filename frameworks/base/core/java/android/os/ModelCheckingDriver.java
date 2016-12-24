@@ -1071,7 +1071,8 @@ public class ModelCheckingDriver {
 	 * and do not misuse it.
 	 */
 	public void initializeTextEmail(SQLiteDatabase db){
-		String data = "andbug.che@gmail.com"; 
+		//String data = "andbug.che@gmail.com"; 
+		String data = "hpmaiya.pallavi@gmail.com";
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_EMAIL);
@@ -1081,7 +1082,8 @@ public class ModelCheckingDriver {
 	
         //password of a dummy account created for testing purpose
 	public void initializeTextPassword(SQLiteDatabase db){
-		String data = "an*42bu.ch"; 
+		//String data = "an*42bu.ch"; 
+		String data = "neointellect"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PASSWORD);
@@ -1222,20 +1224,20 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
 //		values.put(McdDB.COLUMN_ORDER, 5);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
+		
+		data = "66507789"; 		
+		values = new ContentValues();
+		values.put(McdDB.COLUMN_DATA, data);
+		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
+		values.put(McdDB.COLUMN_ORDER, 2);
+		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 //		
-//		data = "66507789"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 4);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "andbug.che@gmail.com"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 3);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
+		data = "andbug.che@gmail.com"; 		
+		values = new ContentValues();
+		values.put(McdDB.COLUMN_DATA, data);
+		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
+		values.put(McdDB.COLUMN_ORDER, 3);
+		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 //		
 //		data = "password"; 		
 //		values = new ContentValues();
@@ -2207,26 +2209,30 @@ public class ModelCheckingDriver {
         
         if(ViewGroup.class.isInstance(v) && 
         		!isIgnoreChildrenViews(getSimplifiedClassOfView(v.getClass()))){
-        	Cursor cursor = database.query(McdDB.TABLE_VIEW_NODE, new String[]{McdDB.COLUMN_ID}, 
+        	if(!(v instanceof AbsListView || v instanceof AbsSpinner) || 
+        			(v.getVisibility() == View.VISIBLE && v.isEnabled())){
+        	
+             	Cursor cursor = database.query(McdDB.TABLE_VIEW_NODE, new String[]{McdDB.COLUMN_ID}, 
 					McdDB.COLUMN_PARENT_ID + " = ?",
 					new String[]{String.valueOf(viewID)},
 					null, null, McdDB.COLUMN_RELATIVE_ID + " ASC");
         	
-        	if(cursor.getCount() != ((ViewGroup)v).getChildCount()){
-				mcdRaiseException("Android Bug-checker hit a view whose children count did not" +
-							" match that stored in database for that view", database);
-        	}
+            	if(cursor.getCount() != ((ViewGroup)v).getChildCount()){
+			    	mcdRaiseException("Android Bug-checker hit a view whose children count did not" +
+				 			" match that stored in database for that view", database);
+        	    }
         	
-        	if(cursor.moveToFirst()){
-        	for(int i=0; i<cursor.getCount(); i++){
-        		storeUIEvents(((ViewGroup)v).getChildAt(i), cursor.getInt(
-        				cursor.getColumnIndexOrThrow(McdDB.COLUMN_ID)), pathNodeID, viewType, 
-        				database);
-        		cursor.moveToNext();
-        	}
-        	}
+            	if(cursor.moveToFirst()){
+                	for(int i=0; i<cursor.getCount(); i++){
+        	        	storeUIEvents(((ViewGroup)v).getChildAt(i), cursor.getInt(
+        		 	    	cursor.getColumnIndexOrThrow(McdDB.COLUMN_ID)), pathNodeID, viewType, 
+        				    database);
+                		cursor.moveToNext();
+                	}
+            	}
         	
-        	cursor.close();
+            	cursor.close();
+        	}
         }
 	}
 	
@@ -2897,7 +2903,7 @@ public class ModelCheckingDriver {
     	    	}
         	}
         	else if(eventType == EVENT_ROTATE_SCREEN){
-        		/*Android bug-checker*/
+        		/*Android bug-checker - we emit these at ActivityManagerNative.setRequestedOrientation()
                 Thread.currentThread().abcEnableLifecycleEvent(
                 		getVisibleActivity().getLocalClassName(), 
                 		getVisibleActivity().hashCode(), AbcGlobal.ABC_RELAUNCH);
@@ -2905,7 +2911,7 @@ public class ModelCheckingDriver {
                 		AbcGlobal.ABC_CHANGE_CONFIG);
                 Thread.currentThread().abcEnableLifecycleEvent("", 0,
             			AbcGlobal.ABC_CHANGE_ACT_CONFIG);
-                /*Android bug-checker*/
+                Android bug-checker*/
                 
         		WindowManager mWindowManager =  (WindowManager) getContext().getSystemService(
         				getContext().WINDOW_SERVICE);

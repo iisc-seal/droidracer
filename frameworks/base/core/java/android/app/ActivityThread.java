@@ -1175,15 +1175,9 @@ public final class ActivityThread {
                 case RELAUNCH_ACTIVITY: {
                 	/*Android bug-checker*/
                 	if(AbcGlobal.abcLogFile != null){
-                	    Thread.currentThread().abcTriggerLifecycleEvent(
-                	    		Looper.mcd.getVisibleActivity().getLocalClassName(), 
-                	    		Looper.mcd.getVisibleActivity().hashCode(),
-                			    AbcGlobal.ABC_RELAUNCH);
-                	    AbcGlobal.isRelaunchInProgress = true;
+                	   AbcGlobal.isRelaunchInProgress = true;
                 	}
-                	/*Android bug-checker*/
-                	
-                    ActivityClientRecord r = (ActivityClientRecord)msg.obj;
+                	ActivityClientRecord r = (ActivityClientRecord)msg.obj;
                     handleRelaunchActivity(r);
                     
                     /*Android bug-checker*/
@@ -3429,19 +3423,7 @@ public final class ActivityThread {
     private void handleSendResult(ResultData res) {
         ActivityClientRecord r = mActivities.get(res.token);
         if (DEBUG_RESULTS) Slog.v(TAG, "Handling send result to " + r);
-        if (r != null) {
-        	/*Android bug-checker*/
-        	//send_result is connected using enable-trigger and not
-        	//by state machine. This is because SEND_RESULT should be connected
-        	//to the point where StartActivityForResult got issued and its
-        	//corresponding STOP_ACTIVITY happened.
-        	if(AbcGlobal.abcLogFile != null){
-        	    Thread.currentThread().abcTriggerLifecycleEvent(
-        			r.activity.getLocalClassName(), 
-        			r.activity.hashCode(), AbcGlobal.ABC_RESULT);
-        	}
-        	/*Android bug-checker*/
-        	
+        if (r != null) {        	
             final boolean resumed = !r.paused;
             if (!r.activity.mFinished && r.activity.mDecor != null
                     && r.hideForNow && resumed) {
@@ -3455,6 +3437,15 @@ public final class ActivityThread {
                     // Now we are idle.
                     r.activity.mCalled = false;
                     r.activity.mTemporaryPause = true;
+                    
+                    /*Android bug-checker*/
+                	if(AbcGlobal.abcLogFile != null){
+                	    Thread.currentThread().abcTriggerLifecycleEvent(
+                			r.activity.getLocalClassName(), 
+                			r.activity.hashCode(), AbcGlobal.ABC_PAUSE);
+                	}
+                	/*Android bug-checker*/
+                	
                     mInstrumentation.callActivityOnPause(r.activity);
                     if (!r.activity.mCalled) {
                         throw new SuperNotCalledException(
@@ -3472,6 +3463,19 @@ public final class ActivityThread {
                     }
                 }
             }
+            
+            /*Android bug-checker*/
+        	//send_result is connected using enable-trigger and not
+        	//by state machine. This is because SEND_RESULT should be connected
+        	//to the point where StartActivityForResult got issued and its
+        	//corresponding STOP_ACTIVITY happened.
+        	if(AbcGlobal.abcLogFile != null){
+        	    Thread.currentThread().abcTriggerLifecycleEvent(
+        			r.activity.getLocalClassName(), 
+        			r.activity.hashCode(), AbcGlobal.ABC_RESULT);
+        	}
+        	/*Android bug-checker*/
+        	
             deliverResults(r, res.results);
             if (resumed) {
             	/*Android bug-checker*/
@@ -3862,6 +3866,14 @@ public final class ActivityThread {
         }
         r.startsNotResumed = tmp.startsNotResumed;
 
+        /*Android bug-checker*/
+    	if(AbcGlobal.abcLogFile != null){
+    	    Thread.currentThread().abcTriggerLifecycleEvent(
+    	    		Looper.mcd.getVisibleActivity().getLocalClassName(), 
+    	    		Looper.mcd.getVisibleActivity().hashCode(),
+    			    AbcGlobal.ABC_RELAUNCH);
+    	}
+    	/*Android bug-checker*/
         handleLaunchActivity(r, currentIntent);
     }
 
