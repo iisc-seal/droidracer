@@ -3844,7 +3844,16 @@ public final class ActivityThread {
         }
 
         handleDestroyActivity(r.token, false, configChanges, true);
-
+        
+        /*Android bug-checker*/
+    	if(AbcGlobal.abcLogFile != null){
+    	    Thread.currentThread().abcTriggerLifecycleEvent(
+    	    		r.activity.getLocalClassName(), 
+    	    		r.activity.hashCode(),
+    			    AbcGlobal.ABC_RELAUNCH);
+    	}
+    	/*Android bug-checker*/
+    	
         r.activity = null;
         r.window = null;
         r.hideForNow = false;
@@ -3866,14 +3875,6 @@ public final class ActivityThread {
         }
         r.startsNotResumed = tmp.startsNotResumed;
 
-        /*Android bug-checker*/
-    	if(AbcGlobal.abcLogFile != null){
-    	    Thread.currentThread().abcTriggerLifecycleEvent(
-    	    		Looper.mcd.getVisibleActivity().getLocalClassName(), 
-    	    		Looper.mcd.getVisibleActivity().hashCode(),
-    			    AbcGlobal.ABC_RELAUNCH);
-    	}
-    	/*Android bug-checker*/
         handleLaunchActivity(r, currentIntent);
     }
 

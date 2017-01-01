@@ -1071,8 +1071,7 @@ public class ModelCheckingDriver {
 	 * and do not misuse it.
 	 */
 	public void initializeTextEmail(SQLiteDatabase db){
-		//String data = "andbug.che@gmail.com"; 
-		String data = "hpmaiya.pallavi@gmail.com";
+		String data = "andbug.che@gmail.com";
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_EMAIL);
@@ -1082,8 +1081,7 @@ public class ModelCheckingDriver {
 	
         //password of a dummy account created for testing purpose
 	public void initializeTextPassword(SQLiteDatabase db){
-		//String data = "an*42bu.ch"; 
-		String data = "neointellect"; 
+		String data = "an*42bu.ch"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PASSWORD);
