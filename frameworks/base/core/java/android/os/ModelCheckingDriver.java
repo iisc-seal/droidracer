@@ -309,6 +309,10 @@ public class ModelCheckingDriver {
 	public int priorityDiff = 3;
 	public static boolean allowControlFlowOutsideApp = false;
 	public static boolean automatedUIExplore = true;
+	public static String email = null;
+	public static String password = null;
+	public static String phone = null;
+	public static String default_text = null;
 	
 	public void initKeyPressEventsAndRotateScreen(SQLiteDatabase db){
 		ContentValues values;
@@ -1000,10 +1004,7 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 	}
 	
-	/*For the benefit of testing we have created a dummy gmail account 
-	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
-	 * and do not misuse it.
-	 */
+	
 	public void initializeTextDate(SQLiteDatabase db){
 		String data = ""; //yyyy-MM-dd
 		ContentValues values = new ContentValues();
@@ -1066,12 +1067,9 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 	}
 	
-	/*For the benefit of testing we have created a dummy gmail account 
-	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
-	 * and do not misuse it.
-	 */
+	
 	public void initializeTextEmail(SQLiteDatabase db){
-		String data = "andbug.che@gmail.com";
+		String data = email;
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_EMAIL);
@@ -1081,7 +1079,7 @@ public class ModelCheckingDriver {
 	
         //password of a dummy account created for testing purpose
 	public void initializeTextPassword(SQLiteDatabase db){
-		String data = "an*42bu.ch"; 
+		String data = password; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PASSWORD);
@@ -1090,7 +1088,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextNameCaps(SQLiteDatabase db){
-		String data = "And bugche"; 
+		String data = "Jane Doe"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NAME_CAPS);
@@ -1106,7 +1104,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 1);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "Andbug Che"; 
+		data = "Jane Doe"; 
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NAME);
@@ -1115,7 +1113,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextAddressCaps(SQLiteDatabase db){
-		String data = "INSTITUTE OF VERIFICATION, STREET 52, BANGALORE 560014"; 
+		String data = "INSTITUTE OF VERIFICATION, STREET TESTING, NV 12345"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_ADDRESS_CAPS);
@@ -1124,7 +1122,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextAddress(SQLiteDatabase db){
-		String data = "Institute of Verification, Street 52, Bangalore 560014"; 
+		String data = "Institute of Verification, Street Testing, NV 12345"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_ADDRESS);
@@ -1158,7 +1156,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 1);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "+91-7777887788"; 
+		data = phone; 
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PHONE);
@@ -1223,14 +1221,14 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 5);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "66507789"; 		
+		data = phone; 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
 		values.put(McdDB.COLUMN_ORDER, 2);
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 //		
-		data = "andbug.che@gmail.com"; 		
+		data = email; 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
@@ -1251,7 +1249,7 @@ public class ModelCheckingDriver {
 //		values.put(McdDB.COLUMN_ORDER, 1);
 //		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "test data"; 		
+		data = default_text; 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
@@ -3417,19 +3415,12 @@ public class ModelCheckingDriver {
 		
 		//code to send instructions to server to backup model-checking DB, kill this app, 
 		//uninstall, install again and then continue
-//		Thread worker = new Thread(new ModelCheckingClient(errorFlag));
-//		//loop till model checking is restarted
-//		worker.start();
+
 			//contacting local server willnot work if the app does not have INTERNET permission
 		    //this is done by contacting our own app which has necessary perms and it informs the server
 			
-//		    Runnable computeRaceRunnable = new Runnable() {
-//				
-//				@Override
-//				public void run() {
-//		            collect stats
 		            AbcGlobal.abcSetTraceEndTime(SystemClock.uptimeMillis());
-		            AbcGlobal.abcSetRaceDetectionStartTime(SystemClock.uptimeMillis());
+//		            AbcGlobal.abcSetRaceDetectionStartTime(SystemClock.uptimeMillis());
 		            
 		            long traceGenerationTime = 0;
 					long raceDetectionTime = 0;
@@ -3448,7 +3439,7 @@ public class ModelCheckingDriver {
 					int success = Thread.currentThread().abcPerformRaceDetection();
 					
 					//collect stats
-					AbcGlobal.abcSetRaceDetectionEndTime(SystemClock.uptimeMillis());
+//					AbcGlobal.abcSetRaceDetectionEndTime(SystemClock.uptimeMillis());
 					
 					//print race stats to file
 					Thread.currentThread().abcPrintRacesDetectedToFile();
@@ -3460,7 +3451,7 @@ public class ModelCheckingDriver {
 					    raceDetectionTime = AbcGlobal.abcGetRaceDetectionEndTime() -
 							AbcGlobal.abcGetRaceDetectionStartTime();
 					    
-					    //computed during HB graph creation and race dtection stage
+					    //computed during HB graph creation and race detection stage
 					    threadCount = Thread.currentThread().abcGetThreadCount();
 					    mqCount = Thread.currentThread().abcGetMessageQueueCount();
 					    asyncCount = Thread.currentThread().abcGetAsyncBlockCount();
@@ -3473,7 +3464,7 @@ public class ModelCheckingDriver {
 					    nonUiRaceCount = Thread.currentThread().abcGetCoEnabledEventNonUiRaces();
 					}
 					
-					Log.e("ABC", "traceGenTime:" + traceGenerationTime + "  raceDetectTime:" + raceDetectionTime);
+//					Log.e("ABC", "traceGenTime:" + traceGenerationTime + "  raceDetectTime:" + raceDetectionTime);
 					
 					Intent intent = new Intent("android.intent.action.MAIN");
 			        intent.setComponent(ComponentName.unflattenFromString("abc.abcclientapp/abc.abcclientapp.AbcClientActivity"));
@@ -3499,20 +3490,6 @@ public class ModelCheckingDriver {
 			        intent.putExtra("abcPort", abcPort);
 			        
 			        getContext().startActivity(intent);
-//				}
-//			};
-//		    
-//			Thread.currentThread().abcStopTraceGeneration(); 
-//		    Thread raceDetectionThread = new Thread(computeRaceRunnable);
-//		    raceDetectionThread.start();
-		    
-		/*	if(errorFlag != FLAG_ERROR){
-				long count = Long.MAX_VALUE;
-				while(count > Long.MIN_VALUE){
-					count = count-2;
-					count++;
-			    }
-		    }*/
 		}else{
 			try{
 		        if(database != null && database.isOpen()){

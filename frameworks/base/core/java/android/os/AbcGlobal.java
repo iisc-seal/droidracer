@@ -155,6 +155,10 @@ public class AbcGlobal {
 	    	boolean allowControlFlowOutsideApp = false;
 	    	boolean automatedUIExplore = false;
 	    	String sampleAppClass = null;
+	    	String email = null;
+	    	String password = null;
+	        String phone = null;
+	        String default_text = null;
 	    	int port = 0;
 			try {
 				BufferedReader br = new BufferedReader(new FileReader(
@@ -223,6 +227,34 @@ public class AbcGlobal {
 			   		automatedUIExplore = true;
 			   	}
 			   	
+			   	String emailStr = br.readLine();
+			   	if(emailStr != null){
+			        email = emailStr;
+			   	}else{
+			   		email = "abc890@xyz.com";
+			   	}
+			   	
+			   	String passwordStr = br.readLine();
+			   	if(passwordStr != null){
+			        password = passwordStr;
+			   	}else{
+			   		password = "4h!*passTxt";
+			   	}
+			   	
+			   	String phoneStr = br.readLine();
+			   	if(phoneStr != null){
+			        phone = phoneStr;
+			   	}else{
+			   		phone = "+123654789";
+			   	}
+			   	
+			   	String defaultStr = br.readLine();
+			   	if(defaultStr != null){
+			        default_text = defaultStr;
+			   	}else{
+			   		default_text = "testdata";
+			   	}
+			   	
 				br.close();	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -238,6 +270,10 @@ public class AbcGlobal {
 				ModelCheckingDriver.variableEventPriority = variableEventPriority;
 				ModelCheckingDriver.allowControlFlowOutsideApp = allowControlFlowOutsideApp;
 				ModelCheckingDriver.automatedUIExplore = automatedUIExplore;
+				ModelCheckingDriver.email = email;
+				ModelCheckingDriver.password = password;
+				ModelCheckingDriver.phone = phone;
+				ModelCheckingDriver.default_text = default_text;
 				
 				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
 						Looper.mcd.sampleAppClass +
