@@ -4680,9 +4680,9 @@ void generatePORTrace(){
 
 bool abcPerformRaceDetection(){
     traceFile = std::string("/data/data/") + gDvm.app_for_ABC
-           + "/abc-trace.txt";
+           + "/trace.txt";
     hbFile = std::string("/data/data/") + gDvm.app_for_ABC
-           + "/hb.txt";
+           + "/dependence.txt";
 
 
     ThreadStatus oldStatus = dvmThreadSelf()->status;
