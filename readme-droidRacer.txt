@@ -1,6 +1,9 @@
-/*
- * @author Pallavi Maiya
- */
+LICENSE
+-------
+DroidRacer is available under the Apache License, version 2.0. Please see the 
+LICENSE and NOTICE files for details.
+
+------------------------------------------------------------------------------
 
 Note: 
 *use a machine with atleast 16 threads and atleast 8GB RAM for 
@@ -75,7 +78,7 @@ droidRacer repository has several branches. To know which branch has
 the latest code view the information displayed in 
 https://bitbucket.org/hppulse/droidracer/branches . 
 To reproduce results corresponding to our paper at PLDI 2014 clone the
-droidracer repository from https://hppulse@bitbucket.org/hppulse/droidracer.git
+droidracer repository from https://bitbucket.org/hppulse/droidracer.git
 
 Switch to branch pldi-2014 and follow instructions given on this page.
 
@@ -154,7 +157,8 @@ DroidRacer related modifications and initializations
    is loaded. This happens when control reaches DroidRacer's UI event trigger code
    too soon. BACK press gets triggered as none of the other events are active yet.
 
-   line 6: port to communicate with emulator (you can specify any unused port number here)
+   line 6: A port number that the emulator can use to communicate with a server
+   residing outside the emulator (you can specify any unused port number here).
 
    line 7: specify a positive integer as limit if the trace generation has to be 
    truncated on hitting the limit. In that case race detection is performed on 
