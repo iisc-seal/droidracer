@@ -10,7 +10,7 @@ Note:
 faster builds (first build takes nearly 25 mins, and incremental builds between 
 2-6 minutes), otherwise may take hours based on resources provided.
 
-* DroidRacer has only been tested on Ubuntu 10.04 
+* DroidRacer has only been tested on Ubuntu 10.04 and 13.10.
 If Android source installation related requirements are satisfied, DroidRacer may
 work on later versions of Ubuntu too.
 
@@ -78,7 +78,7 @@ droidRacer repository has several branches. To know which branch has
 the latest code view the information displayed in 
 https://bitbucket.org/hppulse/droidracer/branches . 
 To reproduce results corresponding to our paper at PLDI 2014 clone the
-droidracer repository from https://hppulse@bitbucket.org/hppulse/droidracer.git
+droidracer repository from https://bitbucket.org/hppulse/droidracer.git
 
 Switch to branch pldi-2014 and follow instructions given on this page.
 
@@ -158,7 +158,7 @@ DroidRacer related modifications and initializations
    too soon. BACK press gets triggered as none of the other events are active yet.
 
    line 6: A port number that the emulator can use to communicate with a server
-   residing outside the emulator and guiding multiple exploration runs of DroidRacer.
+   residing outside the emulator (you can specify any unused port number here).
 
    line 7: specify a positive integer as limit if the trace generation has to be 
    truncated on hitting the limit. In that case race detection is performed on 
@@ -233,8 +233,10 @@ How to run DroidRacer
 1. Install the app to be tested and force-stop it before starting ModelCheckingServer outside emulator. 
    ABCServer.java (main class in ModelCheckingServer project) takes three arguments:
    (1) app-process-name to be tested as input,  (2) port to communicate with emulator
-   (3) emulator ID 
+   (3) emulator ID (its a number displayed on top of the emulator to identify
+   it in case multiple emulators are running simultaneously)
    E.g., org.tomdroid 9998 5554  #to test Tomdroid app running on emulator-5554
+   Also, specify the same port number as specified in abc.txt
 
 2. Before starting DroidRacer run through ModelCheckingServer add 
    <app-process-name, app's main Activity> to intentAppMap HashMap in ABCServer.java inside
