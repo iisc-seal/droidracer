@@ -14,6 +14,26 @@
  * limitations under the License.
  */
 
+/*
+ * The source copyrighted and licensed as above has been modified to add 
+ * Android instrumentation code for DroidRacer. Code within the blocks 
+ * delimited by "Android bug-checker" are copyrighted and licensed as follows:
+ *
+ * Copyright 2014 Pallavi Maiya and Aditya Kanade, Indian Institute of Science
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.android.internal.os;
 
 import android.content.pm.ActivityInfo;
@@ -785,6 +805,7 @@ public class ZygoteInit {
             try {
                 mMethod.invoke(null, new Object[] { mArgs });
             } catch (IllegalAccessException ex) {
+                /*Android bug-checker*/
             	//backtrack code on exception for androidBugChecker
             	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
             		try {
@@ -794,8 +815,10 @@ public class ZygoteInit {
 						e.printStackTrace();
 					}
             	}
+                /*Android bug-checker*/
                 throw new RuntimeException(ex);
             } catch (InvocationTargetException ex) {
+                /*Android bug-checker*/
             	//backtrack code on exception for androidBugChecker
             	if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
             		try {
@@ -805,13 +828,16 @@ public class ZygoteInit {
 						e.printStackTrace();
 					}
             	}
+                /*Android bug-checker*/
                 Throwable cause = ex.getCause();
                 if (cause instanceof RuntimeException) {
                     throw (RuntimeException) cause;
                 } else if (cause instanceof Error) {
                     throw (Error) cause;
                 }
-//                backtrack code on exception for androidBugChecker
+
+                /*Android bug-checker*/
+                //backtrack code on exception for androidBugChecker
                 if(Looper.mcd != null && Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
             		try {
 						Looper.mcd.backtrackOnError();
@@ -820,6 +846,7 @@ public class ZygoteInit {
 						e.printStackTrace();
 					}
             	}
+                /*Android bug-checker*/
                 throw new RuntimeException(ex);
             }
         }

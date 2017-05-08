@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2013, Indian Institute of Science
+ * Copyright 2014 Pallavi Maiya and Aditya Kanade, Indian Institute of Science
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-/* This is a native library to model check Android apps to detect
- * concurrency bugs. 
+/* This is a native library to log and process information obtained by
+ * Android instrumentation added by DroidRacer. 
  *
- * @author Pallavi Maiya
- */
-
-/*todo:
- *(1)if this class works fine, after initalizing along with gDvm,
- *then consider storing custom fields currently in gDvm here iself
- *This will pack all ABC related things in one place unless
- *unavoidable.
-*/
-
-/* todo: have a tag to identify threads started by Thread.start() and when 
- * shouldAbcTrack set to true and the rest (threads started by native method
- * or library and later hitting app code). 
  */
 
 #ifndef ABC_H_

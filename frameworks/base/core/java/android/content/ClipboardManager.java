@@ -14,6 +14,27 @@
  * limitations under the License.
  */
 
+/*
+ * The source copyrighted and licensed as above has been modified to add 
+ * Android instrumentation code for DroidRacer. Code within the blocks 
+ * delimited by "Android bug-checker" are copyrighted and licensed as follows:
+ *
+ * Copyright 2014 Pallavi Maiya and Aditya Kanade, Indian Institute of Science
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package android.content;
 
 import android.content.Context;
@@ -102,11 +123,12 @@ public class ClipboardManager extends android.text.ClipboardManager {
         try {
             getService().setPrimaryClip(clip);
             
-            //Android Bug-checker
+            /*Android bug-checker*/
             if(Looper.mcd != null && Looper.mcd.getPackageName() != null &&
         			Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
         		Looper.mcd.clipBoardSet = true;
-        	}
+            }
+            /*Android bug-checker*/
             
         } catch (RemoteException e) {
         }
@@ -139,12 +161,14 @@ public class ClipboardManager extends android.text.ClipboardManager {
      * Returns true if there is currently a primary clip on the clipboard.
      */
     public boolean hasPrimaryClip() {
+        /*Android bug-checker*/
     	if(Looper.mcd != null && Looper.mcd.getPackageName() != null &&
     			Looper.mcd.getPackageName().equals(Looper.mcd.appUT)){
     		if(Looper.mcd.clipBoardSet == false){
     			return false;
     		}
     	}
+        /*Android bug-checker*/
     	
         try {
             return getService().hasPrimaryClip();
