@@ -1,0 +1,10 @@
+DroidRacer
+Copyright 2014 Pallavi Maiya and Aditya Kanade, Indian Institute of Science
+
+This product includes software developed at 
+Software Engineering and Analysis Lab, Indian Institute of Science
+(http://www.iisc-seal.net/).
+
+This software contains code derived from dalvik, libcore and frameworks/base
+directories of The Android Open Source Project. Please refer to NOTICE files 
+in each of these directories for respective license related information. 
