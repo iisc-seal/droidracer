@@ -259,8 +259,8 @@ void cleanupBeforeExit(){
         while(delIter != abcRWAccesses.end()){
             AbcRWAccess* ptr = delIter->second;
             abcRWAccesses.erase(delIter++);
-            free(ptr->dbPath);
-            free(ptr->field);
+            delete[] ptr->dbPath;
+            delete[] ptr->field;
             free(ptr);
         }
     }
@@ -289,7 +289,7 @@ void cleanupBeforeExit(){
                 free(lockPtr);
             }            
             
-            free(ptr);
+            delete ptr;
         }
     }    
 
@@ -310,7 +310,7 @@ void cleanupBeforeExit(){
             AbcOp* ptr = delIter->second;
             abcTrace.erase(delIter++);
             free(ptr->arg2);
-            free(ptr->arg5);
+            delete[] ptr->arg5;
             free(ptr);
         }
     }
@@ -821,24 +821,9 @@ void abcPrintThreadStack(int threadId){
 
 void abcLockMutex(Thread* self, pthread_mutex_t* pMutex){   
 
-    ThreadStatus oldStatus;
-    
-    if (self == NULL)       // try to get it from TLS 
-        self = dvmThreadSelf();
-
-    if (self != NULL) {
-        oldStatus = self->status;
-        self->status = THREAD_VMWAIT;
-    } else {
-        // happens during VM shutdown 
-        oldStatus = THREAD_UNDEFINED;  // shut up gcc
-    } 
-
+    ThreadStatus oldStatus = dvmChangeStatus(self,THREAD_VMWAIT);
     dvmLockMutex(pMutex); 
-  /*  
-    if (self != NULL)
-        self->status = oldStatus;
-    */
+    dvmChangeStatus(self,oldStatus);
 }
 
 void abcUnlockMutex(pthread_mutex_t* pMutex){
@@ -899,6 +884,9 @@ void executeTestcase(){
     addRetToTrace(abcOpCount++, 1, 2);
 
     addThreadExitToTrace(abcOpCount++, 1);
+	
+    delete obj;
+    delete obj1;
 }
 
 void startAbcModelChecker(){
@@ -912,6 +900,7 @@ void startAbcModelChecker(){
     strcpy(component, "");
     component[1] = '\0';
     addEnableLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, 0, ABC_BIND);
+    delete[] component;
 
     //initialize UI widget class set
     UiWidgetSet.insert("Landroid/view/View;");
@@ -3997,7 +3986,7 @@ bool abcPerformRaceDetection(){
             AbcReceiver* tmpPtr = itTmp->second;
             abcDelayedReceiverTriggerThreadMap.erase(itTmp++);
           //  free(tmpPtr->component);
-            free(tmpPtr->action);
+            delete[] tmpPtr->action;
             free(tmpPtr);
         }
     }
@@ -4008,7 +3997,7 @@ bool abcPerformRaceDetection(){
             AbcReceiver* tmpPtr = itTmp->second;
             abcDelayedReceiverTriggerMsgMap.erase(itTmp++);
          //   free(tmpPtr->component);
-            free(tmpPtr->action);
+            delete[] tmpPtr->action;
             free(tmpPtr);
         }
     }

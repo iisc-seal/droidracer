@@ -165,6 +165,7 @@ DroidRacer related modifications and initializations
    truncated trace. Trace seen may shoot up the limit by a couple of operations as
    coordination has to be brought between multiple threads to stop trace generation.
    specified number of events will still be triggered before the test run exits.
+   If you do not want to prematurely truncate the trace set this line to 0.
 
    E.g:
    com.android.music
