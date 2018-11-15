@@ -162,55 +162,6 @@ static void Dalvik_java_lang_VMThread_abcMapInstanceWithIntentId(const u4* args,
     RETURN_VOID();
 }
 
-/*
-static void Dalvik_java_lang_VMThread_abcRegisterBroadcastReceiver(const u4* args, JValue* pResult){
-    if(gDvm.isRunABC == true){
-        StringObject* compStr = (StringObject*) args[1];
-        StringObject* actionStr = (StringObject*) args[2];
-        char* component = dvmCreateCstrFromString(compStr);
-        char* action = dvmCreateCstrFromString(actionStr);
-
-        AbcCurAsync* curAsync = abcThreadCurAsyncMap.find(dvmThreadSelf()->threadId)->second;
-        if(curAsync->shouldRemove == false && (!curAsync->hasMQ || curAsync->asyncId != -1)){
-            abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-            addRegisterBroadcastReceiverToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, action);
-            abcUnlockMutex(&gAbc->abcMainMutex);
-        }else{
-            LOGE("ABC-DONT-LOG: register broadcast reciever found in a deleted async block. not logging it");
-        }
-    }
-
-    RETURN_VOID();
-}
-
-static void Dalvik_java_lang_VMThread_abcTriggerBroadcastReceiver(const u4* args, JValue* pResult){
-    if(gDvm.isRunABC == true){
-        StringObject* compStr = (StringObject*) args[1];
-        StringObject* actionStr = (StringObject*) args[2];
-        char* component = dvmCreateCstrFromString(compStr);
-        char* action = dvmCreateCstrFromString(actionStr);
-        int triggerNow = args[3]; //1 if trigger now 0 if later(after receiving relevant post)
-
-        abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
-        if(triggerNow == 1){
-            addTriggerBroadcastReceiverToTrace(abcOpCount++, dvmThreadSelf()->threadId, component, action);
-        }else{
-            AbcReceiver* receiver = (AbcReceiver*)malloc(sizeof(AbcReceiver));
-            receiver->component = new char[strlen(component) + 1];
-            strcpy(receiver->component, component);
-            receiver->action = new char[strlen(action) + 1];
-            strcpy(receiver->action, action);
-        
-            abcDelayedReceiverTriggerThreadMap.insert(std::make_pair(
-                    dvmThreadSelf()->threadId, receiver));
-        }
-        abcUnlockMutex(&gAbc->abcMainMutex);
-    }
-
-    RETURN_VOID();
-}
-*/
-
 static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args, JValue* pResult){
     if(gDvm.isRunABC == true){
         StringObject* compStr = (StringObject*) args[1];
@@ -231,6 +182,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerServiceLifecycle(const u4* args,
             outfile.close();
             gDvm.isRunABC = false;
         }
+
+	free(component);
     }
 }
 
@@ -254,6 +207,8 @@ static void Dalvik_java_lang_VMThread_abcEnableLifecycleEvent(const u4* args, JV
             outfile.close();
             gDvm.isRunABC = false;
         }
+
+	free(component);
     }
 
     RETURN_VOID();
@@ -269,6 +224,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerLifecycleEvent(const u4* args, J
         abcLockMutex(dvmThreadSelf(), &gAbc->abcMainMutex);
         addTriggerLifecycleToTrace(abcOpCount++, dvmThreadSelf()->abcThreadId, component, componentId, state);
         abcUnlockMutex(&gAbc->abcMainMutex);
+
+	free(component);
     }
 
     RETURN_VOID();
@@ -338,6 +295,8 @@ static void Dalvik_java_lang_VMThread_abcTriggerBroadcastLifecycle(const u4* arg
 
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
+
+	free(action);
     }
     RETURN_VOID();
 }
@@ -561,6 +520,7 @@ static void Dalvik_java_lang_VMThread_abcSendDbAccessInfo(const u4* args, JValue
         }
         abcUnlockMutex(&gAbc->abcMainMutex);
 
+	free(dbPath);
     }
     }else{
     /*   LOGE("Trace has a READ/WRITE for a async block forced to be deleted which is not addressed by "
