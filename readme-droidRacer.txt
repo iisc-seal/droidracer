@@ -165,6 +165,20 @@ DroidRacer related modifications and initializations
    truncated trace. Trace seen may shoot up the limit by a couple of operations as
    coordination has to be brought between multiple threads to stop trace generation.
    specified number of events will still be triggered before the test run exits.
+   If you do not want to prematurely truncate the trace set this line to 0.
+
+   line 8: specify an email address. This email address will be used to fill out
+   a textbox expecting an email address.
+
+   line 9: specify the password to be used for any login required for the app to be 
+   tested. If the app does not need any login credentials you can supply some dummy
+   text.
+
+   line 10: specify a phone number to be filled in any contact related textbox.
+
+   line 11: specify a text that will be used as a default text to fill out any 
+   textbox with no particular input format.
+   
 
    E.g:
    com.android.music
@@ -174,6 +188,10 @@ DroidRacer related modifications and initializations
    0
    9997
    3000
+   abc@xy.com 
+   paS$w0rD 
+   +14562321111 
+   testdata
 
 ** sample abc.txt can be found on https://bitbucket.org/hppulse/droidracer-related-files
    for each of the app tested by us. Check folder "pldi-2014-tested-apps" in the
