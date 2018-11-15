@@ -167,6 +167,18 @@ DroidRacer related modifications and initializations
    specified number of events will still be triggered before the test run exits.
    If you do not want to prematurely truncate the trace set this line to 0.
 
+	line 8: specify an email address. This email address will be used to fill out
+	a textbox expecting an email address.
+
+	line 9: specify the password to be used for any login required for the app to be 
+	tested. If the app does not need any login credentials you can supply some dummy
+	text.
+
+	line 10: specify a phone number to be filled in any contact related textbox.
+
+	line 11: specify a text that will be used as a default text to fill out any 
+	textbox with no particular input format. 
+
    E.g:
    com.android.music
    Lcom/android/music/
@@ -175,10 +187,10 @@ DroidRacer related modifications and initializations
    0
    9997
    3000
-
-** sample abc.txt can be found on https://bitbucket.org/hppulse/droidracer-related-files
-   for each of the app tested by us. Check folder "pldi-2014-tested-apps" in the
-   droidracer-related-files repository source root.
+	abc@xy.com
+	paS$w0rD
+	+14562321111
+	testdata
 
 ** Make sure not to leave any trailing blank space or blank lines in abc.txt. Check
    examples provided in droidracer-related-files repository.
