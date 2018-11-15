@@ -170,32 +170,32 @@ DroidRacer related modifications and initializations
    line 8: This line indicates whether the UI event priorities should be variable or
    fixed as the exploration progresses in a given run. Indicate "true" or "false" on 
    this line. Set this to true to change the priorities. DroidRacer selects the UI
-	event to be triggered for a given screen based on priorities assigned to each kind
-	of event. If this is set to "true", DroidRacer will lower the priorities of events
-	already explored on a given screen thus giving a chance for even lower priority events
-	to be eventually explored.
+   event to be triggered for a given screen based on priorities assigned to each kind
+   of event. If this is set to "true", DroidRacer will lower the priorities of events
+   already explored on a given screen thus giving a chance for even lower priority events
+   to be eventually explored.
    
-	line 9: DroidRacer can automatically explore an app and log executed operations, only
-	for the app process specified in the abc.txt config file. If the control goes outside 
-	the app, the operation logging will terminate if this line is set to "false"; else 
-	the logging can continue when the control is brought back to the app by manually 
-	performing events such as BACK press, clicking on the app icon etc.
+   line 9: DroidRacer can automatically explore an app and log executed operations, only
+   for the app process specified in the abc.txt config file. If the control goes outside 
+   the app, the operation logging will terminate if this line is set to "false"; else 
+   the logging can continue when the control is brought back to the app by manually 
+   performing events such as BACK press, clicking on the app icon etc.
 
-	line 10: Specify "true" for automated exploration of the specified app, and false
-	for manual exploration. In case of latter, DroidRacer is mainly used to log the 
-	underlying concurrency operations.
+   line 10: Specify "true" for automated exploration of the specified app, and false
+   for manual exploration. In case of latter, DroidRacer is mainly used to log the 
+   underlying concurrency operations.
 
-	line 11: specify an email address. This email address will be used to fill out
-	a textbox expecting an email address.
+   line 11: specify an email address. This email address will be used to fill out
+   a textbox expecting an email address.
 
-	line 12: specify the password to be used for any login required for the app to be 
-	tested. If the app does not need any login credentials you can supply some dummy
-	text.
+   line 12: specify the password to be used for any login required for the app to be 
+   tested. If the app does not need any login credentials you can supply some dummy
+   text.
 
-	line 13: specify a phone number to be filled in any contact related textbox.
+   line 13: specify a phone number to be filled in any contact related textbox.
 
-	line 14: specify a text that will be used as a default text to fill out any 
-	textbox with no particular input format. 
+   line 14: specify a text that will be used as a default text to fill out any 
+   textbox with no particular input format. 
 
    E.g:
    com.android.music
@@ -205,13 +205,13 @@ DroidRacer related modifications and initializations
    0
    9997
    3000
-	true
-	true
-	false
-	abc@xyz.com
-	password**
-	+12333398
-	testdata
+   true
+   false
+   true
+   abc@xyz.com
+   password**
+   +12333398
+   testdata
 
 ** sample abc.txt can be found on https://bitbucket.org/hppulse/droidracer-related-files
    for each of the app tested by us. Check folder "pldi-2014-tested-apps" in the

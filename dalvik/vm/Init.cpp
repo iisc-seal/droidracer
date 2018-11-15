@@ -1759,8 +1759,8 @@ void dvmShutdown()
     freeAssertionCtrl();
 
     /*Android bug-checker*/
-    free(gDvm.app_for_ABC);
-    free(gDvm.package_ABC_app);
+    delete[] gDvm.app_for_ABC;
+    delete[] gDvm.package_ABC_app;
     /*Android bug-checker*/
 
     /*

@@ -111,7 +111,7 @@ static void Dalvik_java_lang_reflect_Method_invokeNative(const u4* args,
                 abcTraceLengthLimit = atoi(str.c_str());
                 LOGE("trace length limit: %d", abcTraceLengthLimit);
                 if(abcTraceLengthLimit < 1){
-                    //ignore this limit by setting it to 1
+                    //ignore this limit by setting it to -1
                     abcTraceLengthLimit = -1;
                 }
             }

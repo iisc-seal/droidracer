@@ -2296,20 +2296,16 @@ public class ModelCheckingDriver {
 				
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_PERSON_NAME){
 				if((rawType & InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0){
-					//PALLAVI MAIYA
 					mappedType = TYPE_TEXT_NAME_CAPS;
 					
 				}else{
-					//Pallavi Maiya
 					mappedType = TYPE_TEXT_NAME;
 				}
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS){
 				if((rawType & InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0){
-					//INSTITUTE OF SCIENCE, BANGALORE - 560024
 					mappedType = TYPE_TEXT_ADDRESS_CAPS;
 					
 				}else{
-					//Institute of Science, Bangalore - 560024
 					mappedType = TYPE_TEXT_ADDRESS;
 				}
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_URI){
@@ -2341,9 +2337,7 @@ public class ModelCheckingDriver {
 					mappedType = TYPE_TEXT_NUMBER_NORMAL;
 			}
 		}else{
-			//our default input is Testdata, a 8 digit no. and _a*$hj kind of 
-			//word
-					mappedType = TYPE_TEXT_DEFAULT;
+			mappedType = TYPE_TEXT_DEFAULT;
 		}
 		
 		return mappedType;
