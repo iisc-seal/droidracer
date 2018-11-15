@@ -130,7 +130,7 @@ DroidRacer related modifications and initializations
 6. Restart emulator
 
 7. Install AbcClientApp on the emulator from droidRacer-related-files repo 
-   (https://bitbucket.org/hppulse/droidracer-related-files)
+   (https://bitbucket.org/iiscseal/droidracer-related-files)
 
 8. Create or push a file (using adb tool) called abc.txt to /mnt/sdcard/Download 
    on the running emulator. File abc.txt should have the following format:
@@ -381,7 +381,4 @@ Understanding DroidRacer implementation
 ---------------------------------------------------------------------------------
 
 * Visit http://www.iisc-seal.net/droidracer to know more about DroidRacer.
-
-* For any further queries drop an e-mail to 
-pallavi <dot> maiya <at> csa <dot> iisc <dot> ernet <dot> in
     
