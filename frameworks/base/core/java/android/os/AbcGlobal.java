@@ -141,18 +141,50 @@ public class AbcGlobal {
 	    	int initDelay = 0;
 	    	String sampleAppClass = null;
 	    	int port = 0;
+	    	String email = null;
+	    	String password = null;
+	        String phone = null;
+	        String default_text = null;
 			try {
 				BufferedReader br = new BufferedReader(new FileReader(
 						"/mnt/sdcard/Download/abc.txt"));
 				appUT = br.readLine();
 				
-				//read the depth for event to be executed (should be greater than one)
-				//it is in 3rd line of abc.txt
-			   	br.readLine(); //skip second line
+				br.readLine(); //skip second line
 			   	sampleAppClass = br.readLine();
 			   	event_depth = Integer.valueOf(br.readLine());
 			    initDelay = Integer.valueOf(br.readLine());
 			    port = Integer.valueOf(br.readLine());
+			    
+			    br.readLine(); //skip seventh line - this will be read by native code
+			    
+			    String emailStr = br.readLine();
+			   	if(emailStr != null){
+			        email = emailStr;
+			   	}else{
+			   		email = "abc890@xyz.com";
+			   	}
+			   	
+			   	String passwordStr = br.readLine();
+			   	if(passwordStr != null){
+			        password = passwordStr;
+			   	}else{
+			   		password = "4h!*passTxt";
+			   	}
+			   	
+			   	String phoneStr = br.readLine();
+			   	if(phoneStr != null){
+			        phone = phoneStr;
+			   	}else{
+			   		phone = "+123654789";
+			   	}
+			   	
+			   	String defaultStr = br.readLine();
+			   	if(defaultStr != null){
+			        default_text = defaultStr;
+			   	}else{
+			   		default_text = "testdata";
+			   	}
 				br.close();	
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -165,10 +197,19 @@ public class AbcGlobal {
 				ModelCheckingDriver.DEPTH_LIMIT = event_depth;
 				ModelCheckingDriver.initDelay = initDelay;
 				ModelCheckingDriver.abcPort = port;
+				ModelCheckingDriver.email = email;
+				ModelCheckingDriver.password = password;
+				ModelCheckingDriver.phone = phone;
+				ModelCheckingDriver.default_text = default_text;
+				
 				Log.e("abc", "abcFile: " + abcLogFile + " class: " + 
 						Looper.mcd.sampleAppClass +
 						" event-depth-limit:" 
-						+ event_depth + " init-delay:" + initDelay);
+						+ event_depth + " init-delay:" + initDelay
+						+ " email:" + email 
+						+ " password:" + password
+						+ " phone:" + phone
+						+ "default text: default_text");
 				Looper.mcd.abcSilentReturn = false;
 				
 				//initialize abcIntentId which will be set as a argument of

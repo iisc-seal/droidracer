@@ -303,6 +303,10 @@ public class ModelCheckingDriver {
 	public static int DEPTH_LIMIT = 5; //this should be supplied by a file and set in the beginning
 	public static int initDelay = 0;
 	public static int abcPort = 0;
+	public static String email = null;
+	public static String password = null;
+	public static String phone = null;
+	public static String default_text = null;
 	
 	public void initKeyPressEventsAndRotateScreen(SQLiteDatabase db){
 		ContentValues values;
@@ -994,10 +998,6 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_UI_EVENT_RELATIVE_PRIORITY, null, values);
 	}
 	
-	/*For the benefit of testing we have created a dummy gmail account 
-	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
-	 * and do not misuse it.
-	 */
 	public void initializeTextDate(SQLiteDatabase db){
 		String data = ""; //yyyy-MM-dd
 		ContentValues values = new ContentValues();
@@ -1060,12 +1060,8 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 	}
 	
-	/*For the benefit of testing we have created a dummy gmail account 
-	 * andbug.che@gmail.com. Please use it only with DroidRacer tool
-	 * and do not misuse it.
-	 */
 	public void initializeTextEmail(SQLiteDatabase db){
-		String data = "andbug.che@gmail.com"; 
+		String data = email; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_EMAIL);
@@ -1073,9 +1069,8 @@ public class ModelCheckingDriver {
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 	}
 	
-        //password of a dummy account created for testing purpose
-	public void initializeTextPassword(SQLiteDatabase db){
-		String data = "an*42bu.ch"; 
+    public void initializeTextPassword(SQLiteDatabase db){
+		String data = password; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PASSWORD);
@@ -1084,7 +1079,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextNameCaps(SQLiteDatabase db){
-		String data = "And bugche"; 
+		String data = "JANE DOE"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NAME_CAPS);
@@ -1093,14 +1088,8 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextName(SQLiteDatabase db){
-		String data = ""; 
 		ContentValues values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NAME);
-//		values.put(McdDB.COLUMN_ORDER, 1);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-		
-		data = "Andbug Che"; 
+		String data = "Jane Doe"; 
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NAME);
@@ -1109,7 +1098,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextAddressCaps(SQLiteDatabase db){
-		String data = "INSTITUTE OF VERIFICATION, STREET 52, BANGALORE 560014"; 
+		String data = "INSTITUTE OF VERIFICATION, STREET TESTING, NV 12345"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_ADDRESS_CAPS);
@@ -1118,7 +1107,7 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextAddress(SQLiteDatabase db){
-		String data = "Institute of Verification, Street 52, Bangalore 560014"; 
+		String data = "INSTITUTE OF VERIFICATION, STREET TESTING, NV 12345"; 
 		ContentValues values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_ADDRESS);
@@ -1145,14 +1134,8 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextPhone(SQLiteDatabase db){
-		String data = ""; 
 		ContentValues values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PHONE);
-//		values.put(McdDB.COLUMN_ORDER, 1);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-		
-		data = "+91-7777887788"; 
+		String data = phone;
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_PHONE);
@@ -1161,14 +1144,8 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextNumberFloat(SQLiteDatabase db){
-		String data = ""; 
 		ContentValues values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NUMBER_FLOAT);
-//		values.put(McdDB.COLUMN_ORDER, 1);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-		
-		data = "3.14"; 
+		String data = "3.14"; 
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_NUMBER_FLOAT);
@@ -1202,56 +1179,28 @@ public class ModelCheckingDriver {
 	}
 	
 	public void initializeTextDefault(SQLiteDatabase db){
-		
-		String data = ""; 
 		ContentValues values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 6);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "Testdata"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 5);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "66507789"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 4);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "andbug.che@gmail.com"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 3);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "password"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 2);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-//		
-//		data = "http://www.google.com"; 		
-//		values = new ContentValues();
-//		values.put(McdDB.COLUMN_DATA, data);
-//		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
-//		values.put(McdDB.COLUMN_ORDER, 1);
-//		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
 		
-		data = "test data"; 		
+		String data = phone; 		
+		values = new ContentValues();
+		values.put(McdDB.COLUMN_DATA, data);
+		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
+		values.put(McdDB.COLUMN_ORDER, 2);
+		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
+	
+		data = email; 		
+		values = new ContentValues();
+		values.put(McdDB.COLUMN_DATA, data);
+		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
+		values.put(McdDB.COLUMN_ORDER, 3);
+		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
+		
+		data = default_text; 		
 		values = new ContentValues();
 		values.put(McdDB.COLUMN_DATA, data);
 		values.put(McdDB.COLUMN_INPUT_TYPE, TYPE_TEXT_DEFAULT);
 		values.put(McdDB.COLUMN_ORDER, 0);
 		db.insert(McdDB.TABLE_INPUT_SPECIFIC_DATA, null, values);
-		
 	}
 	
 	
@@ -2254,20 +2203,16 @@ public class ModelCheckingDriver {
 				
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_PERSON_NAME){
 				if((rawType & InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0){
-					//PALLAVI MAIYA
 					mappedType = TYPE_TEXT_NAME_CAPS;
 					
 				}else{
-					//Pallavi Maiya
 					mappedType = TYPE_TEXT_NAME;
 				}
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_POSTAL_ADDRESS){
 				if((rawType & InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS) != 0){
-					//INSTITUTE OF SCIENCE, BANGALORE - 560024
 					mappedType = TYPE_TEXT_ADDRESS_CAPS;
 					
 				}else{
-					//Institute of Science, Bangalore - 560024
 					mappedType = TYPE_TEXT_ADDRESS;
 				}
 			}else if(tmpRawType == InputType.TYPE_TEXT_VARIATION_URI){
@@ -2280,8 +2225,6 @@ public class ModelCheckingDriver {
 					mappedType = TYPE_TEXT_ALL_CAPS;
 					
 				}else{
-					//our default input is Testdata, a 8 digit no. and _a*$hj kind of 
-					//word
 					mappedType = TYPE_TEXT_DEFAULT;
 				}
 			}
@@ -2299,8 +2242,7 @@ public class ModelCheckingDriver {
 					mappedType = TYPE_TEXT_NUMBER_NORMAL;
 			}
 		}else{
-			//our default input is Testdata, a 8 digit no. and _a*$hj kind of 
-			//word
+			
 					mappedType = TYPE_TEXT_DEFAULT;
 		}
 		
