@@ -76,9 +76,9 @@ About droidRacer repository
 ----------------------------
 droidRacer repository has several branches. To know which branch has
 the latest code view the information displayed in 
-https://bitbucket.org/hppulse/droidracer/branches . 
+https://bitbucket.org/iiscseal/droidracer/branches . 
 To reproduce results corresponding to our paper at PLDI 2014 clone the
-droidracer repository from https://bitbucket.org/hppulse/droidracer.git
+droidracer repository from https://bitbucket.org/iiscseal/droidracer.git
 
 Switch to branch pldi-2014 and follow instructions given on this page.
 
@@ -88,7 +88,7 @@ DroidRacer related modifications and initializations
 ----------------------------------------------------
 1. Make sure your android source builds and runs fine. 
    Then, replace the original files with the corresponding files provided 
-   in droidRacer repository on bitbucket (https://bitbucket.org/hppulse/droidracer). 
+   in droidRacer repository on bitbucket (https://bitbucket.org/iiscseal/droidracer). 
    When there is no corresponding file/folder in the original source, add it 
    from repository.
 
@@ -213,7 +213,7 @@ DroidRacer related modifications and initializations
    +12333398
    testdata
 
-** sample abc.txt can be found on https://bitbucket.org/hppulse/droidracer-related-files
+** sample abc.txt can be found on https://bitbucket.org/iiscseal/droidracer-related-files
    for each of the app tested by us. Check folder "pldi-2014-tested-apps" in the
    droidracer-related-files repository source root.
 
@@ -228,7 +228,7 @@ DroidRacer related modifications and initializations
    some sites which make apks available. Uninstall them when testing other apps 
    to avoid unnecessary logs.
 
-10. Download ModelCheckingServer project from https://bitbucket.org/hppulse/droidracer-related-files
+10. Download ModelCheckingServer project from https://bitbucket.org/iiscseal/droidracer-related-files
    and import it on your eclipse.
    Use ModelCheckingServer to start testing apps using DroidRacer. ModelCheckingServer acts as a 
    server with which the emulator communicates after each testing run. The server performs 
@@ -316,7 +316,7 @@ How to run DroidRacer
    so that app is not killed. ANR gets displayed as DroidRacer does file read-write
    from main thread in some places.
 
-9. Read readme.txt in https://bitbucket.org/hppulse/droidracer-related-files
+9. Read readme.txt in https://bitbucket.org/iiscseal/droidracer-related-files
    to reproduce the runs corresponding to results reported in 
    "Race Detection for Android Applications", PLDI 2014 paper.
 
@@ -339,7 +339,7 @@ Understanding DroidRacer implementation
 
    To understand the source code grep for "Android bug-checker", "mcd" inside 
    files modified to implement DroidRacer (basically, files uploaded on 
-   droidRacer repository https://bitbucket.org/hppulse/droidracer .
+   droidRacer repository https://bitbucket.org/iiscseal/droidracer .
 
    Method androidBugChecker() inside ModelCheckingDriver.java is an important 
    function for UI explorer. For race detector the set of important functions 
